@@ -1,0 +1,288 @@
+.lobbies-container {
+  padding: 40px 20px;
+  min-height: 100vh;
+  /* Sfondo sfumato scuro ma elegante (blu notte verso grigio scuro) */
+  background: radial-gradient(circle at top, #2c3e50, #111111);
+  color: #f1f1f1;
+}
+
+.lobbies-container h1 {
+  font-size: 2.8rem;
+  margin-bottom: 8px;
+  color: #f39c12; /* Titolo dorato/aranciato per risaltare sul buio */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  margin-top: 0;
+}
+
+.lobbies-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto 40px auto;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 20px;
+}
+
+.lobbies-titles p {
+  font-size: 1.2rem;
+  color: #ccc;
+  margin: 0;
+}
+
+/* Stili in comune per i bottoni */
+.btn-common {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.btn-common:active {
+  transform: scale(0.98);
+}
+
+.btn-search {
+  background-color: #27ae60; /* Verde casinò */
+}
+.btn-search:hover {
+  background-color: #2ecc71;
+}
+
+.btn-logout {
+  background-color: #c0392b; /* Rosso profondo */
+}
+.btn-logout:hover {
+  background-color: #e74c3c;
+}
+
+/* Layout principale due colonne */
+.lobbies-content {
+  display: flex;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+.lobbies-sidebar {
+  flex: 0 0 350px;
+  position: sticky;
+  top: 40px;
+}
+
+.lobbies-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Form Creazione Lobby */
+.create-lobby-form {
+  margin: 0;
+  padding: 25px;
+  width: 100%;
+  box-sizing: border-box;
+  /* Sfondo semi-trasparente per far intravedere il background */
+  background: rgba(30, 40, 50, 0.85);
+  backdrop-filter: blur(5px);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-left: 5px solid #d35400;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  text-align: left;
+}
+
+.create-lobby-form h3 {
+  margin: 0;
+  color: #f39c12;
+  text-transform: uppercase;
+  font-size: 1.2rem;
+}
+
+.create-lobby-form input {
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #555;
+  background-color: #1a1a1a; /* Input scuro */
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.create-lobby-form input:focus {
+  border-color: #f39c12;
+  box-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
+}
+
+.btn-submit-form {
+  padding: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #2980b9; /* Blu elegante */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.btn-submit-form:hover {
+  background-color: #3498db;
+}
+
+.btn-submit-form:active {
+  transform: scale(0.98);
+}
+
+/* Stili per il bottone di ricerca durante il caricamento */
+.btn-search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* Spazio tra spinner e testo */
+}
+
+.btn-search:disabled {
+  cursor: wait;
+  background-color: #d68910; /* Un colore leggermente diverso per indicare che è attivo ma non cliccabile */
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff; /* Colore della parte che gira */
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Barra azioni (pulsante cerca) */
+.lobbies-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Lista Lobby */
+.lobbies-list {
+  display: grid;
+  /* Adattamento automatico delle colonne con una larghezza minima di 280px */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+  margin: 0;
+  list-style: none;
+  padding: 0;
+}
+
+/* Stile per i messaggi di "caricamento" o "nessuna lobby" */
+.lobbies-list > p {
+  grid-column: 1 / -1; /* Occupa tutte le colonne della griglia */
+  text-align: center; /* Centra il testo */
+  font-size: 1.1rem;
+  color: #aaa;
+}
+
+/* Stile base per le card inserite nella griglia (anche se gestite da un altro componente, ereditano questi stili per uniformità) */
+.lobbies-list > * {
+  background-color: #1e252b; /* Sfondo scuro per le card */
+  border: 1px solid #3a4556;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: left;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.lobbies-list > *:hover {
+  transform: translateY(-5px); /* Si solleva leggermente */
+  box-shadow: 0 8px 20px rgba(211, 84, 0, 0.3); /* Alone arancione al passaggio */
+  border-color: #d35400;
+}
+
+/* Stili interni per LobbyCard */
+.lobby-card h3 {
+  margin: 0 0 15px 0;
+  color: #f39c12;
+  font-size: 1.3rem;
+  border-bottom: 1px solid #3a4556;
+  padding-bottom: 10px;
+}
+
+.lobby-card p {
+  margin: 8px 0;
+  color: #ccc;
+  font-size: 0.95rem;
+}
+
+.lobby-card strong {
+  color: #fff;
+}
+
+.btn-join-lobby {
+  margin-top: 15px;
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.btn-join-lobby:hover {
+  background-color: #2ecc71;
+}
+
+.btn-join-lobby:active {
+  transform: scale(0.98);
+}
+
+/* Rendi il design responsivo se lo schermo si stringe */
+@media (max-width: 900px) {
+  .lobbies-content {
+    flex-direction: column;
+  }
+  .lobbies-sidebar {
+    flex: none;
+    width: 100%;
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .lobbies-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+}

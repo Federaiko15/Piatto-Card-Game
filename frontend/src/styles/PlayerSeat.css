@@ -1,0 +1,105 @@
+/* PlayerSeat.css */
+
+.placeholder-box {
+  position: relative;
+  padding: 15px;
+  margin-top: 20px; /* <-- Aggiungi questo per dare respiro al tooltip! */
+  border-radius: 10px;
+  text-align: center;
+  transition: all 0.3s ease;
+  background-color: #2c2f33;
+  color: white;
+  border: 2px solid #555;
+  width: 120px;
+}
+.hero {
+  border-color: #4caf50; /* Verde per l'eroe */
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.active-turn {
+  border-color: #ff9800; /* Arancione per il turno attivo */
+  box-shadow: 0 0 15px rgba(255, 152, 0, 0.6);
+  transform: scale(1.05); /* Effetto pop-up */
+}
+/* Il badge principale spinto più in alto */
+.turn-indicator {
+  position: absolute;
+  top: -35px; /* <-- IL FIX È QUI! L'abbiamo alzato di molto */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff9800;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  white-space: nowrap;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  z-index: 10; /* Ci assicuriamo che stia sopra a tutto */
+}
+
+/* La magia: Il triangolino sotto per fare l'effetto "Fumetto" */
+.turn-indicator::after {
+  content: "";
+  position: absolute;
+  bottom: -6px; /* Posizionato appena sotto il bordo inferiore */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0;
+  border-style: solid;
+  border-color: #ff9800 transparent transparent transparent;
+}
+
+.player-name {
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-balance {
+  margin: 0;
+  font-size: 1rem;
+  color: #ffd700; /* Giallo oro */
+}
+
+/* --- STILI PER GLI STATI SPECIALI --- */
+
+.seat-eliminato {
+  opacity: 0.7;
+  filter: grayscale(100%); /* Toglie tutti i colori! */
+  border-color: #f44336;
+  background-color: #331515; /* Sfondo rossastro scuro */
+}
+
+.seat-logout {
+  opacity: 0.5;
+  border-style: dashed; /* Bordo tratteggiato per indicare disconnessione */
+  border-color: #888;
+}
+
+/* Etichette Badge */
+.status-badge {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+.status-badge.waiting {
+  color: #ccc;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.status-badge.eliminato {
+  color: #ffcccc;
+  background-color: #d32f2f; /* Rosso sangue */
+}
+
+.status-badge.logout {
+  color: #ddd;
+  background-color: #555;
+}

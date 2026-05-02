@@ -1,0 +1,52 @@
+import dotenv from "dotenv";
+import app from "./app.js";
+import connectDB from "./config/database.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import verifySocketToken from "./middlewares/socketAuth.middleware.js";
+import registerGameHandlers from "./handlers/game.handler.js";
+
+dotenv.config({
+  path: "./.env",
+});
+
+const startServer = async () => {
+  try {
+    console.log("MONGODB_URI:", process.env.MONGODB_URI);
+
+    await connectDB();
+
+    const httpServer = createServer(app);
+
+    const io = new Server(httpServer, {
+      cors: {
+        origin: "http://localhost:5173", // non posso più utilizzare * perchè altrimenti non potrei utilizzare i cookies per ragioni di sicurezza
+        methods: ["GET", "POST"],
+        credentials: true, // questo serve proprio per far passare i cookie nell'header delle richieste
+      },
+    });
+
+    app.set("io", io); // variabile globale che rende accessibile a tutte le componenti del mio backend il canale di comunicazione creato da socket.io
+
+    io.use(verifySocketToken);
+
+    io.on("connection", (socket) => {
+      console.log(`Nuovo utente collegato. Id Socket: ${socket.id}`);
+      console.log(`ID Utente reale dal Database: ${socket.user.userId}`);
+
+      registerGameHandlers(io, socket); // qui dento gestisco tutti gli eventi per i quali il server si pone in ascolto
+
+      socket.on("error", (error) => {
+        console.log("Error Socket", error);
+        socket.disconnect();
+      });
+    });
+    httpServer.listen(process.env.PORT || 8000, () => {
+      console.log(`Server is listenign on port: ${process.env.PORT}`);
+    });
+  } catch (error) {
+    console.log("Error starting the server: ", error);
+  }
+};
+
+startServer();

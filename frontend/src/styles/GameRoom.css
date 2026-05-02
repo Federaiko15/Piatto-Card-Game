@@ -1,0 +1,271 @@
+/* CONTENITORE PRINCIPALE */
+.game-room-container {
+  width: 100vw;
+  height: 100vh;
+  /* Mettiamo un bel colore "pavimento casinò" o grigio scuro neutro */
+  background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.poker-table {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+
+  /* MODIFICA IMPORTANTE: La riga centrale prende più spazio, 
+     spingendo il croupier in alto e i giocatori in basso */
+  grid-template-rows: 1fr 2.5fr 1fr;
+  gap: 12px;
+
+  width: 100%;
+  height: 100vh;
+
+  padding: 20px;
+  border-radius: 20px;
+
+  background-image: url("../assets/table.png");
+
+  /* MODIFICA IMPORTANTE: Impedisce al tavolo di esplodere a tutto schermo. 
+     Se risulta ancora troppo grande, puoi provare con "background-size: 80% auto;" */
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  /* Rimuovo l'overlay scuro per far brillare i colori originali della tua pixel art */
+  background-color: transparent;
+  box-shadow: none;
+
+  image-rendering: pixelated;
+}
+
+/* TUTTE LE CELLE */
+.grid-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CENTRO TAVOLO (PIATTO) */
+.table-center {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+  transform: translateY(-80px);
+}
+
+/* CROUPIER */
+.table-high-center {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  /* Lo spingiamo verso il basso della sua cella (verso il tavolo) */
+  justify-content: flex-end;
+
+  transform: translateY(-25px);
+}
+
+/* PLAYER SEAT (contenitore generico se vuoi stilizzarlo) */
+.grid-cell > * {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* POSIZIONI GRID */
+
+/* CENTRO */
+.high-center {
+  grid-column: 2 / 5;
+  grid-row: 1;
+}
+
+.mid-center {
+  grid-column: 2 / 5;
+  grid-row: 2;
+}
+
+.bottom-center {
+  grid-column: 2 / 5;
+  grid-row: 3;
+
+  position: relative; /* fondamentale per i bottoni */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* LATI */
+.high-left {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.high-right {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.mid-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.mid-right {
+  grid-column: 5;
+  grid-row: 2;
+}
+
+.low-left {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.low-right {
+  grid-column: 5;
+  grid-row: 3;
+}
+
+/* Effetto pulsante per il giocatore di turno */
+.placeholder-box {
+  /* ... i tuoi stili esistenti per il box (border-radius, flex, etc.) ... */
+  position: relative; /* Fondamentale per posizionare l'effetto interno */
+  overflow: hidden; /* Assicura che l'effetto non esca dai bordi arrotondati */
+  transition: all 0.3s ease; /* Transizione morbida */
+}
+
+/* Quando è attivo, il box in sé non cambia, ma si illumina il bordo con inset shadow */
+.placeholder-box.active-turn {
+  /* Usiamo un inset box-shadow per non alterare il layout esterno */
+  box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.6);
+  border-color: #ffd700 !important; /* Opzionale: cambia il colore del bordo interno */
+}
+
+/* Creiamo l'effetto glow INTERNO con un pseudo-elemento */
+.placeholder-box.active-turn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit; /* Segue i bordi arrotondati del box padre */
+
+  /* Gradiente radiale per l'effetto glow */
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 215, 0, 0) 60%,
+    /* Centro trasparente */ rgba(255, 215, 0, 0.4) 100% /* Bordo illuminato */
+  );
+
+  /* L'effetto è *sotto* il testo del nome del giocatore */
+  z-index: 1;
+  animation: pulse-glow-internal 2s infinite ease-in-out;
+}
+
+/* Assicurati che il nome e il saldo siano SOPRA l'effetto z-index 2 */
+.placeholder-box h4,
+.placeholder-box p {
+  position: relative;
+  z-index: 2;
+}
+
+/* Nuova animazione per il glow interno */
+@keyframes pulse-glow-internal {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* (Opzionale) Se vuoi mantenere la scritta "TOCCA A LUI!" in un'altra posizione,
+   assicurati che non copra il nome. Potresti metterla sotto il saldo. */
+.turn-indicator {
+  /* ... i tuoi stili ... */
+  top: auto; /* Togli top: -10px; */
+  bottom: 2px; /* Mettila in basso dentro il box */
+  z-index: 3;
+}
+
+.pixel-image {
+  width: 192px; /* O la dimensione che preferisci */
+  height: 192px;
+  image-rendering: pixelated; /* <-- QUESTO È FONDAMENTALE */
+}
+
+.pixel-coins {
+  width: 64px; /* O la dimensione che preferisci */
+  height: 64px;
+  image-rendering: pixelated; /* <-- QUESTO È FONDAMENTALE */
+}
+
+.paragraph-coin {
+  display: flex;
+  align-items: center;
+}
+
+/* =========================================
+   TAVOLO DA GIOCO E BOTTONI EROE
+   ========================================= */
+
+/* Assicuriamoci che tutti i testi dei giocatori siano bianchi */
+.grid-cell {
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); /* Aiuta a leggere sui bordi del tavolo */
+}
+
+.my-turn-alert {
+  position: absolute;
+  top: -30px;
+  color: #ffd700;
+  font-weight: bold;
+  animation: pulse-glow-internal 1.5s infinite ease-in-out;
+}
+.rematch-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(4px);
+}
+
+.rematch-box {
+  background: rgba(20, 20, 20, 0.95);
+  border: 2px solid #d4af37;
+  border-radius: 16px;
+  padding: 24px 32px;
+  text-align: center;
+  color: white;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.rematch-box h2 {
+  margin-bottom: 12px;
+}
+
+.rematch-box p {
+  margin: 0;
+  color: #ddd;
+}

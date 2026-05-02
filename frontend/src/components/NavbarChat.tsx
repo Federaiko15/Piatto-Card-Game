@@ -1,0 +1,158 @@
+import { useState, useRef, useEffect } from "react";
+import "../styles/NavbarChat.css";
+import { GameActions } from "../services/GameActions";
+import type { Socket } from "socket.io-client";
+import type { SocketMessageChatResponse, Player } from "../types/index.ts";
+import { useNavigate } from "react-router-dom";
+import showSwal from "../services/CustomAlert.ts";
+
+interface NavbarChatProps {
+  socket: Socket | null;
+  lobbyId: string;
+  messages: SocketMessageChatResponse[];
+  playersInfo: Player[];
+}
+
+const NavbarChat = ({
+  socket,
+  lobbyId,
+  messages,
+  playersInfo,
+}: NavbarChatProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState<string>("");
+  const navigate = useNavigate();
+  const toggleNavbar = () => {
+    setIsOpen((prevState) => !prevState);
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault(); // così si evita di ricaricare ad ogni messaggio mandato la pagina, cosa che farebbe saltare la connesione con il socket
+
+    if (message.trim() === "") return; // controllo per i messaggi vuoti
+
+    GameActions.sendMessage(socket, lobbyId, message);
+    setMessage(""); // meglio svuotare l'input dopo aver mandato il messaggio
+  };
+  // questo hook, useRef, è utilizzato per creare un riferimento, un ancora, ad un elemento html
+  // Noi lo utilizzeremo per scrollare automaticamente alla fine dei messaggi, grazie anche ad useEffect
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleLogout = async () => {
+    const confirmed = await showSwal({
+      type: "leave_lobby",
+      title: "Sei sicuro di voler uscire?",
+      alert: true,
+    });
+
+    if (confirmed) {
+      GameActions.logout(socket, lobbyId!);
+      navigate("/lobbies");
+    }
+  };
+
+  // 3. L'effetto che si attiva quando cambiano i messaggi o si apre la chat
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isOpen]);
+
+  return (
+    <div className="div-container">
+      <button className="navbar-toggle" onClick={toggleNavbar}>
+        {isOpen ? "X" : "Chat"}
+      </button>
+
+      <nav className={`navbar ${isOpen ? "opened" : "closed"}`}>
+        <button className="logout-btn" onClick={handleLogout}>
+          Logout
+        </button>
+
+        <div className="chat-history">
+          {messages.length === 0 ? (
+            <p
+              style={{
+                color: "#bdc3c7",
+                fontStyle: "italic",
+                textAlign: "center",
+              }}
+            >
+              Ancora nessun messaggio. Rompi il ghiaccio!
+            </p>
+          ) : (
+            messages.map((msg, index) => {
+              const isSystemMessage = msg.userId === null;
+
+              // render del messaggio di sistema
+              if (isSystemMessage) {
+                return (
+                  <div
+                    key={index}
+                    className="chat-message system-message"
+                    style={{
+                      fontStyle: "italic",
+                      color: "#f39c12", // Un colore diverso per far risaltare gli avvisi (es. arancione)
+                      textAlign: "center",
+                      margin: "8px 0",
+                    }}
+                  >
+                    <span className="chat-text">{msg.message}</span>
+                  </div>
+                );
+              }
+
+              // render di un messaggio di un utente normale
+              const sender = playersInfo.find((p) => p.id === msg.userId);
+              const displayName = sender
+                ? sender.username
+                : "Utente sconosciuto";
+
+              return (
+                <div key={index} className="chat-message">
+                  <span
+                    className="chat-username"
+                    style={{ fontWeight: "bold" }}
+                  >
+                    {displayName}:{" "}
+                  </span>
+                  <span className="chat-text">{msg.message}</span>
+                </div>
+              );
+            })
+          )}
+          {/* 4. Il div invisibile che fa da ancora per lo scroll */}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <form
+          onSubmit={handleSendMessage}
+          style={{ display: "flex", gap: "5px" }}
+        >
+          <input
+            type="text"
+            placeholder="Scrivi in chat..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            style={{
+              flexGrow: 1,
+              padding: "8px",
+              borderRadius: "4px",
+              border: "none",
+            }}
+          />
+          <button
+            type="submit"
+            style={{ padding: "8px 12px", cursor: "pointer" }}
+          >
+            Invia
+          </button>
+        </form>
+      </nav>
+    </div>
+  );
+};
+
+export default NavbarChat;

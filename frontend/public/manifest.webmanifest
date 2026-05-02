@@ -1,0 +1,21 @@
+{
+  "name": "PIATTO gioco di carte",
+  "short_name": "Piatto",
+  "theme_color": "#E64A19",
+  "display": "fullscreen",
+  "scope": "/",
+  "start_url": "/",
+  "background_color": "#2c2f33",
+  "icons": [
+    {
+      "src": "icons/logo-principale.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/logo-secondario.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

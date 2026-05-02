@@ -1,0 +1,20 @@
+/* 2. Importa i tuoi Font da Google */
+@import url("https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400..700&family=Silkscreen:wght@400;700&display=swap");
+/* 1. Importa Tailwind */
+@import "tailwindcss";
+/* 3. Diciamo a Tailwind di usare il tuo font come default globale! */
+@theme {
+  /* Questo sovrascrive il font standard (sans) di tutto il sito con il DotGothic16 */
+  --font-sans: "DotGothic16", sans-serif;
+
+  /* Opzionale: puoi creare variabili personalizzate per gli altri font se vuoi usarli in specifici bottoni o titoli */
+  --font-pixel: "Pixelify Sans", sans-serif;
+  --font-silk: "Silkscreen", sans-serif;
+}
+
+/* 4. Manteniamo solo la regola per forzare gli input, che a volte sono testardi */
+input,
+button,
+textarea {
+  font-family: inherit;
+}
