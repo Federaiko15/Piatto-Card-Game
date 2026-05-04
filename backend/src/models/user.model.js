@@ -33,10 +33,32 @@ const userSchema = new Schema(
       type: Number,
       default: 1000,
     },
+    otp: {
+      type: String,
+      required: false,
+    },
+    otp_expires_at: {
+      type: Date,
+      required: false,
+    },
+    otp_attempts: {
+      type: Number,
+      default: 0,
+    },
+    verified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   },
+);
+
+// TTL index — elimina automaticamente i documenti con verified: false alla scadenza
+userSchema.index(
+  { otp_expires_at: 1 },
+  { expireAfterSeconds: 0, partialFilterExpression: { verified: false } },
 );
 
 userSchema.pre("save", async function () {

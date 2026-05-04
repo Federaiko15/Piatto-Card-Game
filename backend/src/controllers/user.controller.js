@@ -1,40 +1,52 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
-import { totp } from "otplib";
 import { createAccessToken, createRefreshToken } from "../tokens.js";
 import User from "../models/user.model.js";
+import { generateOtp, sendOTPEmail } from "../services/otpFunctions.js";
 
 dotenv.config({
   path: "./.env",
 });
 
 const sendOtp = async (req, res) => {
-  const { username, email, password } = req.body;
+  try {
+    const { email } = req.body;
 
-  if (!username || !email || !password) {
-    return res.status(400).json({
-      message: "All fields are important",
+    if (!email) {
+      return res.status(400).json({
+        message: "All fields are important",
+      });
+    }
+
+    const otp = generateOtp();
+    const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000);
+
+    await User.findOneAndUpdate(
+      { email: email.trim().toLowerCase() },
+      {
+        otp,
+        otp_expires_at,
+        otp_attempts: 0,
+      },
+      {
+        returnDocument: "after",
+        upsert: true,
+      },
+    );
+
+    await sendOTPEmail(email, otp);
+
+    res.status(200).json({
+      message: "OTP sent successfully",
+    });
+  } catch (error) {
+    console.log("Error in sendOtp", error);
+    return res.status(500).json({
+      message: "Server Error",
+      error: error.message,
     });
   }
-  const existing = await User.findOne({ email: email.trim().toLowerCase() });
-  if (existing) {
-    return res.status(400).json({
-      message: "The user already exists",
-    });
-  }
-
-  const secret = process.env.OTP_SECRET;
-  const otp = totp.generate(secret + email);
-
-  const transporter = nodemailer.createTransport({});
-  await transporter.sendMail({
-    from: "cicciopasticcio@example.com", // qui andrà inserita la email che creerò per il gioco
-    to: email,
-    subject: "Il tuo codice di verifica",
-    text: `Il tuo codice di verifica è: ${otp}`,
-  });
 };
 
 const registerUser = async (req, res) => {
@@ -50,35 +62,43 @@ const registerUser = async (req, res) => {
     // grezze per la comunicazione con MongoDB gestita dalla libreria mongoose, e può essere utilizzata dai
     // modelli (model) creati proprio per la comunicazioni con il DB
 
-    const existing = await User.findOne({ email: email.trim().toLowerCase() });
-    if (existing) {
+    const existing = await User.findOne({
+      email: email.trim().toLowerCase(),
+      verified: false,
+    });
+    if (!existing) {
       return res
-        .status(409)
-        .json({ message: "Already exists a user with that email!" });
+        .status(404)
+        .json({ message: "You have verify you email first!" });
     }
 
-    const isValid = totp.verify({
-      token: otp,
-      secret: process.env.OTP_SECRET + email,
-    });
-
-    if (!isValid) {
-      return res.status(404).json({
-        message: "The OTP isn't valid!",
-      });
+    if (existing.otp_expires_at < new Date())
+      return res.status(400).json({ error: "OTP scaduto" });
+    if (existing.otp_attempts >= 5)
+      return res.status(400).json({ error: "Troppi tentativi" });
+    if (existing.otp !== otp) {
+      await User.updateOne({ email }, { $inc: { otp_attempts: 1 } });
+      return res.status(400).json({ error: "OTP non valido" });
     }
 
-    const user = new User({
-      username,
-      password,
-      email: email.toLowerCase().trim(),
-    });
+    // OTP corretto
+    existing.username = username;
+    existing.password = password; // hashata dal middleware
+    existing.verified = true;
+    existing.otp = undefined;
+    existing.otp_expires_at = undefined;
+    existing.otp_attempts = undefined;
 
-    await user.save();
+    await existing.save();
+
+    await User.updateOne(
+      { email },
+      { $unset: { otp: "", otp_expires_at: "", otp_attempts: "" } },
+    );
 
     res.status(200).json({
       message: "User successfully registered",
-      user,
+      existing,
     });
   } catch (error) {
     console.log("Error in registerUser");
@@ -98,16 +118,17 @@ const loginUser = async (req, res) => {
       });
     }
     const existing = await User.findOne({ email: email.trim().toLowerCase() });
-
+    console.log("req.body:", req.body);
     if (!existing) {
+      console.log("Utente non trovato nel DB");
       return res.status(404).json({
         message: "Invalid email or password",
       });
     }
-
+    console.log(password, existing.password);
     // check if the password sent by the client is correct with bcrypt
     const isPasswordCorrect = await bcrypt.compare(password, existing.password);
-
+    console.log(isPasswordCorrect);
     if (!isPasswordCorrect) {
       return res.status(400).json({
         message: "Invalid email or password",

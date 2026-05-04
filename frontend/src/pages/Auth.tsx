@@ -12,6 +12,7 @@ interface AuthFormData {
   email: string;
   password: string;
   username?: string;
+  otp?: string;
 }
 
 export default function Auth() {
@@ -20,9 +21,11 @@ export default function Auth() {
     email: "",
     password: "",
     username: "",
+    otp: "",
   });
 
   const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [registrationStep, setRegistrationStep] = useState<1 | 2>(1);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   // Stato per il form della modalità Offline
   const [offlineForm, setOfflineForm] = useState({
@@ -53,6 +56,42 @@ export default function Auth() {
     e.preventDefault();
     console.log("Inviando i dati...", form);
 
+    if (!isLogin && registrationStep === 1) {
+      try {
+        const response = await fetch(
+          "http://localhost:4000/api/v1/users/send-otp",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email: form.email }),
+          },
+        );
+
+        const data = await response.json();
+        if (!response.ok) {
+          showSwal({ type: "error", title: data.message, alert: true });
+          return;
+        }
+
+        showSwal({
+          type: "success",
+          title: "Codice OTP inviato!",
+          alert: false,
+        });
+        setRegistrationStep(2);
+      } catch (error) {
+        console.error("Errore nell'invio OTP:", error);
+        showSwal({
+          type: "error",
+          title: "Errore di connessione",
+          alert: true,
+        });
+      }
+      return;
+    }
+
     try {
       const url = isLogin
         ? "http://localhost:4000/api/v1/users/login"
@@ -61,9 +100,10 @@ export default function Auth() {
       const payload: LoginCredentials | RegisterCredentials = isLogin
         ? { email: form.email, password: form.password }
         : {
-            username: form.username,
+            username: form.username || "",
             email: form.email,
             password: form.password,
+            otp: form.otp || "",
           };
 
       const response = await fetch(url, {
@@ -129,6 +169,12 @@ export default function Auth() {
     };
   }, []);
 
+  useEffect(() => {
+    if (isLogin) {
+      setRegistrationStep(1);
+    }
+  }, [isLogin]);
+
   return (
     <div
       className="min-h-screen w-full flex justify-center items-start pt-[12vh] bg-no-repeat bg-center bg-cover"
@@ -146,13 +192,26 @@ export default function Auth() {
               onSubmit={handleSubmit}
               className="flex flex-col gap-4 w-full"
             >
-              {!isLogin && (
+              {!isLogin && registrationStep === 2 && (
+                <input
+                  type="text"
+                  name="otp"
+                  placeholder="Codice OTP (inviato via email)"
+                  value={form.otp}
+                  onChange={handleChange}
+                  required
+                  className="p-2.5 text-base rounded-md border border-[#444] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#f39c12] transition-colors"
+                />
+              )}
+
+              {!isLogin && registrationStep === 2 && (
                 <input
                   type="text"
                   name="username"
                   placeholder="Il tuo Nickname"
                   value={form.username}
                   onChange={handleChange}
+                  required
                   className="p-2.5 text-base rounded-md border border-[#444] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#f39c12] transition-colors"
                 />
               )}
@@ -164,24 +223,31 @@ export default function Auth() {
                 value={form.email}
                 onChange={handleChange}
                 required
-                className="p-2.5 text-base rounded-md border border-[#444] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#f39c12] transition-colors"
+                disabled={!isLogin && registrationStep === 2}
+                className="p-2.5 text-base rounded-md border border-[#444] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#f39c12] transition-colors disabled:opacity-50"
               />
 
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={form.password}
-                onChange={handleChange}
-                required
-                className="p-2.5 text-base rounded-md border border-[#444] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#f39c12] transition-colors"
-              />
+              {(isLogin || (!isLogin && registrationStep === 2)) && (
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  className="p-2.5 text-base rounded-md border border-[#444] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#f39c12] transition-colors"
+                />
+              )}
 
               <button
                 type="submit"
                 className="p-2.5 text-lg mt-2.5 bg-[#f39c12] text-white rounded-md font-bold hover:bg-[#d68910] transition-colors shadow-md"
               >
-                {isLogin ? "Entra nel locale" : "Crea un account"}
+                {isLogin
+                  ? "Entra nel locale"
+                  : registrationStep === 1
+                    ? "Invia OTP"
+                    : "Crea un account"}
               </button>
             </form>
 

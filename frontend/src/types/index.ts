@@ -60,6 +60,7 @@ export interface RegisterCredentials {
   username: string;
   email: string;
   password: string;
+  otp: string;
 }
 
 // La risposta del Server dopo un Login/Registrazione di successo
