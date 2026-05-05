@@ -59,7 +59,7 @@ export default function Auth() {
     if (!isLogin && registrationStep === 1) {
       try {
         const response = await fetch(
-          "http://localhost:4000/api/v1/users/send-otp",
+          `${import.meta.env.VITE_API_URL}/api/v1/users/send-otp`,
           {
             method: "POST",
             headers: {
@@ -94,8 +94,8 @@ export default function Auth() {
 
     try {
       const url = isLogin
-        ? "http://localhost:4000/api/v1/users/login"
-        : "http://localhost:4000/api/v1/users/register";
+        ? `${import.meta.env.VITE_API_URL}/api/v1/users/login`
+        : `${import.meta.env.VITE_API_URL}/api/v1/users/register`;
 
       const payload: LoginCredentials | RegisterCredentials = isLogin
         ? { email: form.email, password: form.password }

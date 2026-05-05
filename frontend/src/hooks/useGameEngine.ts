@@ -220,6 +220,7 @@ export function useGameEngine(lobbyId: string | undefined) {
         socket.emit("rematch_request", personalId, lobbyId);
       } else {
         GameActions.logout(socket, lobbyId!);
+        navigate("/lobbies");
       }
     });
 

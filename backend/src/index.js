@@ -20,7 +20,7 @@ const startServer = async () => {
 
     const io = new Server(httpServer, {
       cors: {
-        origin: "http://localhost:5173", // non posso più utilizzare * perchè altrimenti non potrei utilizzare i cookies per ragioni di sicurezza
+        origin: `${process.env.FRONTEND_URL}`, // non posso più utilizzare * perchè altrimenti non potrei utilizzare i cookies per ragioni di sicurezza
         methods: ["GET", "POST"],
         credentials: true, // questo serve proprio per far passare i cookie nell'header delle richieste
       },
@@ -41,7 +41,7 @@ const startServer = async () => {
         socket.disconnect();
       });
     });
-    httpServer.listen(process.env.PORT || 8000, () => {
+    httpServer.listen(process.env.PORT || 8000, "0.0.0.0", () => {
       console.log(`Server is listenign on port: ${process.env.PORT}`);
     });
   } catch (error) {

@@ -34,7 +34,7 @@ export default function LobbyCard({ lobby }: LobbyCardProps) {
         },
       };
       const response = await fetchWithAuth(
-        `http://localhost:4000/api/v1/lobbies/join/${lobbyId}`,
+        `${import.meta.env.VITE_API_URL}/api/v1/lobbies/join/${lobbyId}`,
         options,
       );
 

@@ -1,12 +1,17 @@
 // express è un framework per node.js per l'implementazione di funzioni che rendono facile la programmazione di backend
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config({
+  path: "./.env",
+});
 
 const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // Lo stesso indirizzo del frontend
+    origin: `${process.env.FRONTEND_URL}`, // Lo stesso indirizzo del frontend
     credentials: true, // FONDAMENTALE per leggere e scrivere i Cookie httpOnly
   }),
 );

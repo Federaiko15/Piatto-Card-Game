@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: . # Usa il Dockerfile nella radice
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000" # Espone la porta 4000
+
+  frontend:
+    build:
+      context: ./frontend # Usa il Dockerfile dentro la cartella frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80" # Mappa la porta 5173 del tuo computer alla porta 80 di NGINX
+    depends_on:
+      - backend # Assicura che il backend parta prima del frontend

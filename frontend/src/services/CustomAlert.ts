@@ -49,7 +49,7 @@ export default function showSwal(props: AlertProps) {
         cancelButtonColor: "#3085d6",
         confirmButtonText: "Sì, esco dalla lobby",
         cancelButtonText: "Annulla",
-      }).then((result) => {
+      }).then((result: any) => {
         if (result.isConfirmed) {
           MySwal.mixin({
             toast: true,
@@ -80,7 +80,7 @@ export default function showSwal(props: AlertProps) {
         cancelButtonColor: "#3085d6",
         confirmButtonText: "Sì, esco dalla lobby",
         cancelButtonText: "Annulla",
-      }).then((result) => {
+      }).then((result: any) => {
         if (result.isConfirmed) {
           MySwal.mixin({
             toast: true,
@@ -105,7 +105,7 @@ export default function showSwal(props: AlertProps) {
         cancelButtonColor: "#d33",
         confirmButtonText: "Rigioca",
         cancelButtonText: "Esci dalla lobby",
-      }).then((result) => {
+      }).then((result: any) => {
         if (result.isConfirmed) {
           MySwal.mixin({
             toast: true,
@@ -131,7 +131,7 @@ export default function showSwal(props: AlertProps) {
         cancelButtonColor: "#d33",
         confirmButtonText: "Sì, chiamo PIATTO!",
         cancelButtonText: "Ci ripenso",
-      }).then((result) => {
+      }).then((result: any) => {
         if (result.isConfirmed) {
           MySwal.mixin({
             toast: true,
