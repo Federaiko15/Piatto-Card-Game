@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GameActions } from "../services/GameActions";
 import type { Socket } from "socket.io-client";
 import type { Player } from "../types";
@@ -21,6 +21,16 @@ export default function HeroControls({
   const [betAmount, setBetAmount] = useState<number>(1);
   const [canDraw, setCanDraw] = useState<boolean>(false);
 
+  // Sincronizziamo canDraw con il server: utile in caso di errori di rete o refresh della pagina
+  useEffect(() => {
+    if (player.currentBet > 0) {
+      // posso fare questo controllo perchè dopo aver pescato, lo stato currentBet viene riportato a 0
+      setCanDraw(true);
+    } else {
+      setCanDraw(false);
+    }
+  }, [player.currentBet]);
+
   const handlePlacePiatto = async () => {
     const amount = Math.min(player.balance, pot);
     const confirmed = await GameActions.placePiatto(
@@ -42,8 +52,8 @@ export default function HeroControls({
         <button
           className={btnBaseClass}
           onClick={() => {
-            GameActions.drawCard(gameSocket, lobbyId);
             setCanDraw(false);
+            GameActions.drawCard(gameSocket, lobbyId);
           }}
           disabled={controlsDisabled || !canDraw}
         >

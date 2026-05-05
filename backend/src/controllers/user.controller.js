@@ -91,11 +91,6 @@ const registerUser = async (req, res) => {
 
     await existing.save();
 
-    await User.updateOne(
-      { email },
-      { $unset: { otp: "", otp_expires_at: "", otp_attempts: "" } },
-    );
-
     res.status(200).json({
       message: "User successfully registered",
       existing,

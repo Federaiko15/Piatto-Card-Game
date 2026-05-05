@@ -27,7 +27,7 @@ const createTransporter = async () => {
     return { transporter, testAccount };
   }
 
-  // In produzione userai le tue credenziali reali
+  // In produzione poi si utilizzeranno le credenziali reali
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {

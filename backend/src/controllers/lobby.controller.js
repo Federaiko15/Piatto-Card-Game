@@ -34,7 +34,13 @@ const createLobby = async (req, res) => {
       });
     }
 
-    // FIX: Scaliamo subito i soldi dal DB per prevenire il glitch del rimborso!
+    if (numPlayers < 2 || numPlayers > 7) {
+      return res.status(400).json({
+        message: "The number of players must be between 2 and 7",
+      });
+    }
+
+    // Scaliamo subito i soldi dal DB per prevenire il glitch del rimborso!
     creatorUser.balance -= starterBet;
     await creatorUser.save();
 
@@ -68,7 +74,15 @@ const createLobby = async (req, res) => {
       req.user.userId,
     );
 
-    await lobby.save();
+    try {
+      await lobby.save();
+    } catch (saveError) {
+      // ROLLBACK: Se il salvataggio della lobby fallisce, restituiamo i soldi!
+      creatorUser.balance += starterBet;
+      await creatorUser.save();
+      throw saveError;
+    }
+
     console.log("Id dell'utente che ha creato la lobby", req.user.userId);
 
     res.status(201).json({
@@ -170,7 +184,15 @@ const joinLobby = async (req, res) => {
       });
     }
 
-    await existingLobby.save();
+    try {
+      await existingLobby.save();
+    } catch (saveError) {
+      // ROLLBACK: Se c'è un errore restituiamo i soldi all'utente
+      user.balance += existingLobby.starterBet;
+      await user.save();
+      existingLobby.activePlayers.pop();
+      throw saveError;
+    }
 
     res.status(200).json({
       message: `You are in, welcome to the ${existingLobby.lobbyname} lobby!!`,
@@ -221,36 +243,6 @@ const getLobbies = async (req, res) => {
   }
 };
 
-const leaveLobby = async (req, res) => {
-  try {
-    const lobby = await Lobby.findById(req.params.id);
-    if (!lobby) {
-      return res.status(404).json({
-        message: "Lobby not found",
-      });
-    }
-    const exist = lobby.activePlayers.includes(req.user.userId);
-    if (!exist) {
-      return res.status(400).json({
-        message: "User not in this lobby",
-      });
-    }
-
-    lobby.activePlayers.pull(req.user.userId);
-    await lobby.save();
-
-    res.status(200).json({
-      message: "You left the lobby correcly",
-    });
-  } catch (error) {
-    console.log("Error in leaveLobby", error);
-    return res.status(500).json({
-      message: "Server Error",
-      error: error.message,
-    });
-  }
-};
-
 // questa non è una chiamata API, ma la inserisco in questo file perchè è una funzione che lavora comunuqe direttamente con il DB
 const deleteLobby = async (lobbyId) => {
   try {
@@ -263,4 +255,4 @@ const deleteLobby = async (lobbyId) => {
     );
   }
 };
-export { createLobby, joinLobby, getLobbies, leaveLobby, deleteLobby };
+export { createLobby, joinLobby, getLobbies, deleteLobby };

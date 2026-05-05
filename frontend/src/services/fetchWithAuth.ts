@@ -20,11 +20,14 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
     try {
       // Chiamo la rotta di refresh (credentials: "include" è FONDAMENTALE per inviare il cookie httpOnly)
-      const refreshResponse = await fetch("http://localhost:4000/api/refresh", {
-        method: "GET",
-        credentials: "include", // fondamentale perchè così react dice al browser di utilizzare il refresh token salvato in maniera
-        // sicura in un http cookie
-      });
+      const refreshResponse = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/refresh`,
+        {
+          method: "GET",
+          credentials: "include", // fondamentale perchè così react dice al browser di utilizzare il refresh token salvato in maniera
+          // sicura in un http cookie
+        },
+      );
 
       if (refreshResponse.ok) {
         const data = await refreshResponse.json();

@@ -74,7 +74,9 @@ export function useGameEngine(lobbyId: string | undefined) {
       return;
     }
 
-    const socket: Socket = io("http://localhost:4000", { auth: { token } });
+    const socket: Socket = io(import.meta.env.VITE_API_URL, {
+      auth: { token },
+    });
     setGameSocket(socket);
 
     socket.on("connect", () => {

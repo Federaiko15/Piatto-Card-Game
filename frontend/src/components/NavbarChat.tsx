@@ -21,6 +21,7 @@ const NavbarChat = ({
 }: NavbarChatProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState<string>("");
+  const [isCooldown, setIsCooldown] = useState<boolean>(false);
   const navigate = useNavigate();
   const toggleNavbar = () => {
     setIsOpen((prevState) => !prevState);
@@ -30,9 +31,25 @@ const NavbarChat = ({
     e.preventDefault(); // così si evita di ricaricare ad ogni messaggio mandato la pagina, cosa che farebbe saltare la connesione con il socket
 
     if (message.trim() === "") return; // controllo per i messaggi vuoti
+    if (isCooldown) return; // Se l'utente è in cooldown, ignoriamo il click
+
+    if (message.length > 150) {
+      showSwal({
+        type: "error",
+        title: "Il messaggio è troppo lungo (max 150 caratteri)!",
+        alert: true,
+      });
+      return;
+    }
 
     GameActions.sendMessage(socket, lobbyId, message);
     setMessage(""); // meglio svuotare l'input dopo aver mandato il messaggio
+
+    // Attiviamo il cooldown di 1.5 secondi per evitare lo spam
+    setIsCooldown(true);
+    setTimeout(() => {
+      setIsCooldown(false);
+    }, 1500);
   };
   // questo hook, useRef, è utilizzato per creare un riferimento, un ancora, ad un elemento html
   // Noi lo utilizzeremo per scrollare automaticamente alla fine dei messaggi, grazie anche ad useEffect
@@ -136,6 +153,7 @@ const NavbarChat = ({
             placeholder="Scrivi in chat..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            maxLength={150}
             style={{
               flexGrow: 1,
               padding: "8px",
@@ -145,9 +163,14 @@ const NavbarChat = ({
           />
           <button
             type="submit"
-            style={{ padding: "8px 12px", cursor: "pointer" }}
+            disabled={isCooldown}
+            style={{
+              padding: "8px 12px",
+              cursor: isCooldown ? "not-allowed" : "pointer",
+              opacity: isCooldown ? 0.5 : 1,
+            }}
           >
-            Invia
+            {isCooldown ? "Wait..." : "Invia"}
           </button>
         </form>
       </nav>

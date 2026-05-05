@@ -53,7 +53,7 @@ export default function Lobbies() {
       };
 
       const response = await fetchWithAuth(
-        "http://localhost:4000/api/v1/lobbies/getLobbies",
+        `${import.meta.env.VITE_API_URL}/api/v1/lobbies/getLobbies`,
         options,
       ); // nel campo header stiamo dicendo alla nostra app Express che stiamo facendo una chiamata API GET, che il content type con cui vogliamo lavorare sia di tipo json e, nel campo autorizzazione mandiamo in nostro token.
 
@@ -115,7 +115,7 @@ export default function Lobbies() {
       };
 
       const response = await fetchWithAuth(
-        "http://localhost:4000/api/v1/lobbies/create",
+        `${import.meta.env.VITE_API_URL}/api/v1/lobbies/create`,
         options,
       );
 
@@ -159,7 +159,7 @@ export default function Lobbies() {
         alert: true,
       });
       if (confirmed) {
-        await fetch("http://localhost:4000/api/v1/users/logout", {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/v1/users/logout`, {
           method: "POST",
           credentials: "include", // Fondamentale per fargli vedere il cookie da cancellare!
         });
