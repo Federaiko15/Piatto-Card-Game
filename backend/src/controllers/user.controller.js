@@ -179,6 +179,32 @@ const logoutUser = async (req, res) => {
   }
 };
 
+const getUser = async (req, res) => {
+  const playerId = req.params.id;
+  try {
+    const player = await User.findById(playerId);
+    if (!player) {
+      return res.status(404).json({
+        message: "Player not found",
+      });
+    }
+    res.status(200).json({
+      message: "Player found",
+      user: {
+        _id: player._id,
+        username: player.username,
+        email: player.email,
+        balance: player.balance,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
 const refreshToken = async (req, res) => {
   try {
     // prendo il refresh token dai cookie
@@ -206,4 +232,4 @@ const refreshToken = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, logoutUser, refreshToken, sendOtp };
+export { registerUser, loginUser, logoutUser, getUser, refreshToken, sendOtp };

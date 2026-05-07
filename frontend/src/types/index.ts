@@ -24,6 +24,13 @@ export interface Player {
   currentBet: number;
 }
 
+export interface UserProfile {
+  _id: string;
+  username: string;
+  email: string;
+  balance: number;
+}
+
 export interface Lobby {
   _id: string;
   lobbyname: string;
@@ -94,6 +101,11 @@ export interface CreateLobbyResponse {
 export interface JoinLobbyApiResponse {
   message: string;
   existingLobby: Lobby;
+}
+
+export interface GetUserInformationsResponse {
+  message: string;
+  user: UserProfile;
 }
 
 // ==========================================

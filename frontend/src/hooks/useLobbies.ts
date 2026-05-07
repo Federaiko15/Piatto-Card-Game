@@ -1,0 +1,214 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import type {
+  Lobby,
+  NewLobbyData,
+  FetchLobbiesResponse,
+  CreateLobbyResponse,
+  UserProfile,
+  GetUserInformationsResponse,
+} from "../types";
+import { fetchWithAuth } from "../services/fetchWithAuth";
+import showSwal from "../services/CustomAlert";
+import getIdFromToken from "../services/utilities";
+
+export function useLobbies() {
+  const [lobbiesList, setLobbiesList] = useState<Lobby[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [viewProfile, setViewProfile] = useState<boolean>(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [newLobby, setNewLobby] = useState<NewLobbyData>({
+    lobbyname: "",
+    starterBet: 0,
+    numPlayers: 0,
+  });
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const fetchLobbies = async (isInitialLoad: boolean = false) => {
+    setIsLoading(true);
+    setLobbiesList([]); // Svuoto la lista per mostrare lo stato di caricamento
+    const accessToken = localStorage.getItem("tokenPiatto");
+
+    if (!accessToken) {
+      showSwal({
+        type: "error",
+        title: "Sessione scaduta o non valida, effettua l'accesso.",
+        alert: true,
+      });
+      navigate("/");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log("Cerchiamo le lobby con il token:", accessToken);
+
+      const options = {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      };
+
+      const response = await fetchWithAuth(
+        `${import.meta.env.VITE_API_URL}/api/v1/lobbies/getLobbies`,
+        options,
+      );
+
+      const data = (await response.json()) as FetchLobbiesResponse;
+
+      if (!response.ok) {
+        console.error("Errore nel server:", data);
+        if (response.status === 401) return; // fetchWithAuth ci sta già reindirizzando
+
+        if (!isInitialLoad) {
+          showSwal({
+            type: "getLobbies",
+            title: "Nessuna lobby disponibile è stata trovata, creane una tu!",
+            alert: false,
+          });
+        }
+        return; // La lista è già vuota, il finally gestirà il loading
+      }
+
+      console.log("Lobby trovate:", data);
+      setLobbiesList(data.allFreeLobbies || []);
+    } catch (error) {
+      console.error("Errore di rete:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      const accessToken = localStorage.getItem("tokenPiatto");
+      if (!accessToken) return;
+
+      const playerId = getIdFromToken();
+      if (!playerId) return;
+
+      const options = {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      };
+
+      const response = await fetchWithAuth(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/profile/${playerId}`,
+        options,
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as GetUserInformationsResponse;
+        setUserProfile(data.user);
+      }
+    } catch (error) {
+      console.error("Server Error nella richiesta del profilo utente:", error);
+    }
+  };
+
+  useEffect(() => {
+    const justLoggedIn = location.state?.justLoggedIn;
+
+    if (justLoggedIn) {
+      showSwal({
+        type: "login_register",
+        title: "Login effettuato con successo!",
+        alert: false,
+      });
+      fetchLobbies(true);
+    }
+
+    fetchUserProfile();
+    window.history.replaceState({}, document.title);
+  }, []);
+
+  const fetchCreateLobby = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const accessToken = localStorage.getItem("tokenPiatto");
+
+    try {
+      console.log("Creazione la lobby...");
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(newLobby),
+      };
+
+      const response = await fetchWithAuth(
+        `${import.meta.env.VITE_API_URL}/api/v1/lobbies/create`,
+        options,
+      );
+
+      const data = (await response.json()) as CreateLobbyResponse;
+      if (response.ok) {
+        const createdLobbyId = data.lobby._id;
+        navigate(`/game/${createdLobbyId}`);
+        fetchLobbies();
+      } else {
+        if (response.status === 401) return;
+        showSwal({
+          type: "error",
+          title: data.message,
+          alert: true,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleLogout = async () => {
+    const accessToken = localStorage.getItem("tokenPiatto");
+
+    if (!accessToken) {
+      showSwal({
+        type: "error",
+        title: "Sessione scaduta o non valida, effettua l'accesso.",
+        alert: true,
+      });
+      navigate("/");
+      return;
+    }
+
+    try {
+      const confirmed = await showSwal({
+        type: "logout",
+        title: "Sei sicuro di uscire dalla retrobottega?",
+        alert: true,
+      });
+      if (confirmed) {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/v1/users/logout`, {
+          method: "POST",
+          credentials: "include",
+        });
+        localStorage.removeItem("tokenPiatto");
+        navigate("/");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return {
+    lobbiesList,
+    isLoading,
+    viewProfile,
+    setViewProfile,
+    userProfile,
+    newLobby,
+    setNewLobby,
+    fetchLobbies,
+    fetchCreateLobby,
+    handleLogout,
+  };
+}

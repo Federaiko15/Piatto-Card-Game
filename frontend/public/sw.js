@@ -1,14 +1,46 @@
 // qui ci sarà lo script eseguito dal service worker, che gestirà lo stato offline del gioco
-const assets = ["/index.html", "/public/cards", "/assets"];
 
-const CACHE_NAME = "piatto-cache-v1";
-const STATIC_ASSETS = ["/", "/index.html", "/manifest.json"];
+// Versione semrpe da aggiornare in caso di modifiche al file
+const CACHE_NAME = "piatto-cache-v2";
+
+// Asset di base dell'applicazione
+const CORE_ASSETS = ["/", "/index.html", "/manifest.json"];
+
+// Genero anche qui tutti i percorsi delle carte che prendo dalla cartella cards in public
+const generateCardAssets = () => {
+  const assets = [];
+  const suits = ["denari", "bastoni", "spade", "coppe"];
+  const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  for (const seme of suits) {
+    for (const value of values) {
+      // IMPORTANTE: Il percorso deve corrispondere a dove si trovano le immagini nella cartella `public`.
+      // Se le tue carte sono in `public/assets/cards/`, il percorso corretto è `/assets/cards/`.
+      assets.push(`./cards/${seme}_${value}.png`);
+    }
+  }
+
+  assets.push("./cards/back.png");
+  assets.push("/assets/table.png"); // Immagine del tavolo da gioco
+
+  return assets;
+};
+
+const CARD_ASSETS = generateCardAssets();
+
+// Uniamo tutti gli asset da mettere in cache all'installazione
+const ASSETS_TO_CACHE = [...CORE_ASSETS, ...CARD_ASSETS];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing...");
+  console.log("Installing Service Worker... Caching assets.");
 
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)),
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
+      .catch((err) => {
+        console.error("Failed to cache assets during install:", err);
+      }),
   );
 });
 

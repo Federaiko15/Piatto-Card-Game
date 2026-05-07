@@ -3,6 +3,7 @@ import {
   registerUser,
   loginUser,
   logoutUser,
+  getUser,
   refreshToken,
   sendOtp,
 } from "../controllers/user.controller.js";
@@ -14,6 +15,7 @@ router.route("/send-otp").post(sendOtp);
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/logout").post(logoutUser);
+router.route("/profile/:id").get(verifyToken, getUser);
 router.route("/refresh").post(verifyToken, refreshToken);
 
 export default router;

@@ -2,10 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { GameActions } from "../services/GameActions";
-
+import getIdFromToken from "../services/utilities";
 import type {
   Player,
-  JwtPayload,
   JoinLobbyResponse,
   SocketJoinResponse,
   SocketDrawResponse,
@@ -33,21 +32,6 @@ export function useGameEngine(lobbyId: string | undefined) {
   const [idCreator, setIdCreator] = useState<string>("");
   const [isGameFinished, setIsGameFinished] = useState<boolean>(false);
   const [isWaitingRematch, setIsWaitingRematch] = useState<boolean>(false);
-
-  // 2. FUNZIONI UTILITY
-  const getIdFromToken = (): string | null => {
-    const token = localStorage.getItem("tokenPiatto");
-    if (!token) return null;
-    try {
-      const payload = token.split(".")[1];
-      const decodeJson = atob(payload); // decodifico in Base64 la parte del payload
-      const finalPayload = JSON.parse(decodeJson) as JwtPayload;
-      return finalPayload.userId;
-    } catch (error) {
-      console.error("Errore token", error);
-      return null;
-    }
-  };
 
   const personalId = getIdFromToken();
 

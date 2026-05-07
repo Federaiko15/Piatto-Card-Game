@@ -64,6 +64,19 @@
   background-color: #e74c3c;
 }
 
+.header-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.btn-profile {
+  background-color: #2980b9; /* Blu elegante */
+}
+.btn-profile:hover {
+  background-color: #3498db;
+}
+
 /* Layout principale due colonne */
 .lobbies-content {
   display: flex;
@@ -284,5 +297,10 @@
     flex-direction: column;
     gap: 15px;
     align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
