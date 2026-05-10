@@ -1,5 +1,8 @@
+import { useState } from "react";
 import "../styles/PlayerProfile.css";
 import type { UserProfile } from "../types";
+import showSwal from "../services/CustomAlert";
+import { fetchWithAuth } from "../services/fetchWithAuth";
 
 interface PlayerProfileProps {
   isOpen: boolean;
@@ -14,6 +17,64 @@ const PlayerProfile = ({
   userProfile,
   onLogout,
 }: PlayerProfileProps) => {
+  const [changePassword, setChangePassword] = useState<boolean>(false);
+  const [oldPassword, setOldPassword] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+
+  const fetchNewCredentials = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showSwal({
+        type: "error",
+        title: "Le password non corrispondono!",
+        alert: true,
+      });
+      return;
+    }
+    try {
+      const options = {
+        method: "PUT",
+        body: JSON.stringify({
+          email: userProfile?.email,
+          password: oldPassword,
+          newPassword: newPassword,
+        }),
+      };
+
+      const response = await fetchWithAuth(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/updatePassword`,
+        options,
+      );
+
+      if (!response.ok) {
+        showSwal({
+          type: "game-alert",
+          title: "Qualcosa è andato storto...",
+          alert: false,
+        });
+        return;
+      } else {
+        setChangePassword(false);
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        showSwal({
+          type: "game-advice",
+          title: "Cambio password avvenuto con successo",
+          alert: false,
+        });
+      }
+    } catch (error) {
+      showSwal({
+        type: "game-alert",
+        title: "Qualcosa è andato storto...",
+        alert: false,
+      });
+      console.error("Server Error nella modifica della password", error);
+      return;
+    }
+  };
   return (
     <>
       {/* Overlay scuro per chiudere la finestra cliccando fuori */}
@@ -43,6 +104,40 @@ const PlayerProfile = ({
                   <span className="stat-label">Saldo Attuale</span>
                   <span className="stat-value">💰 {userProfile.balance}</span>
                 </div>
+              </div>
+
+              <div className="profile-change-credentials">
+                <button onClick={() => setChangePassword(!changePassword)}>
+                  Modifica la password
+                </button>
+                {changePassword && (
+                  <form
+                    onSubmit={fetchNewCredentials}
+                    className="form-change-password"
+                  >
+                    <input
+                      type="password"
+                      placeholder="Vecchia Password"
+                      required
+                      onChange={(e) => setOldPassword(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Nuova Password"
+                      required
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Conferma Password"
+                      required
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <button type="submit" className="btn-change-password">
+                      Conferma
+                    </button>
+                  </form>
+                )}
               </div>
             </>
           ) : (

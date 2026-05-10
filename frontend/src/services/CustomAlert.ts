@@ -36,6 +36,15 @@ export default function showSwal(props: AlertProps) {
         icon: "warning",
         title: props.title,
       });
+    } else if (props.type === "game-advice") {
+      MySwal.mixin({
+        toast: true,
+        position: "center",
+        showConfirmButton: true,
+      }).fire({
+        icon: "success",
+        title: props.title,
+      });
     }
   } else if (props.alert === true) {
     // qui è fondamentale il return perchè così ritorno una Promise, che è fondamentale per bloccare React in attesa della risposta

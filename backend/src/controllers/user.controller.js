@@ -69,7 +69,7 @@ const registerUser = async (req, res) => {
     if (!existing) {
       return res
         .status(404)
-        .json({ message: "You have verify you email first!" });
+        .json({ message: "You have to verify you email first!" });
     }
 
     if (existing.otp_expires_at < new Date())
@@ -113,17 +113,13 @@ const loginUser = async (req, res) => {
       });
     }
     const existing = await User.findOne({ email: email.trim().toLowerCase() });
-    console.log("req.body:", req.body);
     if (!existing) {
-      console.log("Utente non trovato nel DB");
       return res.status(404).json({
         message: "Invalid email or password",
       });
     }
-    console.log(password, existing.password);
     // check if the password sent by the client is correct with bcrypt
     const isPasswordCorrect = await bcrypt.compare(password, existing.password);
-    console.log(isPasswordCorrect);
     if (!isPasswordCorrect) {
       return res.status(400).json({
         message: "Invalid email or password",
@@ -205,6 +201,88 @@ const getUser = async (req, res) => {
   }
 };
 
+const updateUserCredentials = async (req, res) => {
+  const { email, password, newPassword } = req.body;
+  if (!password || !newPassword || !email) {
+    return res.status(400).json({
+      message: "All fields are important",
+    });
+  }
+  try {
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({
+        message: "Invalid password",
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const resetUserPassword = async (req, res) => {
+  const { email, newPassword, confirmPassword, otp } = req.body;
+  if (!newPassword || !confirmPassword || !email || !otp) {
+    return res.status(400).json({
+      message: "All fields are important",
+    });
+  }
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({
+      message: "The password are different",
+    });
+  }
+  try {
+    // l'utente deve già avere un account precedentemente verificato
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+      verified: true,
+    });
+    if (!user) {
+      return res.status(400).json({
+        message: "You have to verify your email first",
+      });
+    }
+
+    if (user.otp_expires_at < new Date())
+      return res.status(400).json({ error: "OTP scaduto" });
+    if (user.otp_attempts >= 5)
+      return res.status(400).json({ error: "Troppi tentativi" });
+    if (user.otp !== otp) {
+      await User.updateOne({ email }, { $inc: { otp_attempts: 1 } });
+      return res.status(400).json({ error: "OTP non valido" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password correttamente reimpostata",
+    });
+  } catch (error) {
+    console.error("Server Error in resetUserPassword: ", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
 const refreshToken = async (req, res) => {
   try {
     // prendo il refresh token dai cookie
@@ -232,4 +310,13 @@ const refreshToken = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, logoutUser, getUser, refreshToken, sendOtp };
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  getUser,
+  updateUserCredentials,
+  resetUserPassword,
+  refreshToken,
+  sendOtp,
+};

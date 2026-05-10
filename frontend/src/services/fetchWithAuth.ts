@@ -11,7 +11,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     "Content-Type": "application/json",
   };
 
-  // 3. Fai la chiamata originale
+  // 3. Fa la chiamata originale con l'oggetto completo con tutti i campi necessari
   let response = await fetch(url, { ...options, headers });
 
   // 4. Se il token è scaduto, il backend risponde 401

@@ -29,28 +29,10 @@ export function useLobbies() {
   const fetchLobbies = async (isInitialLoad: boolean = false) => {
     setIsLoading(true);
     setLobbiesList([]); // Svuoto la lista per mostrare lo stato di caricamento
-    const accessToken = localStorage.getItem("tokenPiatto");
-
-    if (!accessToken) {
-      showSwal({
-        type: "error",
-        title: "Sessione scaduta o non valida, effettua l'accesso.",
-        alert: true,
-      });
-      navigate("/");
-      setIsLoading(false);
-      return;
-    }
 
     try {
-      console.log("Cerchiamo le lobby con il token:", accessToken);
-
       const options = {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
       };
 
       const response = await fetchWithAuth(
@@ -85,18 +67,11 @@ export function useLobbies() {
 
   const fetchUserProfile = async () => {
     try {
-      const accessToken = localStorage.getItem("tokenPiatto");
-      if (!accessToken) return;
-
       const playerId = getIdFromToken();
       if (!playerId) return;
 
       const options = {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
       };
 
       const response = await fetchWithAuth(
@@ -131,16 +106,11 @@ export function useLobbies() {
 
   const fetchCreateLobby = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const accessToken = localStorage.getItem("tokenPiatto");
 
     try {
       console.log("Creazione la lobby...");
       const options = {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
         body: JSON.stringify(newLobby),
       };
 
