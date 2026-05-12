@@ -1,4 +1,3 @@
-// express è un framework per node.js per l'implementazione di funzioni che rendono facile la programmazione di backend
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";

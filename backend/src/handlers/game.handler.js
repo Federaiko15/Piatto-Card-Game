@@ -107,6 +107,10 @@ const handlePlayerExit = async (lobbyId, socket, io) => {
 
 const handleGameOver = async (lobbyId, io, messaggio) => {
   try {
+    await Lobby.findByIdAndUpdate(lobbyId, {
+      $set: { status: "finished" },
+    }); // modifico subito lo stato perchè in questo caso non devo rimborsare soldi se il server crasha, ma devo invece salvare i soldi dei giocatori
+
     const game = getGame(lobbyId);
     // Filtriamo SOLO i giocatori che non sono ancora stati sincronizzati
     const playersToSync = game.activePlayers.filter(
@@ -128,7 +132,7 @@ const handleGameOver = async (lobbyId, io, messaggio) => {
       finalPlayers: game.activePlayers, // così possiamo mostrare una classifica finale su react
     });
 
-    // pulisco il server staccando tutte le socket
+    // pulisco il server staccando tutte le socket collegate nella stessa room
     const socketsInRoom = await io.in(lobbyId).fetchSockets();
     for (const s of socketsInRoom) {
       s.leave(lobbyId);

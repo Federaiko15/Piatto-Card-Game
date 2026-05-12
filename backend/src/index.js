@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import verifySocketToken from "./middlewares/socketAuth.middleware.js";
 import registerGameHandlers from "./handlers/game.handler.js";
+import handleServerCrash from "./services/serverCrash.js";
 
 dotenv.config({
   path: "./.env",
@@ -26,9 +27,10 @@ const startServer = async () => {
       },
     });
 
+    await handleServerCrash(); // chiamo subito anche la funzione per rimborsare gli utenti in caso di crash del server
     app.set("io", io); // variabile globale che rende accessibile a tutte le componenti del mio backend il canale di comunicazione creato da socket.io
 
-    io.use(verifySocketToken);
+    io.use(verifySocketToken); // il canale io utilizzerà come middleware questa funzione che controlla la validità del token
 
     io.on("connection", (socket) => {
       console.log(`Nuovo utente collegato. Id Socket: ${socket.id}`);

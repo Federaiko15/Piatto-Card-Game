@@ -36,7 +36,7 @@ export function useGameEngine(lobbyId: string | undefined) {
   const personalId = getIdFromToken();
 
   // useMemo è un hook fondamentale che mi permette di salvare in cache il calcolo appena fatto a meno di cambiamenti
-  // dei valori all'interno dell'arrya di dipendenze
+  // dei valori all'interno dell'array di dipendenze
   const rotatedPlayers = useMemo(() => {
     if (!personalId || players.length === 0) return players;
     const indexUser = players.findIndex((user) => user.id === personalId);

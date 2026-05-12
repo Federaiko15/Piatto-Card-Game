@@ -18,6 +18,7 @@ const verifySocketToken = (socket, next) => {
       ? token.split(" ")[1]
       : token;
 
+    // e come facevo anche per il controllo del token per le chiamate API, attacco alla socket l'oggetto della verifica che contiene l'id dell'utente che possiede l'accesstoken
     const verified = jwt.verify(tokenString, process.env.ACCESS_WEB_TOKEN);
 
     socket.user = verified;

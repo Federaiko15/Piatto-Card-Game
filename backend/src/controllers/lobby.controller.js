@@ -242,8 +242,8 @@ const getLobbies = async (req, res) => {
     });
   }
 };
-
 // questa non è una chiamata API, ma la inserisco in questo file perchè è una funzione che lavora comunuqe direttamente con il DB
+// non è una chiamata API perchè viene gestita tramite eventi socket.
 const deleteLobby = async (lobbyId) => {
   try {
     await Lobby.findByIdAndDelete(lobbyId);

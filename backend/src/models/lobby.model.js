@@ -35,6 +35,15 @@ const lobbySchema = new Schema(
       enum: ["waiting", "playing", "finished"],
       default: "waiting",
     },
+    serverCrashDate: {
+      type: Date,
+      default: null,
+    },
+    refundStatus: {
+      type: String,
+      enum: ["none", "pending", "refunded"],
+      default: "none",
+    },
   },
   {
     timestamps: true,
