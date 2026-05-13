@@ -27,6 +27,7 @@ export function useAuth() {
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [registrationStep, setRegistrationStep] = useState<1 | 2>(1);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [isForcedOffline, setIsForcedOffline] = useState<boolean>(false);
 
   // STATI PER IL RECUPERO PASSWORD
   const [isForgotPassword, setIsForgotPassword] = useState<boolean>(false);
@@ -274,6 +275,8 @@ export function useAuth() {
     setIsLogin,
     registrationStep,
     isOnline,
+    isForcedOffline,
+    setIsForcedOffline,
     offlineForm,
     setOfflineForm,
     handleSubmit,

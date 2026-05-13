@@ -1,32 +1,42 @@
+/* --- Contenitore Principale --- */
 .lobbies-container {
-  padding: 40px 20px;
   min-height: 100vh;
-  /* Sfondo sfumato scuro ma elegante (blu notte verso grigio scuro) */
-  background: radial-gradient(circle at top, #2c3e50, #111111);
+  width: 100%;
+  /* background-size: cover impedisce la ripetizione dell'immagine */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: #f1f1f1;
+  display: flex;
+  flex-direction: column;
 }
 
-.lobbies-container h1 {
-  font-size: 2.8rem;
-  margin-bottom: 8px;
-  color: #f39c12; /* Titolo dorato/aranciato per risaltare sul buio */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  margin-top: 0;
-}
-
+/* --- Nuovo Header Fisso --- */
 .lobbies-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
-  margin: 0 auto 40px auto;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 20px;
+  padding: 15px 40px;
+  /* Sfondo scuro semitrasparente per far leggere bene il titolo */
+  background: rgba(30, 40, 50, 0.85);
+  backdrop-filter: blur(5px);
+  border-bottom: 2px solid #f39c12;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 30px;
+}
+
+.lobbies-titles h1 {
+  font-size: 2rem;
+  color: #f39c12;
+  margin: 0;
+  text-shadow: 2px 2px 0px #000;
 }
 
 .lobbies-titles p {
-  font-size: 1.2rem;
-  color: #ccc;
+  font-size: 0.9rem;
+  color: #ddd;
   margin: 0;
 }
 
@@ -71,19 +81,25 @@
 }
 
 .btn-profile {
-  background-color: #2980b9; /* Blu elegante */
+  background-color: #f39c12; /* Arancione/Oro per richiamare il tema */
+  color: #000; /* Testo nero per contrasto */
+  border: 2px solid #d35400;
 }
+
 .btn-profile:hover {
-  background-color: #3498db;
+  background-color: #e67e22;
+  transform: translateY(-2px);
 }
 
 /* Layout principale due colonne */
 .lobbies-content {
   display: flex;
   gap: 30px;
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
-  align-items: flex-start;
+  padding: 0 20px 40px 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .lobbies-sidebar {

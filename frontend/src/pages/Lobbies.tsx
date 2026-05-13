@@ -2,6 +2,7 @@ import LobbyCard from "../components/LobbyCard.tsx";
 import "../styles/Lobbies.css";
 import PlayerProfile from "../components/PlayerProfile.tsx";
 import { useLobbies } from "../hooks/useLobbies.ts";
+import lobbiesBg from "../assets/lobbies.png";
 
 export default function Lobbies() {
   const {
@@ -18,7 +19,13 @@ export default function Lobbies() {
   } = useLobbies();
 
   return (
-    <div className="lobbies-container">
+    <div
+      className="lobbies-container"
+      style={{
+        backgroundImage: `url(${lobbiesBg})`,
+        imageRendering: "pixelated",
+      }}
+    >
       <div className="lobbies-header">
         <div className="lobbies-titles">
           <h1>Benvenuto in PIATTO</h1>

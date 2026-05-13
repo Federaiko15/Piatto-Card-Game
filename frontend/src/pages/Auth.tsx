@@ -10,6 +10,8 @@ export default function Auth() {
     setIsLogin,
     registrationStep,
     isOnline,
+    isForcedOffline,
+    setIsForcedOffline,
     offlineForm,
     setOfflineForm,
     handleSubmit,
@@ -48,7 +50,7 @@ export default function Auth() {
     >
       <div className="auth-box">
         {/* CONDIZIONE PRINCIPALE: ONLINE vs OFFLINE */}
-        {isOnline ? (
+        {isOnline && !isForcedOffline ? (
           isForgotPassword ? (
             <>
               <h1 className="auth-title">Recupera Password 🔐</h1>
@@ -172,6 +174,15 @@ export default function Auth() {
                       ? "Invia OTP"
                       : "Crea un account"}
                 </button>
+
+                <button
+                  type="button"
+                  className="auth-submit-btn"
+                  style={{ marginTop: "10px", backgroundColor: "#d35400" }}
+                  onClick={() => setIsForcedOffline(true)}
+                >
+                  Gioca in Modalità Offline
+                </button>
               </form>
 
               <p className="auth-switch-text">
@@ -199,7 +210,9 @@ export default function Auth() {
         ) : (
           /* SEZIONE MOSTRATA SOLO QUANDO OFFLINE */
           <div className="offline-box">
-            <h2 className="offline-title">Connessione Assente 📡</h2>
+            <h2 className="offline-title">
+              {!isOnline ? "Connessione Assente 📡" : "Modalità Offline 📡"}
+            </h2>
             <p className="offline-subtitle">
               Imposta il tuo tavolo locale e gioca contro i Bot!
             </p>
@@ -254,6 +267,17 @@ export default function Auth() {
               <button type="submit" className="offline-submit-btn">
                 Crea Tavolo Offline
               </button>
+
+              {isOnline && (
+                <button
+                  type="button"
+                  className="offline-submit-btn"
+                  style={{ marginTop: "10px", backgroundColor: "#c0392b" }}
+                  onClick={() => setIsForcedOffline(false)}
+                >
+                  Torna al Login
+                </button>
+              )}
             </form>
           </div>
         )}

@@ -1,25 +1,19 @@
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { Resend } from "resend";
 
-dotenv.config({
-  path: "./.env",
-});
+dotenv.config({ path: "./.env" });
 
-// tramite la libreria di Node.js crypto posso creare un codice otp che verrà salvato nel DB insieme all'email dell'utente
-export function generateOtp() {
-  return crypto.randomInt(100000, 999999).toString();
-}
+let transporter;
+let devFromEmail;
+let resend;
 
-// questo invece è il transporter creato grazie alla libreria di nodemailer che crea tutto il necessario
-// per settare le credenziali del mittente, il server quindi, e anche successivamente, tramite la funzione
-// sendMail, il destinatario
-const createTransporter = async () => {
-  // In sviluppo usa Ethereal
+export async function initMailer() {
   if (process.env.NODE_ENV === "development") {
     const testAccount = await nodemailer.createTestAccount();
-
-    const transporter = nodemailer.createTransport({
+    devFromEmail = testAccount.user;
+    transporter = nodemailer.createTransport({
       host: "smtp.ethereal.email",
       port: 587,
       auth: {
@@ -27,34 +21,31 @@ const createTransporter = async () => {
         pass: testAccount.pass,
       },
     });
-
-    return { transporter, testAccount };
+  } else {
+    resend = new Resend(process.env.RESEND_API_KEY); // inizializzo il mio resend tramite la mia chiave privata salvata in .env
   }
+}
 
-  // In produzione poi si utilizzeranno le credenziali reali
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.PASSWORD_USER,
-    },
-  });
-
-  return { transporter, testAccount: null };
-};
+export function generateOtp() {
+  return crypto.randomInt(100000, 999999).toString();
+}
 
 export async function sendOTPEmail(email, otp) {
-  const { transporter, testAccount } = await createTransporter();
-
-  const info = await transporter.sendMail({
-    from: testAccount?.user ?? process.env.EMAIL_USER,
-    to: email,
-    subject: "Codice di verifica",
-    text: `Il tuo codice OTP è: ${otp}`,
-  });
-
-  // In sviluppo ti stampa il link dove vedere l'email
   if (process.env.NODE_ENV === "development") {
+    const info = await transporter.sendMail({
+      from: devFromEmail,
+      to: email,
+      subject: "Codice di verifica",
+      text: `Il tuo codice OTP è: ${otp}. Scade tra 10 minuti.`,
+    });
     console.log("Email preview URL:", nodemailer.getTestMessageUrl(info));
+  } else {
+    await resend.emails.send({
+      from: `Piatto <${process.env.EMAIL_FROM}>`,
+      to: email,
+      subject: "Codice di verifica",
+      html: `<p>Il tuo codice OTP è: <strong style="font-size:24px">${otp}</strong></p>
+             <p>Scade tra <strong>10 minuti</strong>. Non condividerlo con nessuno.</p>`,
+    });
   }
 }
