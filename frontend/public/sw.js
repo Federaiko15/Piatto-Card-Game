@@ -1,7 +1,7 @@
 // qui ci sarà lo script eseguito dal service worker, che gestirà lo stato offline del gioco
 
 // Versione semrpe da aggiornare in caso di modifiche al file
-const CACHE_NAME = "piatto-cache-v2";
+const CACHE_NAME = "piatto-cache-v3";
 
 // Asset di base dell'applicazione
 const CORE_ASSETS = ["/", "/index.html", "/manifest.json"];

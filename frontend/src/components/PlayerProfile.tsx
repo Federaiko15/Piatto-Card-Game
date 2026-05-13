@@ -3,6 +3,7 @@ import "../styles/PlayerProfile.css";
 import type { UserProfile } from "../types";
 import showSwal from "../services/CustomAlert";
 import { fetchWithAuth } from "../services/fetchWithAuth";
+import { useNavigate } from "react-router-dom";
 
 interface PlayerProfileProps {
   isOpen: boolean;
@@ -18,9 +19,11 @@ const PlayerProfile = ({
   onLogout,
 }: PlayerProfileProps) => {
   const [changePassword, setChangePassword] = useState<boolean>(false);
+  const [deleteAccount, setDeleteAccount] = useState<boolean>(false);
   const [oldPassword, setOldPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const navigate = useNavigate();
 
   const fetchNewCredentials = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -75,6 +78,69 @@ const PlayerProfile = ({
       return;
     }
   };
+
+  const fetchDeleteAccount = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (oldPassword !== confirmPassword) {
+      showSwal({
+        type: "error",
+        title: "Le password non corrispondono!",
+        alert: true,
+      });
+      return;
+    }
+    const wantToDelete = await showSwal({
+      type: "logout",
+      title:
+        "Sei sicuro di voler eliminare completamente il tuo profilo? Tutti i tuoi dati saranno correttamente rimossi!",
+      alert: true,
+    });
+
+    if (!wantToDelete) {
+      return;
+    }
+    try {
+      const options = {
+        method: "DELETE",
+        body: JSON.stringify({
+          password: oldPassword,
+        }),
+      };
+
+      const response = await fetchWithAuth(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/profile/${userProfile?._id}`,
+        options,
+      );
+
+      if (!response.ok) {
+        showSwal({
+          type: "game-alert",
+          title: "Qualcosa è andato storto...",
+          alert: false,
+        });
+        return;
+      } else {
+        setDeleteAccount(false);
+        setOldPassword("");
+        setConfirmPassword("");
+        navigate("/");
+        showSwal({
+          type: "game-advice",
+          title: "Cambio password avvenuto con successo",
+          alert: false,
+        });
+      }
+    } catch (error) {
+      showSwal({
+        type: "game-alert",
+        title: "Qualcosa è andato storto...",
+        alert: false,
+      });
+      console.error("Server Error nella modifica della password", error);
+      return;
+    }
+  };
+
   return (
     <>
       {/* Overlay scuro per chiudere la finestra cliccando fuori */}
@@ -130,6 +196,34 @@ const PlayerProfile = ({
                     <input
                       type="password"
                       placeholder="Conferma Password"
+                      required
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <button type="submit" className="btn-change-password">
+                      Conferma
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              <div className="delete-account">
+                <button onClick={() => setDeleteAccount(!deleteAccount)}>
+                  Elimina il tuo account
+                </button>
+                {deleteAccount && (
+                  <form
+                    onSubmit={fetchDeleteAccount}
+                    className="form-change-password"
+                  >
+                    <input
+                      type="password"
+                      placeholder="Inserisci la password"
+                      required
+                      onChange={(e) => setOldPassword(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Conferma la password"
                       required
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />

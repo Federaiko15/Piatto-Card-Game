@@ -6,10 +6,14 @@ dotenv.config({
   path: "./.env",
 });
 
+// tramite la libreria di Node.js crypto posso creare un codice otp che verrà salvato nel DB insieme all'email dell'utente
 export function generateOtp() {
   return crypto.randomInt(100000, 999999).toString();
 }
 
+// questo invece è il transporter creato grazie alla libreria di nodemailer che crea tutto il necessario
+// per settare le credenziali del mittente, il server quindi, e anche successivamente, tramite la funzione
+// sendMail, il destinatario
 const createTransporter = async () => {
   // In sviluppo usa Ethereal
   if (process.env.NODE_ENV === "development") {

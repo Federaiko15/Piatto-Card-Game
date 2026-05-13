@@ -7,6 +7,7 @@ import {
   updateUserCredentials,
   resetUserPassword,
   refreshToken,
+  deleteAccont,
   sendOtp,
 } from "../controllers/user.controller.js";
 import verifyToken from "../middlewares/auth.middleware.js";
@@ -19,7 +20,14 @@ router.route("/login").post(loginUser);
 router.route("/logout").post(logoutUser);
 router.route("/resetPassword").put(resetUserPassword);
 router.route("/updatePassword").put(verifyToken, updateUserCredentials);
-router.route("/profile/:id").get(verifyToken, getUser);
+router
+  .route("/profile/:id")
+  .get(verifyToken, getUser)
+  .delete(verifyToken, deleteAccont);
 router.route("/refresh").post(verifyToken, refreshToken);
 
 export default router;
+
+// il primo argomento delle funzioni che hanno due parametri è una funzione che fa da middleware: praticamente va a prendere dall'header
+// della richiesta il jwt inviato dal client e lo verifica tramite la funzione della libreria jsonwebtoken verify. Se la verifica va a buon fine
+// chiama il campo next, per passare al prossimo middleware che nel nostro caso sarà la funzione.

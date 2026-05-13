@@ -283,6 +283,47 @@ const resetUserPassword = async (req, res) => {
   }
 };
 
+const deleteAccont = async (req, res) => {
+  const { password } = req.body;
+  const userId = req.params.id;
+  if (!password || !userId) {
+    return res.status(400).json({
+      message: "All fields are important",
+    });
+  }
+  try {
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    // controllo se la password inviata dall'utente è corretta
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({
+        message: "Invalid password",
+      });
+    }
+    // tolgo anche dal cookie http in refreshToken salvato per l'utente
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+    });
+    await User.deleteOne({ _id: userId });
+
+    res.status(200).json({
+      message: "Account successfully deleted",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
 const refreshToken = async (req, res) => {
   try {
     // prendo il refresh token dai cookie
@@ -317,6 +358,7 @@ export {
   getUser,
   updateUserCredentials,
   resetUserPassword,
+  deleteAccont,
   refreshToken,
   sendOtp,
 };

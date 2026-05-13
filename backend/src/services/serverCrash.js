@@ -1,71 +1,57 @@
-import User from "../models/user.model";
-import Lobby from "../models/lobby.model";
+import User from "../models/user.model.js";
+import Lobby from "../models/lobby.model.js";
 
 const handleServerCrash = async () => {
-  const date_now = new Date();
-  const lobby_not_deleted = await Lobby.find();
-  if (lobby_not_deleted.length === 0) {
-    return;
-  }
-  for (let i = 0; i < lobby_not_deleted.length; i++) {
-    const lobby = lobby_not_deleted[i];
-    if (lobby.status === "finished") {
-      await Lobby.findByIdAndDelete(lobby._id);
-    } else if (
-      lobby.refundStatus === "none" ||
-      lobby.refundStatus === "pending"
-    ) {
-      lobby.refundStatus = "pending";
-      if (lobby.serverCrashDate === null) {
-        lobby.serverCrashDate = date_now;
-        await lobby.save();
+  try {
+    // 1. Trova tutte le lobby che non sono state concluse correttamente.
+    //    Escludiamo quelle già rimborsate o quelle che sono finite regolarmente.
+    const lobbiesToRefund = await Lobby.find({
+      status: { $in: ["waiting", "playing"] },
+    });
 
-        const updatePromises = lobby.activePlayers.map(async (player) => {
-          const user = await User.findById(player);
-          if (
-            user &&
-            (user.refundServerCrashDate === null ||
-              user.refundServerCrashDate < date_now)
-          ) {
-            user.balance += lobby.starterBet;
-            user.refundServerCrashDate = date_now;
-            await user.save();
-          }
-        });
-        await Promise.all(updatePromises);
-
-        lobby.refundStatus = "refunded";
-        await lobby.save();
-      } else {
-        const updatePromises = lobby.activePlayers.map(async (player) => {
-          const user = await User.findById(player);
-          if (
-            user &&
-            (user.refundServerCrashDate === null ||
-              user.refundServerCrashDate < lobby.serverCrashDate)
-          ) {
-            user.balance += lobby.starterBet;
-            user.refundServerCrashDate = date_now;
-            await user.save();
-          }
-        });
-        await Promise.all(updatePromises);
-
-        lobby.serverCrashDate = date_now;
-        lobby.refundStatus = "refunded";
-        await lobby.save();
-      }
-    } else if (lobby.refundStatus === "refunded") {
-      await Lobby.findByIdAndDelete(lobby._id);
+    if (lobbiesToRefund.length === 0) {
+      console.log("Nessuna lobby da rimborsare trovata dopo il riavvio.");
+      return;
     }
+
+    console.log(
+      `Trovate ${lobbiesToRefund.length} lobby da processare per il rimborso.`,
+    );
+
+    // 2. Processa ogni lobby.
+    for (const lobby of lobbiesToRefund) {
+      const playerIds = lobby.activePlayers;
+      const starterBet = lobby.starterBet;
+
+      if (!playerIds || playerIds.length === 0 || !starterBet) {
+        console.log(
+          `Lobby ${lobby._id} saltata: nessun giocatore o puntata iniziale definita.`,
+        );
+        // Marco la lobby come problematica e la elimino per non bloccare i riavvii futuri
+        await Lobby.findByIdAndDelete(lobby._id);
+        continue;
+      }
+
+      // 3. Rimborso atomico per tutti i giocatori nella lobby.
+      const updateResult = await User.updateMany(
+        { _id: { $in: playerIds } },
+        { $inc: { balance: starterBet } },
+      );
+
+      console.log(
+        `Rimborso per lobby ${lobby._id}: ${updateResult.modifiedCount} utenti aggiornati.`,
+      );
+
+      // 4. Una volta rimborsati i giocatori, eliminiamo la lobby dal DB
+      await Lobby.findByIdAndDelete(lobby._id);
+      console.log(`Lobby ${lobby._id} rimborsata e eliminata con successo.`);
+    }
+  } catch (error) {
+    console.error(
+      "Errore critico durante la gestione del crash del server:",
+      error,
+    );
   }
 };
 
 export default handleServerCrash;
-
-// questa funzione parte appena avvio il server: se ho trovato lobby nel DB vuol dire che c'è stato un creash, perchè queste vengono
-// eliminate immediatamente dopo che una partita finisce. Grazie agli stati delle lobby e a quelli degli utenti controllo:
-// se la lobby si trova in stato di non refund o in stato di pending se già aveva una data salvata o no, perchè se non aveva una data salvata
-// vuol dire che è stato il primo crash e controllo quindi se gli altri utenti hanno una data
-// (ma in questo caso anche per loro non dovrebbe esserci), invece se già aveva una data, controllo se gli utenti hanno la stessa, perchè
-// vorrebbe dire che sono stati già rimborsati, o minore e in questo caso rimborsarli. Infine salvo la nuova data
