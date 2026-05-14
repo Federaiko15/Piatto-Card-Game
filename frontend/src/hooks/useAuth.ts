@@ -48,7 +48,6 @@ export function useAuth() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Inviando i dati...", form);
 
     if (!isLogin && registrationStep === 1) {
       try {
@@ -219,7 +218,6 @@ export function useAuth() {
         return;
       }
 
-      console.log("Reimpostazione password con dati:", forgotForm);
       try {
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/users/resetPassword`,

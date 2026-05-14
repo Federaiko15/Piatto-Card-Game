@@ -131,10 +131,10 @@ const loginUser = async (req, res) => {
 
     // salvo il refresh token nel cookie che poi il client utilizzerà per le richieste di refresh di un access token
     res.cookie("jwt", refreshToken, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-      maxAge: 24 * 60 * 60 * 1000, // calcolo di un giorno in millisecondi
+      httpOnly: true, // così non sarà accessibile tramite JS lato client
+      sameSite: "none",
+      secure: true, // solo HTTPS, fondamentale per garantire la sicurezza
+      maxAge: 7 * 24 * 60 * 60 * 1000, // calcolo di una settimana in millisecondi
     });
 
     res.status(200).json({
