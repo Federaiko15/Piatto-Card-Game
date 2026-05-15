@@ -26,18 +26,21 @@
   padding: 20px;
   border-radius: 20px;
 
-  background-image: url("../assets/table.png");
-
-  /* MODIFICA IMPORTANTE: Impedisce al tavolo di esplodere a tutto schermo. 
-     Se risulta ancora troppo grande, puoi provare con "background-size: 80% auto;" */
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-
-  /* Rimuovo l'overlay scuro per far brillare i colori originali della tua pixel art */
   background-color: transparent;
   box-shadow: none;
+  position: relative;
+  z-index: 1;
+}
 
+/* Nuova classe per l'immagine del tavolo inserita direttamente nel .tsx */
+.table-background-image {
+  position: absolute;
+  top: -30px; /* Alza il tavolo da gioco */
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: -1; /* La mettiamo dietro agli elementi della griglia */
   image-rendering: pixelated;
 }
 
@@ -62,6 +65,12 @@
   transform: translateY(-80px);
 }
 
+/* Ridimensioniamo leggermente il piatto senza intaccare il croupier */
+.table-center .pixel-image {
+  width: 150px;
+  height: 150px;
+}
+
 /* CROUPIER */
 .table-high-center {
   width: 100%;
@@ -74,17 +83,15 @@
   /* Lo spingiamo verso il basso della sua cella (verso il tavolo) */
   justify-content: flex-end;
 
-  transform: translateY(-25px);
+  transform: translateY(-15px);
 }
 
-/* PLAYER SEAT (contenitore generico se vuoi stilizzarlo) */
+/* PLAYER SEAT  */
 .grid-cell > * {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
-/* POSIZIONI GRID */
 
 /* CENTRO */
 .high-center {
@@ -219,6 +226,7 @@
 .paragraph-coin {
   display: flex;
   align-items: center;
+  margin-top: -15px;
 }
 
 /* =========================================

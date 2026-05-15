@@ -206,12 +206,6 @@
   }
 }
 
-/* Barra azioni (pulsante cerca) */
-.lobbies-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 /* Lista Lobby */
 .lobbies-list {
   display: grid;

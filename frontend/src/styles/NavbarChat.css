@@ -69,7 +69,75 @@
   font-weight: bold;
 }
 
-.navbar form {
+.logout-btn {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+  background-color: #e74c3c;
+}
+
+.chat-empty-message {
+  color: #bdc3c7;
+  font-style: italic;
+  text-align: center;
+}
+
+.system-message {
+  font-style: italic;
+  color: #f39c12;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.chat-form {
+  display: flex;
+  gap: 5px;
   flex-shrink: 0;
-  margin-top: 10px; /* Un po' di respiro dalla chat */
+  margin-top: 10px;
+  width: 100%;
+}
+
+.chat-input {
+  flex-grow: 1;
+  min-width: 0; /* Fondamentale: permette all'input di rimpicciolirsi senza spingere via il bottone */
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #95a5a6;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.chat-input:focus {
+  box-shadow: 0 0 0 2px #f39c12;
+}
+
+.chat-submit-btn {
+  padding: 8px 12px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background-color: #f39c12;
+  color: white;
+  font-weight: bold;
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.chat-submit-btn:hover:not(:disabled) {
+  background-color: #d68910;
+}
+
+.chat-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

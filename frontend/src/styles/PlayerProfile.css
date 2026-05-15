@@ -253,3 +253,26 @@
 .profile-logout-btn:active {
   transform: scale(0.98);
 }
+
+.delete-account {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.delete-account > button {
+  background: none;
+  border: none;
+  color: #f39c12;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+  margin-bottom: 15px;
+}
+
+.delete-account > button:hover {
+  color: #d68910;
+}

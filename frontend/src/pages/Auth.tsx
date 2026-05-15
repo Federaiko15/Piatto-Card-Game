@@ -1,6 +1,7 @@
 import authBg from "../assets/auth.png";
 import { useAuth } from "../hooks/useAuth";
 import "../styles/Auth.css";
+import { useState } from "react";
 
 export default function Auth() {
   const {
@@ -24,6 +25,8 @@ export default function Auth() {
     handleForgotChange,
     handleForgotSubmit,
   } = useAuth();
+
+  const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
 
   const handleOfflineChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -116,7 +119,7 @@ export default function Auth() {
           ) : (
             <>
               <h1 className="auth-title">
-                {isLogin ? "Accedi a Piatto 🃏" : "Registrati a Piatto 🃏"}
+                {isLogin ? "Accedi a Piatto" : "Registrati a Piatto"}
               </h1>
 
               <form onSubmit={handleSubmit} className="auth-form">
@@ -167,7 +170,55 @@ export default function Auth() {
                   />
                 )}
 
-                <button type="submit" className="auth-submit-btn">
+                {!isLogin && registrationStep === 2 && (
+                  <div
+                    className="terms-checkbox-container"
+                    style={{ margin: "10px 0", textAlign: "left" }}
+                  >
+                    <label
+                      style={{
+                        color: "#fff",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        required
+                        style={{ width: "18px", height: "18px" }}
+                      />
+                      Accetto i{" "}
+                      <span
+                        onClick={() => navigate("/terms")}
+                        style={{
+                          color: "#f1c40f",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        Termini, Privacy e Cookie Policy
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="auth-submit-btn"
+                  disabled={
+                    !isLogin && registrationStep === 2 && !acceptedTerms
+                  }
+                  style={{
+                    opacity:
+                      !isLogin && registrationStep === 2 && !acceptedTerms
+                        ? 0.6
+                        : 1,
+                  }}
+                >
                   {isLogin
                     ? "Entra nel locale"
                     : registrationStep === 1
@@ -205,6 +256,23 @@ export default function Auth() {
                   </button>
                 </p>
               )}
+
+              <div
+                className="auth-footer"
+                style={{
+                  marginTop: "20px",
+                  borderTop: "1px solid rgba(255,255,255,0.1)",
+                  paddingTop: "10px",
+                }}
+              >
+                <button
+                  onClick={() => navigate("/terms")}
+                  className="auth-switch-btn"
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  Note Legali & Privacy
+                </button>
+              </div>
             </>
           )
         ) : (

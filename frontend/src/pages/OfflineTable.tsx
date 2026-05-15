@@ -6,6 +6,7 @@ import Card from "../components/Cards";
 import piattoImg from "../assets/piatto.png";
 import croupierImg from "../assets/croupier.png";
 import coinsImg from "../assets/coins.png";
+import tableBg from "../assets/table.png";
 import "../styles/OfflineTable.css";
 
 type OfflineRoomState = {
@@ -73,6 +74,12 @@ export default function OfflineRoom() {
 
       {/* TAVOLO (GRIGLIA) */}
       <div className="poker-table offline-table">
+        <img
+          src={tableBg}
+          alt="Tavolo da gioco"
+          className="table-background-image"
+        />
+
         {/* PIATTO (Fisso al centro) */}
         <div className="grid-cell mid-center">
           <div className="table-center">
@@ -106,6 +113,12 @@ export default function OfflineRoom() {
           return (
             <div key={player.playerId} className={`grid-cell ${positionGrid}`}>
               <div className="seat-wrapper">
+                <PlayerSeat
+                  player={player}
+                  isHero={isHero}
+                  isActive={isMyTurn}
+                />
+
                 {/* CONTROLLI EROE */}
                 {isHero && isMyTurn && (
                   <div className="hero-offline-controls">
@@ -145,12 +158,6 @@ export default function OfflineRoom() {
                     </button>
                   </div>
                 )}
-
-                <PlayerSeat
-                  player={player}
-                  isHero={isHero}
-                  isActive={isMyTurn}
-                />
 
                 {/* BADGE PERSONALITÀ */}
                 {!isHero && player.personality && (

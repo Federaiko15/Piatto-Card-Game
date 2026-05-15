@@ -90,13 +90,7 @@ const NavbarChat = ({
 
         <div className="chat-history">
           {messages.length === 0 ? (
-            <p
-              style={{
-                color: "#bdc3c7",
-                fontStyle: "italic",
-                textAlign: "center",
-              }}
-            >
+            <p className="chat-empty-message">
               Ancora nessun messaggio. Rompi il ghiaccio!
             </p>
           ) : (
@@ -106,16 +100,7 @@ const NavbarChat = ({
               // render del messaggio di sistema
               if (isSystemMessage) {
                 return (
-                  <div
-                    key={index}
-                    className="chat-message system-message"
-                    style={{
-                      fontStyle: "italic",
-                      color: "#f39c12", // Un colore diverso per far risaltare gli avvisi (es. arancione)
-                      textAlign: "center",
-                      margin: "8px 0",
-                    }}
-                  >
+                  <div key={index} className="chat-message system-message">
                     <span className="chat-text">{msg.message}</span>
                   </div>
                 );
@@ -129,12 +114,7 @@ const NavbarChat = ({
 
               return (
                 <div key={index} className="chat-message">
-                  <span
-                    className="chat-username"
-                    style={{ fontWeight: "bold" }}
-                  >
-                    {displayName}:{" "}
-                  </span>
+                  <span className="chat-username">{displayName}: </span>
                   <span className="chat-text">{msg.message}</span>
                 </div>
               );
@@ -144,31 +124,19 @@ const NavbarChat = ({
           <div ref={messagesEndRef} />
         </div>
 
-        <form
-          onSubmit={handleSendMessage}
-          style={{ display: "flex", gap: "5px" }}
-        >
+        <form onSubmit={handleSendMessage} className="chat-form">
           <input
             type="text"
             placeholder="Scrivi in chat..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={150}
-            style={{
-              flexGrow: 1,
-              padding: "8px",
-              borderRadius: "4px",
-              border: "none",
-            }}
+            className="chat-input"
           />
           <button
             type="submit"
             disabled={isCooldown}
-            style={{
-              padding: "8px 12px",
-              cursor: isCooldown ? "not-allowed" : "pointer",
-              opacity: isCooldown ? 0.5 : 1,
-            }}
+            className="chat-submit-btn"
           >
             {isCooldown ? "Wait..." : "Invia"}
           </button>

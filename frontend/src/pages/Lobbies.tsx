@@ -33,6 +33,20 @@ export default function Lobbies() {
         </div>
         <div className="header-actions">
           <button
+            onClick={() => fetchLobbies()}
+            className="btn-common btn-search"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="spinner"></div>
+                <span>Ricerca...</span>
+              </>
+            ) : (
+              "Cerca Tavoli Liberi"
+            )}
+          </button>
+          <button
             onClick={() => setViewProfile(true)}
             className="btn-common btn-profile"
           >
@@ -83,23 +97,6 @@ export default function Lobbies() {
         </div>
 
         <div className="lobbies-main">
-          <div className="lobbies-actions">
-            <button
-              onClick={() => fetchLobbies()}
-              className="btn-common btn-search"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <div className="spinner"></div>
-                  <span>Ricerca...</span>
-                </>
-              ) : (
-                "Cerca Tavoli Liberi"
-              )}
-            </button>
-          </div>
-
           <ul className="lobbies-list">
             {isLoading ? (
               <p>Ricerca dei tavoli in corso...</p>
@@ -107,12 +104,7 @@ export default function Lobbies() {
               lobbiesList.map((lobby) => (
                 <LobbyCard key={lobby._id} lobby={lobby} />
               ))
-            ) : (
-              <p>
-                Nessun tavolo trovato. Clicca il bottone per cercare o creane
-                uno!
-              </p>
-            )}
+            ) : null}
           </ul>
         </div>
       </div>

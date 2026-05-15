@@ -11,6 +11,7 @@ import Card from "../components/Cards";
 import piatto from "../assets/piatto.png";
 import croupier from "../assets/croupier.png";
 import coins from "../assets/coins.png";
+import tableBg from "../assets/table.png";
 import type { SingleCard } from "../types";
 import showSwal from "../services/CustomAlert.ts";
 
@@ -18,7 +19,7 @@ export default function GameRoom() {
   const { lobbyId } = useParams();
   const navigate = useNavigate();
 
-  // 1. ESTRIAMO I DATI DAL CUSTOM HOOK
+  // 1. ESTRAIAMO I DATI DAL CUSTOM HOOK
   const {
     rotatedPlayers,
     isGameStarted,
@@ -134,6 +135,12 @@ export default function GameRoom() {
       />
 
       <div className="poker-table">
+        <img
+          src={tableBg}
+          alt="Tavolo da gioco"
+          className="table-background-image"
+        />
+
         {/* OVERLAY FINE PARTITA */}
         {isGameFinished && !isWaitingRematch && (
           <div className="rematch-overlay">
