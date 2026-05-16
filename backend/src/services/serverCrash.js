@@ -3,8 +3,8 @@ import Lobby from "../models/lobby.model.js";
 
 const handleServerCrash = async () => {
   try {
-    // 1. Trova tutte le lobby che non sono state concluse correttamente.
-    //    Escludiamo quelle già rimborsate o quelle che sono finite regolarmente.
+    //  Trovo tutte le lobby che non sono state concluse correttamente.
+    //  controllo ogni tipo di lobby presente, per gestire la chiusura di ogni caso in maniera corretta
     const lobbiesToRefund = await Lobby.find({
       status: { $in: ["waiting", "playing"] },
     });
@@ -18,7 +18,6 @@ const handleServerCrash = async () => {
       `Trovate ${lobbiesToRefund.length} lobby da processare per il rimborso.`,
     );
 
-    // 2. Processa ogni lobby.
     for (const lobby of lobbiesToRefund) {
       const playerIds = lobby.activePlayers;
       const starterBet = lobby.starterBet;
@@ -27,12 +26,11 @@ const handleServerCrash = async () => {
         console.log(
           `Lobby ${lobby._id} saltata: nessun giocatore o puntata iniziale definita.`,
         );
-        // Marco la lobby come problematica e la elimino per non bloccare i riavvii futuri
         await Lobby.findByIdAndDelete(lobby._id);
         continue;
       }
 
-      // 3. Rimborso atomico per tutti i giocatori nella lobby.
+      // Rimborso atomico per tutti i giocatori nella lobby.
       const updateResult = await User.updateMany(
         { _id: { $in: playerIds } },
         { $inc: { balance: starterBet } },
@@ -42,10 +40,17 @@ const handleServerCrash = async () => {
         `Rimborso per lobby ${lobby._id}: ${updateResult.modifiedCount} utenti aggiornati.`,
       );
 
-      // 4. Una volta rimborsati i giocatori, eliminiamo la lobby dal DB
+      // Una volta rimborsati i giocatori, eliminiamo la lobby dal DB
       await Lobby.findByIdAndDelete(lobby._id);
       console.log(`Lobby ${lobby._id} rimborsata e eliminata con successo.`);
     }
+
+    // adesso invece controllo tutti gli utenti salvati nel DB per capire se se al momento del crash fossero presenti utenti online,
+    // che quindi rimarebbero in questo stato senza più poter entrare nel gioco
+    await User.updateMany(
+      { online: true },
+      { $set: { online: false, refundServerCrashDate: new Date() } },
+    );
   } catch (error) {
     console.error(
       "Errore critico durante la gestione del crash del server:",

@@ -31,6 +31,7 @@ const handlePlayerExit = async (lobbyId, socket, io) => {
       // Rimborsiamo i soldi nel DB
       await User.findByIdAndUpdate(socket.user.userId, {
         $inc: { balance: game.starterBet },
+        $set: { online: false },
       });
 
       game.piatto -= game.starterBet;

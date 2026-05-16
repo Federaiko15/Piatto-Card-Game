@@ -11,7 +11,7 @@ export default function showSwal(props: AlertProps) {
         toast: true,
         position: "top-end",
         showConfirmButton: false,
-        timer: 3000,
+        timer: 2000,
         timerProgressBar: true,
       }).fire({
         icon: "success",
@@ -22,7 +22,7 @@ export default function showSwal(props: AlertProps) {
         toast: true,
         position: "center",
         showConfirmButton: false,
-        timer: 1000,
+        timer: 2000,
       }).fire({
         icon: "info",
         title: props.title,
@@ -136,7 +136,7 @@ export default function showSwal(props: AlertProps) {
         text: "È una mossa rischiosa, potresti perdere tutto!",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#28a745", // Verde per indicare coraggio/azione positiva
+        confirmButtonColor: "#28a745",
         cancelButtonColor: "#d33",
         confirmButtonText: "Sì, chiamo PIATTO!",
         cancelButtonText: "Ci ripenso",

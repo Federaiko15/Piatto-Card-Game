@@ -62,6 +62,7 @@ const registerUser = async (req, res) => {
     // grezze per la comunicazione con MongoDB gestita dalla libreria mongoose, e può essere utilizzata dai
     // modelli (model) creati proprio per la comunicazioni con il DB
 
+    // deve esistere ma avere il verified a false
     const existing = await User.findOne({
       email: email.trim().toLowerCase(),
       verified: false,
@@ -97,7 +98,7 @@ const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.log("Error in registerUser");
-    return res.status(400).json({
+    return res.status(500).json({
       message: "Server Error",
       error: error.message,
     });
@@ -118,7 +119,14 @@ const loginUser = async (req, res) => {
         message: "Invalid email or password",
       });
     }
-    // check if the password sent by the client is correct with bcrypt
+
+    if (existing.online) {
+      return res.status(400).json({
+        message: "User already logged in",
+      });
+    }
+
+    // controllo quindi se la password inserita è corretta facendo la verifica tramite la funzione compare di bcrypt
     const isPasswordCorrect = await bcrypt.compare(password, existing.password);
     if (!isPasswordCorrect) {
       return res.status(400).json({
@@ -137,6 +145,9 @@ const loginUser = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // calcolo di una settimana in millisecondi
     });
 
+    existing.online = true;
+    await existing.save();
+    // e invio invece l'access token all'utente così che venga salvato nel localstorage
     res.status(200).json({
       message: "Login successfully accepted",
       user: {

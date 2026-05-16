@@ -328,6 +328,8 @@ export default function Auth() {
                     <option value={3}>3 Giocatori</option>
                     <option value={4}>4 Giocatori</option>
                     <option value={5}>5 Giocatori</option>
+                    <option value={6}>6 Giocatori</option>
+                    <option value={7}>7 Giocatori</option>
                   </select>
                 </div>
               </div>

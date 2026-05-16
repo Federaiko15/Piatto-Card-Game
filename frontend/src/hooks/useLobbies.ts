@@ -153,7 +153,7 @@ export function useLobbies() {
     try {
       const confirmed = await showSwal({
         type: "logout",
-        title: "Sei sicuro di uscire dalla retrobottega?",
+        title: "Sei sicuro di uscire da Piatto?",
         alert: true,
       });
       if (confirmed) {

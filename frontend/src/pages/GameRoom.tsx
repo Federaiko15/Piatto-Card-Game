@@ -36,14 +36,13 @@ export default function GameRoom() {
     newMazzo,
   } = useGameEngine(lobbyId);
 
-  // 2. STATI LOCALI
   const [isCardHidden, setIsCardHidden] = useState<boolean>(true);
   const [displayedCard, setDisplayedCard] = useState<SingleCard>({
     seed: "",
     value: 0,
   });
 
-  // 3. ANIMAZIONE CARTA
+  // ANIMAZIONE CARTA
   useEffect(() => {
     let innerTimer: ReturnType<typeof setTimeout>;
     if (card && card.value > 0) {
@@ -78,7 +77,6 @@ export default function GameRoom() {
 
   const amITheCreator = personalId === idCreator;
 
-  // 4. GESTIONE USCITA
   const handleLeaveLobby = async () => {
     const confirmed = await showSwal({
       type: "leave_lobby",

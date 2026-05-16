@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import { NUM_HASH } from "../config/constants.js";
+import { defaultMaxListeners } from "nodemailer/lib/xoauth2/index.js";
 
 const userSchema = new Schema(
   {
@@ -52,6 +53,10 @@ const userSchema = new Schema(
     refundServerCrashDate: {
       type: Date,
       default: null,
+    },
+    online: {
+      type: Boolean,
+      default: false,
     },
   },
   {
