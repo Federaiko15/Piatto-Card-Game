@@ -14,6 +14,7 @@ const createNewGame = (
     throw new Error("Esiste già un game per questa lobby");
   }
   const newGame = new ActiveGame(
+    lobbyId,
     starterBet,
     activePlayers,
     piattoIniziale,

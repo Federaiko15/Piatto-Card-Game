@@ -250,6 +250,17 @@ const registerGameHandlers = (io, socket) => {
           console.log(
             `Ripristinato lo status dell'utente ${user.username} dopo che si era disconnesso`,
           );
+
+          socket.to(lobbyId).emit("player_reconnected", {
+            message: `L'utente ${user.username} si è riconnesso!`,
+            activePlayers: activePlayers,
+          });
+
+          // Avvisiamo in chat gli altri giocatori
+          socket.to(lobbyId).emit("message_resolved", {
+            userId: null,
+            message: `L'utente ${user.username} è tornato in partita!`,
+          });
         }
 
         socket.emit("new_game", {
@@ -296,7 +307,6 @@ const registerGameHandlers = (io, socket) => {
       }
 
       const bet = user.currentBet;
-      let win = false;
 
       // LA REGOLA PRINCIPALE DEL GIOCO: 1-5 Perde, 6-10 Vince
       if (card.value <= 5) {
@@ -355,7 +365,6 @@ const registerGameHandlers = (io, socket) => {
           return;
         }
       } else {
-        win = true;
         user.balance += bet;
         game.piatto -= bet;
 

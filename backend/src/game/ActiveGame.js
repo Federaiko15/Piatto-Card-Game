@@ -1,7 +1,9 @@
 import createDeck from "./deck.js";
+import app from "../app.js";
 
 class ActiveGame {
-  constructor(starterBet, activePlayers, piattoIniziale, idCreatore) {
+  constructor(lobbyId, starterBet, activePlayers, piattoIniziale, idCreatore) {
+    this.lobbyId = lobbyId;
     this.starterBet = starterBet;
     this.activePlayers = activePlayers;
     this.piatto = Number(piattoIniziale) || 0; // soldi totali nel piatto
@@ -16,6 +18,8 @@ class ActiveGame {
   drawCard() {
     if (this.deck.length === 0) {
       this.deck = createDeck();
+      const io = app.get("io");
+      io.to(this.lobbyId).emit("new_mazzo");
     }
     return this.deck.pop();
   }

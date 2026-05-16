@@ -33,6 +33,7 @@ export default function GameRoom() {
     idCreator,
     isGameFinished,
     isWaitingRematch,
+    newMazzo,
   } = useGameEngine(lobbyId);
 
   // 2. STATI LOCALI
@@ -176,6 +177,11 @@ export default function GameRoom() {
 
         {/* IL CROUPIER E LA CARTA */}
         <div className="grid-cell high-center">
+          {newMazzo && (
+            <div className="new-mazzo-message">
+              <p>E' stato generato un nuovo mazzo per continuare la partita</p>
+            </div>
+          )}
           <div className="table-high-center">
             <img src={croupier} alt="Croupier" className="pixel-image" />
             {displayedCard.value > 0 && (

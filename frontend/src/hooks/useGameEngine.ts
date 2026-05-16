@@ -32,6 +32,7 @@ export function useGameEngine(lobbyId: string | undefined) {
   const [idCreator, setIdCreator] = useState<string>("");
   const [isGameFinished, setIsGameFinished] = useState<boolean>(false);
   const [isWaitingRematch, setIsWaitingRematch] = useState<boolean>(false);
+  const [newMazzo, setNewMazzo] = useState<boolean>(false);
 
   const personalId = getIdFromToken();
 
@@ -97,6 +98,12 @@ export function useGameEngine(lobbyId: string | undefined) {
       // Aggiorniamo lo stato dei giocatori con la lista aggiornata dal server
       if (data.giocatoriAlTavolo) {
         setPlayers(data.giocatoriAlTavolo);
+      }
+    });
+
+    socket.on("player_reconnected", (data: SocketLogOutResponse) => {
+      if (data.activePlayers) {
+        setPlayers(data.activePlayers);
       }
     });
 
@@ -208,6 +215,13 @@ export function useGameEngine(lobbyId: string | undefined) {
       }
     });
 
+    socket.on("new_mazzo", () => {
+      setNewMazzo(true);
+      setInterval(() => {
+        setNewMazzo(false); // arriva il messaggio dal server per avvisare che è stato generato un nuovo mazzo
+      }, 3000);
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -232,5 +246,6 @@ export function useGameEngine(lobbyId: string | undefined) {
     idCreator,
     isGameFinished,
     isWaitingRematch,
+    newMazzo,
   };
 }
