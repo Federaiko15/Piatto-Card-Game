@@ -11,38 +11,37 @@ const handleServerCrash = async () => {
 
     if (lobbiesToRefund.length === 0) {
       console.log("Nessuna lobby da rimborsare trovata dopo il riavvio.");
-      return;
-    }
-
-    console.log(
-      `Trovate ${lobbiesToRefund.length} lobby da processare per il rimborso.`,
-    );
-
-    for (const lobby of lobbiesToRefund) {
-      const playerIds = lobby.activePlayers;
-      const starterBet = lobby.starterBet;
-
-      if (!playerIds || playerIds.length === 0 || !starterBet) {
-        console.log(
-          `Lobby ${lobby._id} saltata: nessun giocatore o puntata iniziale definita.`,
-        );
-        await Lobby.findByIdAndDelete(lobby._id);
-        continue;
-      }
-
-      // Rimborso atomico per tutti i giocatori nella lobby.
-      const updateResult = await User.updateMany(
-        { _id: { $in: playerIds } },
-        { $inc: { balance: starterBet } },
-      );
-
+    } else {
       console.log(
-        `Rimborso per lobby ${lobby._id}: ${updateResult.modifiedCount} utenti aggiornati.`,
+        `Trovate ${lobbiesToRefund.length} lobby da processare per il rimborso.`,
       );
 
-      // Una volta rimborsati i giocatori, eliminiamo la lobby dal DB
-      await Lobby.findByIdAndDelete(lobby._id);
-      console.log(`Lobby ${lobby._id} rimborsata e eliminata con successo.`);
+      for (const lobby of lobbiesToRefund) {
+        const playerIds = lobby.activePlayers;
+        const starterBet = lobby.starterBet;
+
+        if (!playerIds || playerIds.length === 0 || !starterBet) {
+          console.log(
+            `Lobby ${lobby._id} saltata: nessun giocatore o puntata iniziale definita.`,
+          );
+          await Lobby.findByIdAndDelete(lobby._id);
+          continue;
+        }
+
+        // Rimborso atomico per tutti i giocatori nella lobby.
+        const updateResult = await User.updateMany(
+          { _id: { $in: playerIds } },
+          { $inc: { balance: starterBet } },
+        );
+
+        console.log(
+          `Rimborso per lobby ${lobby._id}: ${updateResult.modifiedCount} utenti aggiornati.`,
+        );
+
+        // Una volta rimborsati i giocatori, eliminiamo la lobby dal DB
+        await Lobby.findByIdAndDelete(lobby._id);
+        console.log(`Lobby ${lobby._id} rimborsata e eliminata con successo.`);
+      }
     }
 
     // adesso invece controllo tutti gli utenti salvati nel DB per capire se se al momento del crash fossero presenti utenti online,
@@ -51,6 +50,7 @@ const handleServerCrash = async () => {
       { online: true },
       { $set: { online: false, refundServerCrashDate: new Date() } },
     );
+    console.log("Utenti controllati");
   } catch (error) {
     console.error(
       "Errore critico durante la gestione del crash del server:",

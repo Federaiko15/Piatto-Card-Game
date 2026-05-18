@@ -91,6 +91,77 @@
   transform: translateY(-2px);
 }
 
+/* --- Sezione Ricerca --- */
+.lobbies-search-section {
+  position: relative;
+}
+
+.btn-general-search {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  background-color: #2980b9; /* Colore blu elegante */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.btn-general-search:hover {
+  background-color: #3498db;
+}
+
+.btn-general-search:active {
+  transform: scale(0.98);
+}
+
+.form-search {
+  position: absolute;
+  top: 100%; /* Si posiziona esattamente sotto il bottone */
+  left: 0;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(30, 40, 50, 0.95);
+  backdrop-filter: blur(5px);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #f39c12;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+  z-index: 50; /* Permette al menu di coprire i contenuti sottostanti */
+  min-width: 200px;
+}
+
+.form-search select,
+.form-search input {
+  padding: 10px;
+  font-size: 15px;
+  border-radius: 5px;
+  border: 1px solid #555;
+  background-color: #1a1a1a;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-search select:focus,
+.form-search input:focus {
+  border-color: #f39c12;
+  box-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
+}
+
+/* Evita che le opzioni della select siano illeggibili sui browser che non ereditano il bg scuro */
+.form-search select option {
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
 /* Layout principale due colonne */
 .lobbies-content {
   display: flex;

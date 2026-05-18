@@ -2,6 +2,7 @@ import createDeck from "./deck.js";
 import app from "../app.js";
 
 class ActiveGame {
+  //questa classe gestisce semplicemente tutte le informazioni relative ad una partita in corso, come i turni della partita o il mazzo di carte
   constructor(lobbyId, starterBet, activePlayers, piattoIniziale, idCreatore) {
     this.lobbyId = lobbyId;
     this.starterBet = starterBet;
@@ -19,7 +20,7 @@ class ActiveGame {
     if (this.deck.length === 0) {
       this.deck = createDeck();
       const io = app.get("io");
-      io.to(this.lobbyId).emit("new_mazzo");
+      io.to(this.lobbyId).emit("new_mazzo"); // avviso il client che farà mostrare un messaggio
     }
     return this.deck.pop();
   }

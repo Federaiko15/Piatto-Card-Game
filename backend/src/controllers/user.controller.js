@@ -10,6 +10,7 @@ dotenv.config({
 });
 
 const sendOtp = async (req, res) => {
+  // questa funzione viene chiamata quando, volendo creare un account, bisogna prima mandare l'email per controllarne la validità
   try {
     const { email } = req.body;
 
@@ -18,10 +19,10 @@ const sendOtp = async (req, res) => {
         message: "All fields are important",
       });
     }
-
+    // tramite la funzione generateOtp creo il codice, imposto la sua scadenza a 1 minut0, così da evitare attacchi brute force
     const otp = generateOtp();
-    const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000);
-
+    const otp_expires_at = new Date(Date.now() + 1 * 60 * 1000);
+    // e salvo l'email nel DB, insieme con tutte le info relative al codice otp
     await User.findOneAndUpdate(
       { email: email.trim().toLowerCase() },
       {
@@ -35,7 +36,7 @@ const sendOtp = async (req, res) => {
       },
     );
 
-    await sendOTPEmail(email, otp);
+    await sendOTPEmail(email, otp); // e chiamo la funzione che tramite RESEND invia l'email dallo stesso dominio del gioco
 
     res.status(200).json({
       message: "OTP sent successfully",
@@ -73,6 +74,7 @@ const registerUser = async (req, res) => {
         .json({ message: "You have to verify you email first!" });
     }
 
+    // faccio tutti i controlli per verificare la correttezza dell'otp mandato
     if (existing.otp_expires_at < new Date())
       return res.status(400).json({ error: "OTP scaduto" });
     if (existing.otp_attempts >= 5)
@@ -84,7 +86,7 @@ const registerUser = async (req, res) => {
 
     // OTP corretto
     existing.username = username;
-    existing.password = password; // hashata dal middleware
+    existing.password = password; // hashata dal middleware prima di essere correttamente salvato sul DB
     existing.verified = true;
     existing.otp = undefined;
     existing.otp_expires_at = undefined;
@@ -133,11 +135,11 @@ const loginUser = async (req, res) => {
         message: "Invalid email or password",
       });
     }
-
+    // creo i token, quello di accesso che verrà salvato nel localstorage del browser del client, e quello di refresh
     const accessToken = createAccessToken(existing._id);
     const refreshToken = createRefreshToken(existing._id);
 
-    // salvo il refresh token nel cookie che poi il client utilizzerà per le richieste di refresh di un access token
+    // salvo il refresh token nel cookie http che poi il client utilizzerà per le richieste di refresh di un access token
     res.cookie("jwt", refreshToken, {
       httpOnly: true, // così non sarà accessibile tramite JS lato client
       sameSite: "none",
@@ -147,7 +149,6 @@ const loginUser = async (req, res) => {
 
     existing.online = true;
     await existing.save();
-    // e invio invece l'access token all'utente così che venga salvato nel localstorage
     res.status(200).json({
       message: "Login successfully accepted",
       user: {
@@ -169,6 +170,7 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
   try {
+    // in questa funzione che gestisce il logout dalla pagina generale delle lobby elimino semplicemente il refreshtoken dal cookie
     res.clearCookie("jwt", {
       httpOnly: true,
       sameSite: "None",
@@ -226,6 +228,8 @@ const updateUserCredentials = async (req, res) => {
         message: "User not found",
       });
     }
+    // per cambiare la password l'utente deve aver prima inserito quella vecchia
+    // che controllo quindi tramite bcrypt
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
       return res.status(400).json({
@@ -270,7 +274,7 @@ const resetUserPassword = async (req, res) => {
         message: "You have to verify your email first",
       });
     }
-
+    // controllo la validità del codice otp mandato per il reset della password
     if (user.otp_expires_at < new Date())
       return res.status(400).json({ error: "OTP scaduto" });
     if (user.otp_attempts >= 5)
@@ -337,9 +341,10 @@ const deleteAccont = async (req, res) => {
 
 const refreshToken = async (req, res) => {
   try {
-    // prendo il refresh token dai cookie
+    // prendo il refresh token dal cookie
     const cookies = req.cookies;
-    if (!cookies?.jwt) return res.sendStatus(401);
+    if (!cookies?.jwt) return res.sendStatus(401); // se non lo trovo mando 401, che verrà intercettato dal client che rimanderà l'utente
+    // nella pagina di autenticazione
 
     const refreshToken = cookies.jwt;
 
@@ -354,7 +359,7 @@ const refreshToken = async (req, res) => {
 
         const newAccessToken = createAccessToken(decoded.userId);
 
-        res.json({ accessToken: newAccessToken });
+        res.json({ accessToken: newAccessToken }); // nel caso quindi che il controllo vada a buon fine, mando un nuovo accesstoken
       },
     );
   } catch (error) {

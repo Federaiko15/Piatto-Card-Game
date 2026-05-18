@@ -1,7 +1,7 @@
 import ActiveGame from "./ActiveGame.js";
 
 const register = new Map();
-
+// utilizzo una mappa per salvare tutte le partite in corso, utilizzando come chiave di accesso l'id univoco di ogni lobby
 const createNewGame = (
   lobbyId,
   starterBet,

@@ -26,13 +26,21 @@ export function useLobbies() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const fetchLobbies = async (isInitialLoad: boolean = false) => {
+  const fetchLobbies = async (
+    isInitialLoad: boolean = false,
+    searchStatus: string,
+    searchStarterBet: number,
+  ) => {
     setIsLoading(true);
     setLobbiesList([]); // Svuoto la lista per mostrare lo stato di caricamento
 
     try {
       const options = {
-        method: "GET",
+        method: "POST",
+        body: JSON.stringify({
+          searchStatus: searchStatus,
+          searchStarterBet: searchStarterBet,
+        }),
       };
 
       const response = await fetchWithAuth(
@@ -57,7 +65,10 @@ export function useLobbies() {
       }
 
       console.log("Lobby trovate:", data);
-      setLobbiesList(data.allFreeLobbies || []);
+      // Salviamo sia il caso in cui arrivino le freeLobbies di default, sia le filteredLobbies della ricerca
+      setLobbiesList(
+        (data as any).filteredLobbies || data.allFreeLobbies || [],
+      );
     } catch (error) {
       console.error("Errore di rete:", error);
     } finally {
@@ -97,7 +108,7 @@ export function useLobbies() {
         title: "Login effettuato con successo!",
         alert: false,
       });
-      fetchLobbies(true);
+      fetchLobbies(true, "free", -1);
     }
 
     fetchUserProfile();
@@ -123,7 +134,6 @@ export function useLobbies() {
       if (response.ok) {
         const createdLobbyId = data.lobby._id;
         navigate(`/game/${createdLobbyId}`);
-        fetchLobbies();
       } else {
         if (response.status === 401) return;
         showSwal({

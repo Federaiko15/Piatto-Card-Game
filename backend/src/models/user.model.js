@@ -1,7 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import { NUM_HASH } from "../config/constants.js";
-import { defaultMaxListeners } from "nodemailer/lib/xoauth2/index.js";
 
 const userSchema = new Schema(
   {
@@ -69,7 +68,8 @@ userSchema.index(
   { otp_expires_at: 1 },
   { expireAfterSeconds: 0, partialFilterExpression: { verified: false } },
 );
-
+// questa funzione pre è un middleware, che parte quando viene chiamata la funzione di mongoose save. Prima infatti di salvare un utente
+// sul db, utilizzo una funzione hash critograficamente sicura tramite bcrypt per hashare la password
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
 

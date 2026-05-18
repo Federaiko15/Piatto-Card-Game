@@ -7,10 +7,11 @@ dotenv.config({
   path: "./.env",
 });
 
-const app = express();
+const app = express(); // creo l'app express per il server
 
 app.use(
   cors({
+    // imposto le impostazioni cors per gestire i collegamenti da indirizzi diversi rispetto a quello del server
     origin: `${process.env.FRONTEND_URL}`, // Lo stesso indirizzo del frontend
     credentials: true, // FONDAMENTALE per leggere e scrivere i Cookie httpOnly
   }),

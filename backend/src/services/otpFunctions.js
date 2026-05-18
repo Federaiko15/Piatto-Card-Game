@@ -10,6 +10,8 @@ let devFromEmail;
 let resend;
 
 export async function initMailer() {
+  // questa funzione viene chiamata all'avvio del server, e serve ad instanziare il trasporter in base alla modalità:
+  // se siamo in development utilizzo nodmailer per creare un account di test, altrimenti utilizzo RESEND con la API_KEY salvata in .env
   if (process.env.NODE_ENV === "development") {
     const testAccount = await nodemailer.createTestAccount();
     devFromEmail = testAccount.user;
@@ -26,10 +28,11 @@ export async function initMailer() {
   }
 }
 
+// crypto è una libreria di Node.js che server per creare codici otp
 export function generateOtp() {
   return crypto.randomInt(100000, 999999).toString();
 }
-
+// sempre in base allo stato di sviluppo, mando tramite nodemailer utilizzando ethereal, altrimenti tramite resend utilizzando il dominio del server
 export async function sendOTPEmail(email, otp) {
   if (process.env.NODE_ENV === "development") {
     const info = await transporter.sendMail({

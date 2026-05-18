@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
-
+// tramite mongoose posso definire degli Schema, utili per dire al DB le proprietà degli oggetti che andremo a gestire.
+// questi Schema poi saranno trasformati in modelli, così da poter utilizzare le funzioni di mongoose per le query al DB
 const lobbySchema = new Schema(
   {
     lobbyname: {
