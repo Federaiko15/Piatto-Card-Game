@@ -150,6 +150,7 @@ export function useAuth() {
   };
 
   useEffect(() => {
+    console.log("API URL:", import.meta.env.VITE_API_URL);
     const handleOffline = () => setIsOnline(false);
     const handleOnline = () => setIsOnline(true);
 
