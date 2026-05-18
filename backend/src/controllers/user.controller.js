@@ -21,7 +21,7 @@ const sendOtp = async (req, res) => {
     }
     // tramite la funzione generateOtp creo il codice, imposto la sua scadenza a 1 minut0, così da evitare attacchi brute force
     const otp = generateOtp();
-    const otp_expires_at = new Date(Date.now() + 1 * 60 * 1000);
+    const otp_expires_at = new Date(Date.now() + 3 * 60 * 1000);
     // e salvo l'email nel DB, insieme con tutte le info relative al codice otp
     await User.findOneAndUpdate(
       { email: email.trim().toLowerCase() },

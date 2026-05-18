@@ -39,7 +39,7 @@ export async function sendOTPEmail(email, otp) {
       from: devFromEmail,
       to: email,
       subject: "Codice di verifica",
-      text: `Il tuo codice OTP è: ${otp}. Scade tra 10 minuti.`,
+      text: `Il tuo codice OTP è: ${otp}. Scade tra 3 minuti.`,
     });
     console.log("Email preview URL:", nodemailer.getTestMessageUrl(info));
   } else {
@@ -48,7 +48,7 @@ export async function sendOTPEmail(email, otp) {
       to: email,
       subject: "Codice di verifica",
       html: `<p>Il tuo codice OTP è: <strong style="font-size:24px">${otp}</strong></p>
-             <p>Scade tra <strong>10 minuti</strong>. Non condividerlo con nessuno.</p>`,
+             <p>Scade tra <strong>3 minuti</strong>. Non condividerlo con nessuno.</p>`,
     });
   }
 }
