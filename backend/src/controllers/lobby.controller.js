@@ -222,42 +222,59 @@ const joinLobby = async (req, res) => {
 };
 
 const getLobbies = async (req, res) => {
-  // questa non è una chiamata API con metodo GET. Ho dovuto modificare questa funzione per ricevere dal client dei dati relativi ai filtri
-  // per ricercare delle lobby specifiche. Questo però ha comportato il cambiamento del metodo, da GET a POST perchè molti browser non
-  // permettono di inviare dei dati nel body di una richiesta in una chiamata con il metodo GET, perchè è buona norma (seguendo le regole
-  // https) non inserire in chiamate di sola risposta dei dati che cambierebbero l'entità della risposta stessa
   try {
     const { searchStatus, searchStarterBet } = req.body;
-    const allLobbies = await Lobby.find(); //prendo dal DB tutte le lobby
+    const allLobbies = await Lobby.find();
+
     if (allLobbies.length === 0) {
       return res.status(404).json({
         message: "No Lobbies available...",
       });
     }
-    // se l'utente richiede quindi le liste senza aggiungere nessun filro mando solamente quelle libere
+
+    // Nessun filtro applicato → restituisce solo le lobby libere
     if (searchStatus === "" && searchStarterBet == -1) {
       const allFreeLobbies = allLobbies.filter(
-        // filtrando quindi le lobby che hanno meno giocatori rispetto al loro massimo
         (lobby) =>
           lobby.activePlayers.length < lobby.numPlayers &&
           lobby.status === "waiting",
       );
-
       if (allFreeLobbies.length === 0) {
-        // controlliamo se il filtraggio ha restituito delle lobby
         return res.status(404).json({
           message: "No free lobbies available...",
         });
       }
-
       return res.status(200).json({
         message: "Here all the accessible lobbies",
         allFreeLobbies,
       });
     }
-    // altrimenti impostiamo i filtri in base a quelli mandati dall'utente: se non è stato mandato il filtro sullo status della lobby
-    // allora di default mando solo quelle libere; se non è stato mandato un limite massimo al credito iniziale da dover versare per entrare,
-    // allora lo imposto ad Infinity
+
+    // "all" → tutte le lobby nel DB (già attive per definizione)
+    if (searchStatus === "all" && searchStarterBet == -1) {
+      return res.status(200).json({
+        message: "Here all the active lobbies",
+        lobbies: allLobbies,
+      });
+    }
+
+    // "all" + filtro sulla puntata
+    if (searchStatus === "all" && searchStarterBet !== -1) {
+      const lobbiesByBet = allLobbies.filter(
+        (lobby) => lobby.starterBet <= searchStarterBet,
+      );
+      if (lobbiesByBet.length === 0) {
+        return res.status(404).json({
+          message: "No lobbies available with the selected starter bet...",
+        });
+      }
+      return res.status(200).json({
+        message: "Here all the active lobbies filtered by starter bet",
+        lobbies: lobbiesByBet,
+      });
+    }
+
+    // Filtri combinati: status ("free" | "full") + starterBet opzionale
     const statusFilter = searchStatus === "" ? "free" : searchStatus;
     const starterBetFilter =
       searchStarterBet === -1 ? Infinity : searchStarterBet;
@@ -276,7 +293,7 @@ const getLobbies = async (req, res) => {
           lobby.status !== "waiting";
       }
 
-      return isBetValid && isStatusValid; // fondamentale il return nel caso in cui definiamo dei comportamenti complessi
+      return isBetValid && isStatusValid;
     });
 
     if (filteredLobbies.length === 0) {
