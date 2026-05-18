@@ -91,6 +91,7 @@ export interface NewLobbyData {
 export interface FetchLobbiesResponse {
   message: string;
   allFreeLobbies?: Lobby[];
+  filteredLobbies?: Lobby[];
 }
 
 export interface CreateLobbyResponse {

@@ -48,10 +48,10 @@ export function useLobbies() {
         options,
       );
 
-      const data = (await response.json()) as FetchLobbiesResponse;
-
       if (!response.ok) {
-        console.error("Errore nel server:", data);
+        console.error(
+          "Errore nella risposta del server dopo la chiamata a getLobbies",
+        );
         if (response.status === 401) return; // fetchWithAuth ci sta già reindirizzando
 
         if (!isInitialLoad) {
@@ -63,12 +63,9 @@ export function useLobbies() {
         }
         return; // La lista è già vuota, il finally gestirà il loading
       }
-
-      console.log("Lobby trovate:", data);
+      const data = (await response.json()) as FetchLobbiesResponse;
       // Salviamo sia il caso in cui arrivino le freeLobbies di default, sia le filteredLobbies della ricerca
-      setLobbiesList(
-        (data as any).filteredLobbies || data.allFreeLobbies || [],
-      );
+      setLobbiesList(data.filteredLobbies || data.allFreeLobbies || []);
     } catch (error) {
       console.error("Errore di rete:", error);
     } finally {

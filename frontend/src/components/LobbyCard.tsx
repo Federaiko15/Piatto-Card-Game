@@ -26,10 +26,6 @@ export default function LobbyCard({ lobby }: LobbyCardProps) {
     try {
       const options = {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
       };
       const response = await fetchWithAuth(
         `${import.meta.env.VITE_API_URL}/api/v1/lobbies/join/${lobbyId}`,
