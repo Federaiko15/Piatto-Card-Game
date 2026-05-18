@@ -121,8 +121,6 @@ export function useAuth() {
         return;
       }
 
-      console.log("Successo!", data);
-
       if (isLogin) {
         const accessTokenServer = data.user?.accessToken;
         if (accessTokenServer) {
@@ -150,7 +148,6 @@ export function useAuth() {
   };
 
   useEffect(() => {
-    console.log("API URL:", import.meta.env.VITE_API_URL);
     const handleOffline = () => setIsOnline(false);
     const handleOnline = () => setIsOnline(true);
 

@@ -24,8 +24,6 @@ export default function LobbyCard({ lobby }: LobbyCardProps) {
       return;
     }
     try {
-      console.log("Proviamo ad entrare nella lobby con id: ", lobbyId);
-
       const options = {
         method: "POST",
         headers: {
@@ -49,8 +47,6 @@ export default function LobbyCard({ lobby }: LobbyCardProps) {
         });
         return;
       }
-
-      console.log("Ti sei unito correttamente alla lobby:", data.existingLobby);
 
       navigate(`/game/${lobbyId}`);
     } catch (error) {
