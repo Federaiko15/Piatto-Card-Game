@@ -11,8 +11,16 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     "Content-Type": "application/json",
   };
 
+  // Aggiungiamo credentials: "include" in modo che il browser accetti
+  // i comandi Set-Cookie (come il clearCookie) inviati dal server
+  const finalOptions: RequestInit = {
+    ...options,
+    headers,
+    credentials: options.credentials || "include",
+  };
+
   // 3. Fa la chiamata originale con l'oggetto completo con tutti i campi necessari
-  let response = await fetch(url, { ...options, headers });
+  let response = await fetch(url, finalOptions);
 
   // 4. Se il token è scaduto, il backend risponde 401
   if (response.status === 401) {
@@ -36,8 +44,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         localStorage.setItem("tokenPiatto", data.accessToken);
 
         // 6. RIPROVO la chiamata originale con il nuovo token
-        headers["Authorization"] = `Bearer ${data.accessToken}`;
-        response = await fetch(url, { ...options, headers });
+        const newHeaders = {
+          ...headers,
+          Authorization: `Bearer ${data.accessToken}`,
+        };
+        response = await fetch(url, { ...finalOptions, headers: newHeaders });
       } else {
         // Il refresh token è scaduto o invalido. L'utente deve rifare il login vero e proprio.
         console.log("Refresh token scaduto. Ritorno al login.");

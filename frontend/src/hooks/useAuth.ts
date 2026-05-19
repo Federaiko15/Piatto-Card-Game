@@ -28,6 +28,7 @@ export function useAuth() {
   const [registrationStep, setRegistrationStep] = useState<1 | 2>(1);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [isForcedOffline, setIsForcedOffline] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // STATI PER IL RECUPERO PASSWORD
   const [isForgotPassword, setIsForgotPassword] = useState<boolean>(false);
@@ -50,6 +51,7 @@ export function useAuth() {
     e.preventDefault();
 
     if (!isLogin && registrationStep === 1) {
+      setIsLoading(true);
       try {
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/users/send-otp`,
@@ -81,10 +83,13 @@ export function useAuth() {
           title: "Errore di connessione",
           alert: true,
         });
+      } finally {
+        setIsLoading(false);
       }
       return;
     }
 
+    setIsLoading(true);
     try {
       const url = isLogin
         ? `${import.meta.env.VITE_API_URL}/api/v1/users/login`
@@ -144,6 +149,8 @@ export function useAuth() {
         title: "Hai bisogno di una connessione per accedere al servizio...",
         alert: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -176,6 +183,7 @@ export function useAuth() {
 
   const handleForgotSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
 
     if (forgotStep === 1) {
       try {
@@ -205,6 +213,8 @@ export function useAuth() {
           alert: true,
         });
         return;
+      } finally {
+        setIsLoading(false);
       }
     } else {
       if (forgotForm.newPassword !== forgotForm.confirmPassword) {
@@ -213,6 +223,7 @@ export function useAuth() {
           title: "Le password non coincidono!",
           alert: true,
         });
+        setIsLoading(false);
         return;
       }
 
@@ -260,6 +271,8 @@ export function useAuth() {
           title: "Server Error",
           alert: true,
         });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -273,6 +286,7 @@ export function useAuth() {
     isOnline,
     isForcedOffline,
     setIsForcedOffline,
+    isLoading,
     offlineForm,
     setOfflineForm,
     handleSubmit,

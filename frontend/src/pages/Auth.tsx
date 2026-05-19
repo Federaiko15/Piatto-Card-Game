@@ -1,7 +1,9 @@
 import authBg from "../assets/auth.png";
 import { useAuth } from "../hooks/useAuth";
 import "../styles/Auth.css";
+import "../styles/LoadingButton.css";
 import { useState } from "react";
+import LoadingButton from "../components/LoadingButton";
 
 export default function Auth() {
   const {
@@ -13,6 +15,7 @@ export default function Auth() {
     isOnline,
     isForcedOffline,
     setIsForcedOffline,
+    isLoading,
     offlineForm,
     setOfflineForm,
     handleSubmit,
@@ -99,9 +102,14 @@ export default function Auth() {
                     />
                   </>
                 )}
-                <button type="submit" className="auth-submit-btn">
+                <LoadingButton
+                  type="submit"
+                  className="auth-submit-btn"
+                  isLoading={isLoading}
+                  loadingText="Attendere..."
+                >
                   {forgotStep === 1 ? "Invia OTP" : "Reimposta Password"}
-                </button>
+                </LoadingButton>
               </form>
               <p className="auth-switch-text">
                 Ti sei ricordato la password?{" "}
@@ -206,9 +214,17 @@ export default function Auth() {
                   </div>
                 )}
 
-                <button
+                <LoadingButton
                   type="submit"
                   className="auth-submit-btn"
+                  isLoading={isLoading}
+                  loadingText={
+                    isLogin
+                      ? "Accesso..."
+                      : registrationStep === 1
+                        ? "Invio..."
+                        : "Registrazione..."
+                  }
                   disabled={
                     !isLogin && registrationStep === 2 && !acceptedTerms
                   }
@@ -224,7 +240,7 @@ export default function Auth() {
                     : registrationStep === 1
                       ? "Invia OTP"
                       : "Crea un account"}
-                </button>
+                </LoadingButton>
 
                 <button
                   type="button"

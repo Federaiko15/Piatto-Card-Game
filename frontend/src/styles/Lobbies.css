@@ -262,21 +262,6 @@
   background-color: #d68910; /* Un colore leggermente diverso per indicare che è attivo ma non cliccabile */
 }
 
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff; /* Colore della parte che gira */
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Lista Lobby */
 .lobbies-list {
   display: grid;

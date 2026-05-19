@@ -145,18 +145,6 @@ export function useLobbies() {
   };
 
   const handleLogout = async () => {
-    const accessToken = localStorage.getItem("tokenPiatto");
-
-    if (!accessToken) {
-      showSwal({
-        type: "error",
-        title: "Sessione scaduta o non valida, effettua l'accesso.",
-        alert: true,
-      });
-      navigate("/");
-      return;
-    }
-
     try {
       const confirmed = await showSwal({
         type: "logout",
@@ -164,10 +152,13 @@ export function useLobbies() {
         alert: true,
       });
       if (confirmed) {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/v1/users/logout`, {
+        const options = {
           method: "POST",
-          credentials: "include",
-        });
+        };
+        await fetchWithAuth(
+          `${import.meta.env.VITE_API_URL}/api/v1/users/profile/${getIdFromToken()}}`,
+          options,
+        );
         localStorage.removeItem("tokenPiatto");
         navigate("/");
       }

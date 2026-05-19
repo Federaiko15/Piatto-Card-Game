@@ -176,6 +176,15 @@ const logoutUser = async (req, res) => {
       sameSite: "None",
       secure: true,
     });
+    const userId = req.user.userId;
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    user.online = false;
+    await user.save();
     res.status(200).json({
       message: "Logout successfully done",
     });
