@@ -3,12 +3,12 @@ import jwt from "jsonwebtoken";
 // questo mi permette di poter verificare la correttezza della richiesta
 export const createAccessToken = (userId) => {
   return jwt.sign({ userId }, process.env.ACCESS_WEB_TOKEN, {
-    expiresIn: "15m",
+    expiresIn: "10m",
   });
 };
 
 export const createRefreshToken = (userId) => {
   return jwt.sign({ userId }, process.env.REFRESH_WEB_TOKEN, {
-    expiresIn: "1d",
+    expiresIn: "7d",
   });
 };

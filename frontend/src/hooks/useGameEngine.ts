@@ -15,6 +15,7 @@ import type {
   SocketErrorResponse,
 } from "../types";
 import showSwal from "../services/CustomAlert";
+import { notificationManager } from "../services/NotificationManager.ts";
 
 export function useGameEngine(lobbyId: string | undefined) {
   const navigate = useNavigate();
@@ -227,12 +228,21 @@ export function useGameEngine(lobbyId: string | undefined) {
     };
   }, [lobbyId, navigate]);
 
-  // 4. CALCOLIAMO SE È IL TUO TURNO
+  // Calcolo se è il turno dell'utente
   const isMyTurn =
     players?.length > 0 && players[currentTurn]?.id === personalId;
-  // TROVIAMO L'ID ESATTO DI CHI DEVE GIOCARE ADESSO
+
+  useEffect(() => {
+    // Inviamo la notifica solo se diventa il nostro turno e se non stiamo guardando la pagina
+    if (isMyTurn && document.visibilityState !== "visible") {
+      const username = players[currentTurn]?.username || "Giocatore";
+      notificationManager.notifyGameTurn(username);
+    }
+  }, [isMyTurn]);
+
+  // Calcolo anche l'id dell'utente che deve giocare
   const activePlayerId = players?.length > 0 ? players[currentTurn]?.id : null;
-  // 5. RESTITUIAMO AL FRONTEND SOLO QUELLO CHE SERVE PER DISEGNARE
+  // E restituisco alla GameRoom.tsx, che chiamerà questo custom hook, le variabili di cui ha bisogno
   return {
     rotatedPlayers,
     isGameStarted,

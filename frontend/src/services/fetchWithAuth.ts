@@ -20,38 +20,74 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   };
 
   // 3. Fa la chiamata originale con l'oggetto completo con tutti i campi necessari
+  console.log(`[fetchWithAuth] Richiesta iniziale a: ${url}`);
   let response = await fetch(url, finalOptions);
 
-  // 4. Se il token è scaduto, il backend risponde 401
-  if (response.status === 401) {
-    console.log("Access Token scaduto! Tento il refresh...");
+  // 4. Se il token è scaduto o non valido, il backend risponde 401 (o 403)
+  if (response.status === 401 || response.status === 403) {
+    console.log(
+      `[fetchWithAuth] Ricevuto errore ${response.status} da ${url}. Access Token scaduto! Tento il refresh...`,
+    );
 
     try {
+      console.log(
+        `[fetchWithAuth] Chiamo l'endpoint di refresh: /api/v1/users/refresh`,
+      );
       // Chiamo la rotta di refresh (credentials: "include" è FONDAMENTALE per inviare il cookie httpOnly)
       const refreshResponse = await fetch(
         `${import.meta.env.VITE_API_URL}/api/v1/users/refresh`,
         {
-          method: "GET",
+          method: "POST",
           credentials: "include", // fondamentale perchè così react dice al browser di utilizzare il refresh token salvato in maniera
           // sicura in un http cookie
         },
       );
 
+      console.log(
+        `[fetchWithAuth] Risposta dal refresh: ${refreshResponse.status}`,
+      );
+
       if (refreshResponse.ok) {
         const data = await refreshResponse.json();
+        console.log(
+          `[fetchWithAuth] Refresh token valido, nuovo access token ricevuto!`,
+        );
 
         // 5. Salvo il nuovo token
         localStorage.setItem("tokenPiatto", data.accessToken);
 
-        // 6. RIPROVO la chiamata originale con il nuovo token
+        // 6. E riprovo la chiamata originale con il nuovo headers dentro il quale inserisco il token aggiornato
         const newHeaders = {
           ...headers,
           Authorization: `Bearer ${data.accessToken}`,
         };
+        console.log(
+          `[fetchWithAuth] Riprovo la richiesta originale a: ${url} con il nuovo token...`,
+        );
         response = await fetch(url, { ...finalOptions, headers: newHeaders });
+        console.log(
+          `[fetchWithAuth] Esito della richiesta riprovata: ${response.status}`,
+        );
       } else {
         // Il refresh token è scaduto o invalido. L'utente deve rifare il login vero e proprio.
-        console.log("Refresh token scaduto. Ritorno al login.");
+        console.log(
+          "Refresh token scaduto. Tento il logout e ritorno al login.",
+        );
+
+        // Chiamiamo l'endpoint di logout per assicurarci che l'utente non rimanga bloccato su 'online'
+        try {
+          await fetch(
+            `${import.meta.env.VITE_API_URL}/api/v1/users/forcedLogout`,
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${accessToken}` },
+              credentials: "include",
+            },
+          );
+        } catch (e) {
+          console.error("Errore durante il logout forzato", e);
+        }
+
         localStorage.removeItem("tokenPiatto");
         window.location.href = "/"; // Reindirizzamento forzato al login
       }

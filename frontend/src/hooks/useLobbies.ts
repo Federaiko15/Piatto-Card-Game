@@ -156,7 +156,7 @@ export function useLobbies() {
           method: "POST",
         };
         await fetchWithAuth(
-          `${import.meta.env.VITE_API_URL}/api/v1/users/profile/${getIdFromToken()}}`,
+          `${import.meta.env.VITE_API_URL}/api/v1/users/profile/${getIdFromToken()}`,
           options,
         );
         localStorage.removeItem("tokenPiatto");

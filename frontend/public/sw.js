@@ -1,10 +1,15 @@
 // qui ci sarà lo script eseguito dal service worker, che gestirà lo stato offline del gioco
 
 // Versione semrpe da aggiornare in caso di modifiche al file
-const CACHE_NAME = "piatto-cache-v3";
+const CACHE_NAME = "piatto-cache-v6";
 
 // Asset di base dell'applicazione
-const CORE_ASSETS = ["/", "/index.html", "/manifest.json"];
+const CORE_ASSETS = [
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
+  "/assets/auth.png",
+];
 
 // Genero anche qui tutti i percorsi delle carte che prendo dalla cartella cards in public
 const generateCardAssets = () => {
@@ -35,12 +40,16 @@ self.addEventListener("install", (event) => {
   console.log("Installing Service Worker... Caching assets.");
 
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
-      .catch((err) => {
-        console.error("Failed to cache assets during install:", err);
-      }),
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Usiamo un ciclo for invece di addAll per evitare che un singolo 404 faccia fallire tutto
+      for (const asset of ASSETS_TO_CACHE) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn(`Impossibile mettere in cache l'asset: ${asset}`, err);
+        }
+      }
+    }),
   );
 });
 
@@ -93,8 +102,14 @@ self.addEventListener("fetch", (event) => {
           return networkResponse;
         });
       })
-      .catch(() => {
-        console.log("Sei offline e la risorsa non è in cache.");
+      .catch((error) => {
+        // Ignoriamo gli errori di aborto dovuti al cambio/aggiornamento pagina
+        if (error.name !== "AbortError" && !error.message.includes("aborted")) {
+          console.log(
+            "Sei offline o la risorsa non è raggiungibile:",
+            event.request.url,
+          );
+        }
       }),
   );
 });

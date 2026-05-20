@@ -6,6 +6,7 @@ import type {
   AuthResponse,
 } from "../types";
 import showSwal from "../services/CustomAlert";
+import { notificationManager } from "../services/NotificationManager";
 
 interface AuthFormData {
   email: string;
@@ -47,73 +48,114 @@ export function useAuth() {
     numPlayers: 4,
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!isLogin && registrationStep === 1) {
-      setIsLoading(true);
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/users/send-otp`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email: form.email }),
-          },
-        );
-
-        const data = await response.json();
-        if (!response.ok) {
-          showSwal({ type: "error", title: data.message, alert: true });
-          return;
-        }
-
-        showSwal({
-          type: "success",
-          title: "Codice OTP inviato!",
-          alert: false,
-        });
-        setRegistrationStep(2);
-      } catch (error) {
-        console.error("Errore nell'invio OTP:", error);
-        showSwal({
-          type: "error",
-          title: "Errore di connessione",
-          alert: true,
-        });
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
-
+  const handleSendOtp = async () => {
     setIsLoading(true);
     try {
-      const url = isLogin
-        ? `${import.meta.env.VITE_API_URL}/api/v1/users/login`
-        : `${import.meta.env.VITE_API_URL}/api/v1/users/register`;
-
-      const payload: LoginCredentials | RegisterCredentials = isLogin
-        ? { email: form.email, password: form.password }
-        : {
-            username: form.username || "",
-            email: form.email,
-            password: form.password,
-            otp: form.otp || "",
-          };
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/send-otp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email }),
+          credentials: "include",
         },
-        body: JSON.stringify(payload),
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        showSwal({ type: "error", title: data.message, alert: true });
+        return;
+      }
+
+      showSwal({
+        type: "game-advice",
+        title: "Codice OTP inviato!",
+        alert: false,
       });
+      setRegistrationStep(2);
+    } catch (error) {
+      console.error("Errore nell'invio OTP:", error);
+      showSwal({
+        type: "error",
+        title: "Errore di connessione",
+        alert: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    setIsLoading(true);
+    try {
+      const payload: RegisterCredentials = {
+        username: form.username || "",
+        email: form.email,
+        password: form.password,
+        otp: form.otp || "",
+      };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          credentials: "include",
+        },
+      );
+
+      const data = (await response.json()) as AuthResponse;
+
+      if (!response.ok) {
+        console.error("Errore dal server:", data);
+        showSwal({
+          type: "error",
+          title: data.message,
+          alert: true,
+        });
+        return;
+      }
+
+      showSwal({
+        type: "login_register",
+        title: "Registrazione completata! Ora puoi fare il login",
+        alert: false,
+      });
+      setIsLogin(true);
+    } catch (error) {
+      console.error("Errore di rete bloccante:", error);
+      showSwal({
+        type: "error",
+        title: "Hai bisogno di una connessione per accedere al servizio...",
+        alert: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const payload: LoginCredentials = {
+        email: form.email,
+        password: form.password,
+      };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          credentials: "include", // in questa funzione di login è fondamentale avere credentials:include, perchè così
+          // e possibile salvare il refresh token nel cookie https
+        },
+      );
 
       const data = (await response.json()) as AuthResponse & {
-        user?: { accessToken: string }; // con questo vedo se nella risposta è presente il campo user, per accedere nel caso al JWT
+        user?: { accessToken: string };
       };
 
       if (!response.ok) {
@@ -126,21 +168,16 @@ export function useAuth() {
         return;
       }
 
-      if (isLogin) {
-        const accessTokenServer = data.user?.accessToken;
-        if (accessTokenServer) {
-          localStorage.setItem("tokenPiatto", accessTokenServer);
-          navigate("/lobbies", { state: { justLoggedIn: true } });
-        } else {
-          console.error("Token non trovato nella risposta del server");
-        }
+      const accessTokenServer = data.user?.accessToken;
+      if (accessTokenServer) {
+        localStorage.setItem("tokenPiatto", accessTokenServer);
+
+        // Richiediamo i permessi per le notifiche
+        await notificationManager.requestPermission();
+
+        navigate("/lobbies", { state: { justLoggedIn: true } });
       } else {
-        showSwal({
-          type: "login_register",
-          title: "Registrazione completata! Ora puoi fare il login",
-          alert: false,
-        });
-        setIsLogin(true);
+        console.error("Token non trovato nella risposta del server");
       }
     } catch (error) {
       console.error("Errore di rete bloccante:", error);
@@ -151,6 +188,17 @@ export function useAuth() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isLogin) {
+      await handleLogin();
+    } else if (registrationStep === 1) {
+      await handleSendOtp();
+    } else {
+      await handleRegister();
     }
   };
 
@@ -191,10 +239,9 @@ export function useAuth() {
           `${import.meta.env.VITE_API_URL}/api/v1/users/send-otp`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: forgotForm.email }),
+            credentials: "include",
           },
         );
 
@@ -232,24 +279,24 @@ export function useAuth() {
           `${import.meta.env.VITE_API_URL}/api/v1/users/resetPassword`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: forgotForm.email,
               newPassword: forgotForm.newPassword,
               confirmPassword: forgotForm.confirmPassword,
               otp: forgotForm.otp,
             }),
+            credentials: "include",
           },
         );
 
         if (!response.ok) {
           showSwal({
-            type: "game-error",
+            type: "error", // game-error non esiste nei tuoi tipi, uso error
             title: "Errore nel reimpostare la password",
-            alert: false,
+            alert: true,
           });
+          return; // FONDAMENTALE PER FERMARE L'ESECUZIONE ED EVITARE IL FALSO MESSAGGIO DI SUCCESSO
         }
 
         showSwal({

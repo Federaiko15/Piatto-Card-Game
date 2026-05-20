@@ -142,8 +142,8 @@ const loginUser = async (req, res) => {
     // salvo il refresh token nel cookie http che poi il client utilizzerà per le richieste di refresh di un access token
     res.cookie("jwt", refreshToken, {
       httpOnly: true, // così non sarà accessibile tramite JS lato client
-      sameSite: "none",
-      secure: true, // solo HTTPS, fondamentale per garantire la sicurezza
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+      secure: process.env.NODE_ENV !== "development", // true solo in produzione
       maxAge: 7 * 24 * 60 * 60 * 1000, // calcolo di una settimana in millisecondi
     });
 
@@ -173,8 +173,8 @@ const logoutUser = async (req, res) => {
     // in questa funzione che gestisce il logout dalla pagina generale delle lobby elimino semplicemente il refreshtoken dal cookie
     res.clearCookie("jwt", {
       httpOnly: true,
-      sameSite: "None",
-      secure: true,
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+      secure: process.env.NODE_ENV !== "development",
     });
     const userId = req.user.userId;
     const user = await User.findOne({ _id: userId });
@@ -332,8 +332,8 @@ const deleteAccont = async (req, res) => {
     // tolgo anche dal cookie http in refreshToken salvato per l'utente
     res.clearCookie("jwt", {
       httpOnly: true,
-      sameSite: "None",
-      secure: true,
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+      secure: process.env.NODE_ENV !== "development",
     });
     await User.deleteOne({ _id: userId });
 
@@ -350,29 +350,99 @@ const deleteAccont = async (req, res) => {
 
 const refreshToken = async (req, res) => {
   try {
+    console.log("=> [refreshToken] Inizio chiamata per il refresh del token.");
     // prendo il refresh token dal cookie
     const cookies = req.cookies;
-    if (!cookies?.jwt) return res.sendStatus(401); // se non lo trovo mando 401, che verrà intercettato dal client che rimanderà l'utente
-    // nella pagina di autenticazione
+    console.log(
+      "=> [refreshToken] Cookies ricevuti:",
+      cookies ? Object.keys(cookies) : "Nessuno",
+    );
+
+    if (!cookies?.jwt) {
+      console.log(
+        "=> [refreshToken] Nessun cookie 'jwt' trovato. Ritorno 401.",
+      );
+      return res.sendStatus(401); // se non lo trovo mando 401, che verrà intercettato dal client che rimanderà l'utente
+      // nella pagina di autenticazione
+    }
 
     const refreshToken = cookies.jwt;
 
-    jwt.verify(
-      refreshToken,
-      process.env.REFRESH_WEB_TOKEN,
-      async (err, decoded) => {
-        if (err)
-          return res
-            .status(403)
-            .json({ message: "Token non valido o scaduto" });
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.REFRESH_WEB_TOKEN);
+      const newAccessToken = createAccessToken(decoded.userId);
+      console.log(
+        "=> [refreshToken] Refresh Token valido per userId:",
+        decoded.userId,
+      );
 
-        const newAccessToken = createAccessToken(decoded.userId);
-
-        res.json({ accessToken: newAccessToken }); // nel caso quindi che il controllo vada a buon fine, mando un nuovo accesstoken
-      },
-    );
+      // nel caso quindi che il controllo vada a buon fine, mando un nuovo accesstoken
+      return res.status(200).json({ accessToken: newAccessToken });
+    } catch (err) {
+      console.log(
+        "=> [refreshToken] Errore validazione Refresh Token:",
+        err.message,
+      );
+      // Se il refresh token è scaduto, lo decodifichiamo comunque forzatamente (senza validarlo)
+      // per estrarre l'ID utente e assicuraci che venga impostato offline nel database.
+      const decodedPayload = jwt.decode(refreshToken);
+      console.log("=> [refreshToken] Payload forzato:", decodedPayload);
+      if (decodedPayload && decodedPayload.userId) {
+        console.log(
+          "=> [refreshToken] Imposto online: false per utente:",
+          decodedPayload.userId,
+        );
+        await User.findByIdAndUpdate(decodedPayload.userId, {
+          online: false,
+        });
+      }
+      res.clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+        secure: process.env.NODE_ENV !== "development",
+      });
+      return res.status(403).json({ message: "Token non valido o scaduto" });
+    }
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
+  }
+};
+
+const forcedLogout = async (req, res) => {
+  try {
+    const authorization = req.headers["authorization"];
+    if (!authorization) {
+      return res.status(401).json({ message: "You have to be logged in" });
+    }
+
+    const token = authorization.split(" ")[1];
+
+    const decoded = jwt.verify(token, process.env.ACCESS_WEB_TOKEN, {
+      ignoreExpiration: true,
+    });
+
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+      secure: process.env.NODE_ENV !== "development",
+    });
+
+    const userId = decoded.userId;
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.online = false;
+    await user.save();
+
+    res.status(200).json({ message: "Forced logout successfully done" });
+  } catch (error) {
+    console.log("Error in forcedLogout", error);
+    return res.status(403).json({
+      message: "Invalid token for forced logout",
+      error: error.message,
+    });
   }
 };
 
@@ -386,4 +456,5 @@ export {
   deleteAccont,
   refreshToken,
   sendOtp,
+  forcedLogout,
 };

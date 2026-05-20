@@ -9,6 +9,7 @@ import {
   refreshToken,
   deleteAccont,
   sendOtp,
+  forcedLogout,
 } from "../controllers/user.controller.js";
 import verifyToken from "../middlewares/auth.middleware.js";
 
@@ -24,7 +25,8 @@ router
   .get(verifyToken, getUser)
   .delete(verifyToken, deleteAccont)
   .post(verifyToken, logoutUser);
-router.route("/refresh").post(verifyToken, refreshToken);
+router.route("/refresh").post(refreshToken);
+router.route("/forcedLogout").post(forcedLogout);
 
 export default router;
 

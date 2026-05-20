@@ -21,8 +21,9 @@ const startServer = async () => {
     const io = new Server(httpServer, {
       cors: {
         origin: `${process.env.FRONTEND_URL}`, // non posso più utilizzare * perchè altrimenti non potrei utilizzare i cookies per ragioni di sicurezza
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true, // questo serve proprio per far passare i cookie nell'header delle richieste
+        allowedHeaders: ["Content-Type", "Authorization"],
       },
     });
 
