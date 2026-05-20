@@ -52,10 +52,11 @@ class NotificationManager {
     });
   }
 
-  notifyTimer(): Notification | null {
-    return this.send("Tempo scaduto!", {
-      body: "Il tuo turno è stato saltato.",
+  notifyTimer(heroName: string, message: string): Notification | null {
+    return this.send(`Tempo scaduto per il tuo turno ${heroName}!`, {
+      body: message,
       tag: "timer",
+      requireInteraction: false, // in questo caso si chiuderà da sola, senza che l'utente clicchi
     });
   }
 }

@@ -383,7 +383,7 @@ const refreshToken = async (req, res) => {
         "=> [refreshToken] Errore validazione Refresh Token:",
         err.message,
       );
-      // Se il refresh token è scaduto, lo decodifichiamo comunque forzatamente (senza validarlo)
+      // Se il refresh token è scaduto, lo decodifichiamo comunque (senza validarlo)
       // per estrarre l'ID utente e assicuraci che venga impostato offline nel database.
       const decodedPayload = jwt.decode(refreshToken);
       console.log("=> [refreshToken] Payload forzato:", decodedPayload);
@@ -418,7 +418,7 @@ const forcedLogout = async (req, res) => {
     const token = authorization.split(" ")[1];
 
     const decoded = jwt.verify(token, process.env.ACCESS_WEB_TOKEN, {
-      ignoreExpiration: true,
+      ignoreExpiration: true, // ignorando quindi se il token è scaduto o meno, perchè questo è il caso in cui entrambi i token sono scaduti
     });
 
     res.clearCookie("jwt", {

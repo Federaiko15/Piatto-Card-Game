@@ -223,6 +223,18 @@ export function useGameEngine(lobbyId: string | undefined) {
       }, 3000);
     });
 
+    socket.on(
+      "skip_turn",
+      (data: { message: string; userId: string; username: string }) => {
+        if (data.userId === personalId) {
+          notificationManager.notifyTimer(
+            data.username || "Giocatore",
+            data.message,
+          );
+        }
+      },
+    );
+
     return () => {
       socket.disconnect();
     };

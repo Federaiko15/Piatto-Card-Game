@@ -186,7 +186,8 @@ const joinLobby = async (req, res) => {
       game.status = "playing";
       game.activePlayers.forEach((player) => {
         player.status = "playing";
-      }); // impostiamo la status di ogni giocatore ad "playing"
+      }); // impostiamo la status di ogni giocatore ad "playing" e chiamiamo la funzione startMatch che farà partire il timer per il turno
+      game.starterMatch();
       // e inoltriamo a tutti l'evento "new_game" con i dati relativi alla partita, come il piatto e l'array dei giocatori
       // che mi servirà per gestire il giro dei turni
       io.to(req.params.id).emit("new_game", {

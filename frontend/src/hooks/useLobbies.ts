@@ -1,3 +1,6 @@
+// custom hook per la pagina generale nel quale ho inserito tutte le funzioni, gli stati e gli useEffect necessari per la gestione
+// delle lobby
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type {
@@ -13,11 +16,12 @@ import showSwal from "../services/CustomAlert";
 import getIdFromToken from "../services/utilities";
 
 export function useLobbies() {
-  const [lobbiesList, setLobbiesList] = useState<Lobby[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [viewProfile, setViewProfile] = useState<boolean>(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [lobbiesList, setLobbiesList] = useState<Lobby[]>([]); // stato per ricevere la lista delle lobby dal DB
+  const [isLoading, setIsLoading] = useState<boolean>(false); // stato per bloccare i bottoni e aspettare la risposta del server
+  const [viewProfile, setViewProfile] = useState<boolean>(false); // stato per la pagina laterare per visualizzare il profilo
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null); // lo stato per le variabili che contengono le info dello user
   const [newLobby, setNewLobby] = useState<NewLobbyData>({
+    // e le variabili mandate dallo user al momento della creazione della lobby
     lobbyname: "",
     starterBet: 0,
     numPlayers: 0,
@@ -27,7 +31,7 @@ export function useLobbies() {
   const location = useLocation();
 
   const fetchLobbies = async (
-    isInitialLoad: boolean = false,
+    isInitialLoad: boolean = false, // questa è una variabile che utilizzo per capire se l'utente è appena arrivato dal login o meno
     searchStatus: string,
     searchStarterBet: number,
   ) => {
@@ -35,6 +39,7 @@ export function useLobbies() {
     setLobbiesList([]); // Svuoto la lista per mostrare lo stato di caricamento
 
     try {
+      // definisco solo il body e il metodo della fetch, perchè l'headers sarà riempito direttamente dalla funzione fetchWIthAuth
       const options = {
         method: "POST",
         body: JSON.stringify({
@@ -52,7 +57,7 @@ export function useLobbies() {
         console.error(
           "Errore nella risposta del server dopo la chiamata a getLobbies",
         );
-        if (response.status === 401) return; // fetchWithAuth ci sta già reindirizzando
+        if (response.status === 401) return; // questo è il caso in cui anche il refresh token è scaduto
 
         if (!isInitialLoad) {
           showSwal({
@@ -74,6 +79,7 @@ export function useLobbies() {
   };
 
   const fetchUserProfile = async () => {
+    // stessa logica della fetch precedente, in questo caso però mi serve l'id dell'utente che prendo grazie alla funzione getIdFromToken
     try {
       const playerId = getIdFromToken();
       if (!playerId) return;
@@ -97,6 +103,8 @@ export function useLobbies() {
   };
 
   useEffect(() => {
+    // questo useEffect si attiva una volta qunado renderizziamo questa pagina, e controlla se l'utente è appena arrivato dal login o
+    // da una partita
     const justLoggedIn = location.state?.justLoggedIn;
 
     if (justLoggedIn) {
@@ -108,7 +116,8 @@ export function useLobbies() {
       fetchLobbies(true, "free", -1);
     }
 
-    fetchUserProfile();
+    fetchUserProfile(); // ogni volta che arrivo nella pagine prendo le informazione dell'utente che magari nel frattempo sono cambiate
+    // come il saldo se si viene da una partita appena terminata
     window.history.replaceState({}, document.title);
   }, []);
 
@@ -129,6 +138,7 @@ export function useLobbies() {
 
       const data = (await response.json()) as CreateLobbyResponse;
       if (response.ok) {
+        // se la lobby è stata creata con successo, prendo l'id della lobby e navigo nella sua pagina
         const createdLobbyId = data.lobby._id;
         navigate(`/game/${createdLobbyId}`);
       } else {

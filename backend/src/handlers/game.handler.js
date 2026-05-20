@@ -1,206 +1,12 @@
-import { getGame, deleteGame } from "../game/GameStateManager.js";
 import { deleteLobby } from "../controllers/lobby.controller.js";
+import { getGame, deleteGame } from "../game/GameStateManager.js";
 import User from "../models/user.model.js";
-import Lobby from "../models/lobby.model.js";
-import createDeck from "../game/deck.js";
 
-const handlePlayerExit = async (lobbyId, socket, io) => {
-  if (!lobbyId) return;
-
-  try {
-    const game = getGame(lobbyId);
-    if (!game) return;
-
-    const indexPlayer = game.activePlayers.findIndex(
-      (user) => user.id === socket.user.userId,
-    );
-
-    if (indexPlayer === -1) {
-      console.log("Error in logout handler");
-      return socket.emit("game_error", { message: `Server error` });
-    }
-
-    const existingPlayer = game.activePlayers[indexPlayer];
-    const username = existingPlayer.username;
-
-    // 1. GESTIONE USCITA IN BASE ALLO STATO DEL GIOCO
-    if (game.status === "waiting") {
-      // SOLO SE WAITING: Lo rimuoviamo fisicamente dall'array in RAM
-      game.activePlayers.splice(indexPlayer, 1);
-
-      // Rimborsiamo i soldi nel DB
-      await User.findByIdAndUpdate(socket.user.userId, {
-        $inc: { balance: game.starterBet },
-        $set: { online: false },
-      });
-
-      game.piatto -= game.starterBet;
-
-      // Liberiamo il posto nel DB della Lobby
-      await Lobby.findByIdAndUpdate(lobbyId, {
-        $pull: { activePlayers: socket.user.userId },
-      });
-
-      console.log(`Rimborso effettuato per ${username}`);
-    } else if (game.status === "playing" || game.status === "waiting_rematch") {
-      // SE PLAYING O WAITING_REMATCH: NON facciamo lo splice. Cambiamo solo lo stato.
-      existingPlayer.status = "logout";
-      console.log(
-        `${username} ha abbandonato la partita in corso o durante il rematch.`,
-      );
-
-      // Rimuoviamo il giocatore dalla lista rematch se aveva già accettato, per evitare inconsistenze
-      if (game.rematchPlayer) {
-        game.rematchPlayer = game.rematchPlayer.filter(
-          (p) => p.id !== existingPlayer.id,
-        );
-      }
-
-      // lo segniamo come "già salvato", gestiamo subito il salvataggio sul db
-      existingPlayer.dbSynced = true;
-      await User.findByIdAndUpdate(existingPlayer.id, {
-        $set: { balance: existingPlayer.balance },
-      });
-
-      // Usiamo io.to per garantire la consegna
-      io.to(lobbyId).emit("message_resolved", {
-        userId: null,
-        message: `L'utente ${username} è uscito dalla partita...`,
-      });
-    }
-
-    // 2. USCITA DALLA STANZA SOCKET (Lo facciamo qui, DOPO le logiche di base)
-    socket.leave(lobbyId);
-
-    // 3. CONTROLLO FINE PARTITA
-    // Contiamo quanti giocatori stanno effettivamente ancora giocando
-    const activeCount = game.activePlayers.filter(
-      (p) => p.status === "playing",
-    ).length;
-
-    if (
-      (game.status === "playing" || game.status === "waiting_rematch") &&
-      activeCount <= 1
-    ) {
-      console.log(`La partita ${lobbyId} sta per essere chiusa.`);
-
-      await handleGameOver(
-        lobbyId,
-        io,
-        "La partita si è conclusa per mancanza di giocatori",
-      );
-    } else {
-      // 4. AGGIORNAMENTO UI PER GLI ALTRI
-      // Usiamo io.to per inviare l'array aggiornato a chi è rimasto
-      io.to(lobbyId).emit("player_logout", {
-        message: `L'utente ${username} si è disconnesso.`,
-        activePlayers: game.activePlayers,
-      });
-    }
-  } catch (error) {
-    if (error.message.includes("Non esiste un game con questo id")) {
-      return; // Usciamo in modo pulito senza sporcare il terminale
-    }
-
-    console.error("Errore in handlePlayerExit: ", error.message);
-  }
-};
-
-const handleGameOver = async (lobbyId, io, messaggio) => {
-  try {
-    await Lobby.findByIdAndUpdate(lobbyId, {
-      $set: { status: "finished" },
-    }); // modifico subito lo stato perchè in questo caso non devo rimborsare soldi se il server crasha, ma devo invece salvare i soldi dei giocatori
-
-    const game = getGame(lobbyId);
-    // Filtriamo SOLO i giocatori che non sono ancora stati sincronizzati
-    const playersToSync = game.activePlayers.filter(
-      (player) => !player.dbSynced,
-    );
-
-    // utilizzo anche qui la funzione di mongoose per aggiornare il saldo degli utenti a fine partita
-    const updatePromises = playersToSync.map((player) => {
-      return User.findByIdAndUpdate(player.id, {
-        $set: { balance: player.balance }, // la chiave $set serve per aggiornare il valore
-      });
-    });
-
-    await Promise.all(updatePromises); // questo serve per aspettare che tutti gli update siano effettuati prima di andare avanti
-    console.log("Saldi salvati con successo nel Database!");
-
-    io.to(lobbyId).emit("end_game", {
-      message: messaggio,
-      finalPlayers: game.activePlayers, // così possiamo mostrare una classifica finale su react
-    });
-
-    // pulisco il server staccando tutte le socket collegate nella stessa room
-    const socketsInRoom = await io.in(lobbyId).fetchSockets();
-    for (const s of socketsInRoom) {
-      s.leave(lobbyId);
-    }
-
-    // e rimuovo il game sia dalla ram che dal db
-    deleteGame(lobbyId);
-    await deleteLobby(lobbyId);
-  } catch (error) {
-    console.error("Errore durante la chiusura del gioco: ", error.message);
-  }
-};
-
-const handleGameReset = async (lobbyId, io) => {
-  try {
-    const game = getGame(lobbyId);
-    if (!game || game.status !== "waiting_rematch") {
-      return;
-    }
-    if (game.rematchPlayer.length <= 1) {
-      console.log(
-        `Pochi giocatori per il rematch in lobby ${lobbyId}. Chiusura...`,
-      );
-      // Se è rimasto 1 solo (o zero), chiudiamo tutto salvando i saldi
-      await handleGameOver(
-        lobbyId,
-        io,
-        "Non ci sono abbastanza giocatori per iniziare una nuova partita.",
-      );
-      return;
-    }
-
-    // altrimenti resettiamo la partita
-    game.activePlayers = [...game.rematchPlayer]; // imposto come giocatori quelli che hanno chiesto di rigiocare
-    game.rematchPlayer = []; // e svuoto questo array.
-    game.piatto = 0;
-    game.activePlayers.forEach((player) => {
-      if (player.balance >= game.starterBet) {
-        player.balance -= game.starterBet;
-        game.piatto += game.starterBet;
-        player.currentBet = 0;
-        player.status = "playing";
-      } else {
-        player.status = "eliminato";
-      }
-    });
-
-    game.status = "playing";
-    game.currentTurnIndex = 0;
-    game.deck = createDeck();
-
-    // e mandiamo il messaggio con tutte le informazioni necessarie per aggiornare correttamente la ui
-    io.to(lobbyId).emit("new_game", {
-      message: "La nuova partita è iniziata! Buona fortuna!",
-      giocatoriAlTavolo: game.activePlayers,
-      nuovaPartita: lobbyId,
-      piatto: game.piatto,
-      idCreatore: game.idCreatore,
-    });
-
-    console.log(
-      `Lobby ${lobbyId} resettata con successo! Piatto: ${game.piatto}`,
-    );
-  } catch (error) {
-    console.error("Errore in handleGameRestart:", error.message);
-  }
-};
+import {
+  handlePlayerExit,
+  handleGameReset,
+  handleGameOver,
+} from "../services/gameHandlerService.js";
 
 const registerGameHandlers = (io, socket) => {
   socket.on("create_lobby", (lobbyId) => {
@@ -218,10 +24,6 @@ const registerGameHandlers = (io, socket) => {
     socket.join(lobbyId);
     socket.data.lobbyId = lobbyId;
 
-    console.log(
-      `Il Socket dell'utente ${socket.user.userId} si è sintonizzato sulla stanza: ${lobbyId}`,
-    );
-
     try {
       const matchInProgress = getGame(lobbyId);
       if (!matchInProgress) return;
@@ -230,21 +32,11 @@ const registerGameHandlers = (io, socket) => {
         ? matchInProgress.activePlayers
         : [];
 
-      console.log("DEBUG join_lobby_rooms:", {
-        lobbyId,
-        status: matchInProgress.status,
-        activePlayersLength: activePlayers.length,
-        currentTurnIndex: matchInProgress.currentTurnIndex,
-        activePlayers,
-      });
-
       if (
         matchInProgress.status === "playing" ||
         matchInProgress.status === "waiting_rematch"
       ) {
         const user = activePlayers.find((p) => p.id === socket.user.userId);
-
-        console.log("DEBUG user trovato:", user);
 
         if (user && user.status === "logout") {
           user.status = "playing";
@@ -292,14 +84,15 @@ const registerGameHandlers = (io, socket) => {
       const game = getGame(lobbyId);
       if (!game) return;
 
+      game.stopTurnTimer(); // Fermiamo il timer perchè l'utente ha giocato
+
       const user = game.activePlayers.find((u) => u.id === socket.user.userId);
 
-      // 1. L'utente ha piazzato la puntata in questo turno?
+      // Controlliamo anche che la mossa sia quella corrente per sicurezza
       if (!user.currentBet || user.currentBet <= 0) {
         return socket.emit("game_error", { message: "Devi prima puntare!" });
       }
 
-      // 2. Estraiamo la carta
       const card = game.drawCard();
       if (!card) {
         return io
@@ -311,8 +104,8 @@ const registerGameHandlers = (io, socket) => {
 
       // LA REGOLA PRINCIPALE DEL GIOCO: 1-5 Perde, 6-10 Vince
       if (card.value <= 5) {
-        // PERDE: I soldi vanno nel piatto (li avevamo solo "congelati" in currentBet,
-        // ora li togliamo per davvero dal suo bilancio ufficiale)
+        // PERDE: I soldi vanno nel piatto
+        // ora li togliamo per davvero dal suo bilancio ufficiale
         user.balance -= bet;
         game.piatto += bet;
         console.log(
@@ -440,6 +233,8 @@ const registerGameHandlers = (io, socket) => {
 
     try {
       const game = getGame(lobbyId);
+      game.stopTurnTimer(); // FERMIAMO IL TIMER PERCHÉ L'UTENTE HA PIAZZATO LA PUNTATA
+
       const user = game.activePlayers.find((u) => u.id === socket.user.userId);
 
       // CONTROLLO 0: Validazione dell'input
