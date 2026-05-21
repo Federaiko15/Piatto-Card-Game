@@ -93,3 +93,11 @@ npm run dev
 ```
 
 _Il terminale mostrerà un URL in `localhost` (es. `http://localhost:5713`). Cliccare sul link per aprire il gioco nel browser._
+
+### 4. Account di Prova
+
+Per agevolare il testing e la valutazione del progetto, sono presenti nel database **7 account di prova** già verificati e pronti all'uso.
+È possibile effettuare l'accesso utilizzando le seguenti credenziali (dove la password coincide esattamente con l'indirizzo email):
+
+- Da `prova1@example.com` fino a `prova7@example.com`
+  _(es. Email: `prova1@example.com`, Password: `prova1@example.com`)_.
