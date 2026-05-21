@@ -1,7 +1,7 @@
 // qui ci sarà lo script eseguito dal service worker, che gestirà lo stato offline del gioco
 // in questa parte ho utilizzato l'IA, prendendo anche come base gli script fatti vedere nelle slide del corso
 // Versione semrpe da aggiornare in caso di modifiche al file
-const CACHE_NAME = "piatto-cache-v6";
+const CACHE_NAME = "piatto-cache-v7";
 
 // Asset di base dell'applicazione
 const CORE_ASSETS = [
