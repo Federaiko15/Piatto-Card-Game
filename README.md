@@ -6,6 +6,8 @@
 
 Il progetto è stato concepito integrando sia una logica di gioco online, sia una modalità **offline**, essendo strutturato come una **PWA (Progressive Web App)**. Grazie all'utilizzo di Service Workers, l'applicazione gestisce la cache degli asset e simula una partita locale contro dei Bot qualora l'utente perda la connessione.
 
+Inoltre, grazie al modulo **NotificationManager.ts** (che sfrutta le Web API standard `Notification` del browser), l'applicazione invia notifiche desktop all'utente quando quest'ultimo non sta guardando lo schermo (ad esempio se si trova su un'altra scheda). Nello specifico, il sistema invia un avviso per notificare all'utente che è arrivato il suo turno e quando il timer associato al suo turno scade senza che abbia effettuato una mossa.
+
 ## 🛠 Stack Tecnologico
 
 L'applicativo adotta l'architettura **MERN** arricchita dall'uso di WebSocket per garantire la comunicazione in tempo reale.
