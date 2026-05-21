@@ -1,3 +1,5 @@
+// per questa parte ho utilizzato, oltre alle slide del corso, l'IA
+
 class NotificationManager {
   permission: NotificationPermission;
 

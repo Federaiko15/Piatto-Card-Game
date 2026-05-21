@@ -28,7 +28,7 @@ const NavbarChat = ({
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault(); // così si evita di ricaricare ad ogni messaggio mandato la pagina, cosa che farebbe saltare la connesione con il socket
+    e.preventDefault(); // così si evita di ricaricare, ad ogni messaggio mandato, la pagina, cosa che farebbe saltare la connesione con il socket
 
     if (message.trim() === "") return; // controllo per i messaggi vuoti
     if (isCooldown) return; // Se l'utente è in cooldown, ignoriamo il click
@@ -52,7 +52,7 @@ const NavbarChat = ({
     }, 1500);
   };
   // questo hook, useRef, è utilizzato per creare un riferimento, un ancora, ad un elemento html
-  // Noi lo utilizzeremo per scrollare automaticamente alla fine dei messaggi, grazie anche ad useEffect
+  // lo utilizzo per far scorrere automaticamente la chat.
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {

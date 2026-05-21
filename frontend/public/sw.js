@@ -1,5 +1,5 @@
 // qui ci sarà lo script eseguito dal service worker, che gestirà lo stato offline del gioco
-
+// in questa parte ho utilizzato l'IA, prendendo anche come base gli script fatti vedere nelle slide del corso
 // Versione semrpe da aggiornare in caso di modifiche al file
 const CACHE_NAME = "piatto-cache-v6";
 
@@ -19,14 +19,13 @@ const generateCardAssets = () => {
 
   for (const seme of suits) {
     for (const value of values) {
-      // IMPORTANTE: Il percorso deve corrispondere a dove si trovano le immagini nella cartella `public`.
-      // Se le tue carte sono in `public/assets/cards/`, il percorso corretto è `/assets/cards/`.
+      // Il percorso deve corrispondere a dove si trovano le immagini nella cartella `public`.
       assets.push(`./cards/${seme}_${value}.png`);
     }
   }
 
-  assets.push("./cards/back.png");
-  assets.push("/assets/table.png"); // Immagine del tavolo da gioco
+  assets.push("./cards/back.png"); // inserisco anche l'immagine del back delle carte
+  assets.push("/assets/table.png"); // e l'immagine del tavolo di gioco
 
   return assets;
 };
@@ -103,7 +102,7 @@ self.addEventListener("fetch", (event) => {
         });
       })
       .catch((error) => {
-        // Ignoriamo gli errori di aborto dovuti al cambio/aggiornamento pagina
+        // Ignoriamo gli errori di abort dovuti al cambio/aggiornamento pagina
         if (error.name !== "AbortError" && !error.message.includes("aborted")) {
           console.log(
             "Sei offline o la risorsa non è raggiungibile:",

@@ -89,6 +89,15 @@
   background-color: #d68910;
 }
 
+.auth-resend-btn {
+  background-color: #8e44ad;
+  margin-top: 0.3125rem;
+}
+
+.auth-resend-btn:hover {
+  background-color: #9b59b6;
+}
+
 .auth-switch-text {
   margin-top: 1.25rem;
   text-align: center;

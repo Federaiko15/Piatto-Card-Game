@@ -27,29 +27,10 @@ export default function PlayerSeat({
         ${isReallyActive ? "active-turn" : ""} 
         ${isEliminato ? "seat-eliminato" : ""} 
         ${isLogout ? "seat-logout" : ""}`}
-      style={{ marginTop: "40px" }}
     >
       {/* Indicatore del turno */}
-      {isReallyActive && (
-        <div
-          style={{
-            position: "absolute",
-            top: "-35px", // Questo lo spinge fisicamente 35 pixel sopra il box
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999, // Assicura che niente lo copra
-            backgroundColor: "#FF9800",
-            color: "white",
-            padding: "4px 10px",
-            borderRadius: "8px",
-            boxShadow: "0px 5px 15px rgba(0,0,0,0.5)",
-            fontSize: "0.85rem",
-            fontWeight: "bold",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Tocca a lui!
-        </div>
+      {isReallyActive && !isHero && (
+        <div className="turn-indicator">Tocca a lui!</div>
       )}
 
       {/* Dettagli Giocatore */}

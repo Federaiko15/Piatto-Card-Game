@@ -1,3 +1,6 @@
+// qui ho utilizzato tailwind perchè volevo convertire l'intero progetto eliminando tutti i file css, ma non ho avuto abbastanza tempo
+// per farlo
+
 import PlayerSeat from "./PlayerSeat";
 import type { Player } from "../types";
 

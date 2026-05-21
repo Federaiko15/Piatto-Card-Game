@@ -27,6 +27,10 @@ export default function Auth() {
     forgotForm,
     handleForgotChange,
     handleForgotSubmit,
+    hasOtpFailed,
+    handleSendOtp,
+    hasForgotOtpFailed,
+    handleForgotSendOtp,
   } = useAuth();
 
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
@@ -110,6 +114,17 @@ export default function Auth() {
                 >
                   {forgotStep === 1 ? "Invia OTP" : "Reimposta Password"}
                 </LoadingButton>
+
+                {forgotStep === 2 && hasForgotOtpFailed && (
+                  <button
+                    type="button"
+                    className="auth-submit-btn auth-resend-btn"
+                    onClick={handleForgotSendOtp}
+                    disabled={isLoading}
+                  >
+                    Richiedi nuovo OTP
+                  </button>
+                )}
               </form>
               <p className="auth-switch-text">
                 Ti sei ricordato la password?{" "}
@@ -241,6 +256,17 @@ export default function Auth() {
                       ? "Invia OTP"
                       : "Crea un account"}
                 </LoadingButton>
+
+                {!isLogin && registrationStep === 2 && hasOtpFailed && (
+                  <button
+                    type="button"
+                    className="auth-submit-btn auth-resend-btn"
+                    onClick={handleSendOtp}
+                    disabled={isLoading}
+                  >
+                    Richiedi nuovo OTP
+                  </button>
+                )}
 
                 <button
                   type="button"

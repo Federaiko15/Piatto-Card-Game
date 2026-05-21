@@ -4,10 +4,10 @@
   position: relative;
   padding: clamp(10px, 1.5vw, 15px);
   margin-top: clamp(
-    15px,
-    2vw,
-    20px
-  ); /* <-- Aggiungi questo per dare respiro al tooltip! */
+    25px,
+    4vw,
+    40px
+  ); /* Margine responsive per dare respiro al tooltip! */
   border-radius: 10px;
   text-align: center;
   transition: all 0.3s ease;
@@ -30,18 +30,18 @@
 /* Il badge principale spinto più in alto */
 .turn-indicator {
   position: absolute;
-  top: -35px; /* <-- IL FIX È QUI! L'abbiamo alzato di molto */
+  top: clamp(-35px, -5vw, -25px); /* Altezza responsive */
   left: 50%;
   transform: translateX(-50%);
   background-color: #ff9800;
   color: white;
-  padding: 4px 12px;
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 12px);
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: clamp(0.7rem, 1.2vw, 0.85rem);
   font-weight: bold;
   white-space: nowrap;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  z-index: 10; /* Ci assicuriamo che stia sopra a tutto */
+  box-shadow: 0 clamp(3px, 1vw, 5px) clamp(8px, 2vw, 15px) rgba(0, 0, 0, 0.5);
+  z-index: 9999; /* Ci assicuriamo che stia sopra a tutto */
 }
 
 /* La magia: Il triangolino sotto per fare l'effetto "Fumetto" */

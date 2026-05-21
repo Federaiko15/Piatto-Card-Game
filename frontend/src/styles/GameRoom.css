@@ -182,7 +182,6 @@
 .placeholder-box {
   /* ... i tuoi stili esistenti per il box (border-radius, flex, etc.) ... */
   position: relative; /* Fondamentale per posizionare l'effetto interno */
-  overflow: hidden; /* Assicura che l'effetto non esca dai bordi arrotondati */
   transition: all 0.3s ease; /* Transizione morbida */
 }
 
@@ -233,15 +232,6 @@
   100% {
     opacity: 0.6;
   }
-}
-
-/* (Opzionale) Se vuoi mantenere la scritta "TOCCA A LUI!" in un'altra posizione,
-   assicurati che non copra il nome. Potresti metterla sotto il saldo. */
-.turn-indicator {
-  /* ... i tuoi stili ... */
-  top: auto; /* Togli top: -10px; */
-  bottom: 2px; /* Mettila in basso dentro il box */
-  z-index: 3;
 }
 
 .pixel-image {

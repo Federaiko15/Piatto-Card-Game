@@ -1,3 +1,7 @@
+// all'interno di questo file non potevo chiamare la funzione fetchWithAuth, perchè ancora i token devono essere creati, quindi
+// a differenza degli altri file, ho dovuto chiamare la funzione normale passando tutti i metodo necessari,
+// cosa che non faccio negli altri perchè, ad esempio l'headers, viene attaccato direttamente in fetchWithAuth
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type {
@@ -30,6 +34,7 @@ export function useAuth() {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [isForcedOffline, setIsForcedOffline] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasOtpFailed, setHasOtpFailed] = useState<boolean>(false);
 
   // STATI PER IL RECUPERO PASSWORD
   const [isForgotPassword, setIsForgotPassword] = useState<boolean>(false);
@@ -40,6 +45,7 @@ export function useAuth() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [hasForgotOtpFailed, setHasForgotOtpFailed] = useState<boolean>(false);
 
   // Stato per il form della modalità Offline
   const [offlineForm, setOfflineForm] = useState({
@@ -73,6 +79,7 @@ export function useAuth() {
         alert: false,
       });
       setRegistrationStep(2);
+      setHasOtpFailed(false);
     } catch (error) {
       console.error("Errore nell'invio OTP:", error);
       showSwal({
@@ -114,6 +121,7 @@ export function useAuth() {
           title: data.message,
           alert: true,
         });
+        setHasOtpFailed(true);
         return;
       }
 
@@ -229,41 +237,56 @@ export function useAuth() {
     }));
   };
 
-  const handleForgotSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleForgotSendOtp = async () => {
     setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/send-otp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: forgotForm.email }),
+          credentials: "include",
+        },
+      );
 
-    if (forgotStep === 1) {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/users/send-otp`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: forgotForm.email }),
-            credentials: "include",
-          },
-        );
-
-        if (!response.ok) {
-          showSwal({
-            type: "error",
-            title: "Errore di connessione",
-            alert: true,
-          });
-        }
-        setForgotStep(2);
-      } catch (error) {
+      if (!response.ok) {
         showSwal({
           type: "error",
           title: "Errore di connessione",
           alert: true,
         });
         return;
-      } finally {
-        setIsLoading(false);
       }
+
+      showSwal({
+        type: "game-advice",
+        title:
+          forgotStep === 2
+            ? "Nuovo codice OTP inviato!"
+            : "Codice OTP inviato!",
+        alert: false,
+      });
+      setForgotStep(2);
+      setHasForgotOtpFailed(false);
+    } catch (error) {
+      showSwal({
+        type: "error",
+        title: "Errore di connessione",
+        alert: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (forgotStep === 1) {
+      await handleForgotSendOtp();
     } else {
+      setIsLoading(true);
       if (forgotForm.newPassword !== forgotForm.confirmPassword) {
         showSwal({
           type: "error",
@@ -292,11 +315,12 @@ export function useAuth() {
 
         if (!response.ok) {
           showSwal({
-            type: "error", // game-error non esiste nei tuoi tipi, uso error
+            type: "error",
             title: "Errore nel reimpostare la password",
             alert: true,
           });
-          return; // FONDAMENTALE PER FERMARE L'ESECUZIONE ED EVITARE IL FALSO MESSAGGIO DI SUCCESSO
+          setHasForgotOtpFailed(true);
+          return;
         }
 
         showSwal({
@@ -346,5 +370,9 @@ export function useAuth() {
     setForgotForm,
     handleForgotChange,
     handleForgotSubmit,
+    hasOtpFailed,
+    handleSendOtp,
+    hasForgotOtpFailed,
+    handleForgotSendOtp,
   };
 }

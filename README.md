@@ -24,7 +24,18 @@ L'applicativo adotta l'architettura **MERN** arricchita dall'uso di WebSocket pe
 - **Socket.IO** per la gestione degli eventi in-game, i messaggi in chat e le stanze/lobby
 - **MongoDB** con **Mongoose** per il database (salvataggio Utenti, Storico Partite, Lobby in attesa)
 - **JWT (JSON Web Token)** e **Bcrypt** per l'autenticazione sicura (meccanismo di Refresh Token via HTTP-only Cookies)
-- **Nodemailer** per la verifica account tramite OTP inviato via email
+- **Nodemailer** e **Resend** per la verifica account tramite codice OTP inviato via email. In fase di _development_ le email vengono inviate tramite Nodemailer appoggiandosi al servizio Ethereal. In ambiente di _production_, invece, viene utilizzato Resend.
+
+---
+
+## 📜 Regole del Gioco
+
+Le regole base del tavolo sono semplici ma fondamentali:
+
+1. **Puntata obbligatoria**: Prima di poter pescare una carta, devi piazzare una puntata (bet). Puoi regolare l'ammontare della tua puntata in base al valore presente sul piatto e a ciò che pensi possa uscire.
+2. **Richiesta carta**: Dopo aver effettuato la puntata, è possibile richiedere la carta.
+3. **Pulsante "Piatto"**: Questo pulsante speciale serve a puntare in un colpo solo tutto l'ammontare presente in quel momento sul piatto. Se i soldi che hai a disposizione sono minori del valore del piatto, punterai automaticamente tutti i tuoi soldi rimanenti (all-in).
+4. **Tempo limite del turno**: Ogni turno dura al massimo **1 minuto**. Al termine del tempo, se non sono state effettuate mosse, il sistema effettuerà per te una puntata automatica con ammontare pari a 1.
 
 ---
 
