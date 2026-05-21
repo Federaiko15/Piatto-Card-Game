@@ -276,3 +276,9 @@
 .delete-account > button:hover {
   color: #d68910;
 }
+
+@media (max-width: 480px) {
+  .profile-sidebar {
+    width: 100vw;
+  }
+}

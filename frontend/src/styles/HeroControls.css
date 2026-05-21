@@ -1,0 +1,75 @@
+/* HeroControls.css */
+
+.hero-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  z-index: 20;
+}
+
+.hero-controls-group {
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 1vw, 8px);
+  background: rgba(0, 0, 0, 0.6);
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 12px);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  border: 1px solid #444;
+}
+
+.btn-hero {
+  padding: clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px);
+  border-radius: 8px;
+  border: none;
+  background-color: #ffd700;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-hero:hover:not(:disabled) {
+  background-color: #ffea00;
+  transform: scale(1.05);
+}
+
+.btn-hero:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(50%);
+}
+
+.hero-bet-input {
+  width: clamp(60px, 10vw, 80px);
+  padding: clamp(6px, 1vw, 8px) 10px;
+  border-radius: 8px;
+  border: 1px solid #666;
+  background-color: #1f1f1f;
+  color: white;
+  text-align: center;
+  outline: none;
+  font-weight: bold;
+}
+
+.hero-bet-input:focus {
+  border-color: #f39c12;
+}
+
+.hero-bet-input:disabled {
+  opacity: 0.5;
+}
+
+/* RESPONSIVE: incoloniamo i gruppi su dispositivi mobili */
+@media (max-width: 768px) {
+  .hero-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hero-controls-group {
+    padding: 5px 8px;
+  }
+}

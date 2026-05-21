@@ -25,6 +25,8 @@
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 30px;
+  position: relative;
+  z-index: 100; /* Assicura che la tendina di ricerca stia sopra al contenuto sottostante */
 }
 
 .lobbies-titles h1 {
@@ -165,7 +167,9 @@
 /* Layout principale due colonne */
 .lobbies-content {
   display: flex;
+  flex-direction: row; /* Torna a due colonne affiancate su schermi larghi */
   gap: 30px;
+  align-items: flex-start;
   max-width: 1300px;
   margin: 0 auto;
   padding: 0 20px 40px 20px;
@@ -174,7 +178,7 @@
 }
 
 .lobbies-sidebar {
-  flex: 0 0 350px;
+  flex: 0 0 350px; /* Occupa uno spazio fisso a sinistra */
   position: sticky;
   top: 40px;
 }
@@ -184,13 +188,15 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
 }
 
 /* Form Creazione Lobby */
 .create-lobby-form {
-  margin: 0;
+  margin: 0 auto;
   padding: 25px;
   width: 100%;
+  max-width: 100%; /* Sulla sinistra occupa tutto lo spazio concesso dalla sidebar */
   box-sizing: border-box;
   /* Sfondo semi-trasparente per far intravedere il background */
   background: rgba(30, 40, 50, 0.85);
@@ -228,7 +234,7 @@
 }
 
 .btn-submit-form {
-  padding: 10px;
+  padding: 10px 30px;
   font-size: 18px;
   font-weight: bold;
   cursor: pointer;
@@ -239,6 +245,7 @@
   transition:
     background-color 0.2s ease,
     transform 0.1s ease;
+  align-self: center; /* Questo restringe il bottone al suo contenuto e lo centra */
 }
 
 .btn-submit-form:hover {
@@ -346,18 +353,27 @@
   transform: scale(0.98);
 }
 
-/* Rendi il design responsivo se lo schermo si stringe */
-@media (max-width: 900px) {
+/* Passa ad una singola colonna quando la finestra non ha spazio 
+   per il form e per almeno due lobby affiancate (sotto i 1024px) */
+@media (max-width: 1024px) {
   .lobbies-content {
     flex-direction: column;
+    align-items: center;
   }
   .lobbies-sidebar {
     flex: none;
     width: 100%;
     position: static;
   }
+  .lobbies-main {
+    width: 100%;
+  }
+  .create-lobby-form {
+    max-width: 500px; /* Il form si restringe elegantemente al centro dello schermo */
+  }
 }
 
+/* Rendi il design responsivo se lo schermo si stringe */
 @media (max-width: 600px) {
   .lobbies-header {
     flex-direction: column;
@@ -368,5 +384,9 @@
   .header-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .btn-submit-form {
+    width: 100%;
   }
 }

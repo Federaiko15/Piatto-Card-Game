@@ -18,7 +18,8 @@
   backdrop-filter: blur(8px);
   color: white;
   padding: 2.5rem 3rem;
-  min-width: 320px;
+  width: 90%;
+  max-width: 400px;
   border: 4px solid #f39c12;
   border-radius: 1.5rem; /* Aumentato per smussare bene i bordi */
   display: flex;
@@ -122,8 +123,8 @@
   border-radius: 1.5rem; /* Reso coerente e ben arrotondato */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); /* Ombra morbida coerente */
   color: white;
-  width: 100%;
-  max-width: 28rem;
+  width: 90%;
+  max-width: 400px;
   margin: 0 auto;
 }
 
@@ -192,4 +193,13 @@
 
 .offline-submit-btn:hover {
   background-color: #ea580c;
+}
+
+/* Responsive per schermi molto piccoli */
+@media (max-width: 480px) {
+  .auth-box,
+  .offline-box {
+    padding: 1.5rem;
+    width: 95%;
+  }
 }

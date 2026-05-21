@@ -19,3 +19,10 @@
     transform: rotate(360deg);
   }
 }
+
+@media (max-width: 480px) {
+  .loading-content {
+    flex-wrap: wrap;
+    text-align: center;
+  }
+}
