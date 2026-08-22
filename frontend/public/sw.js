@@ -1,7 +1,6 @@
-// qui ci sarà lo script eseguito dal service worker, che gestirà lo stato offline del gioco
-// in questa parte ho utilizzato l'IA, prendendo anche come base gli script fatti vedere nelle slide del corso
-// Versione semrpe da aggiornare in caso di modifiche al file
-const CACHE_NAME = "piatto-cache-v7";
+// Service Worker per Piatto Card Game
+// Gestione stato offline e caching asset
+const CACHE_NAME = "piatto-cache-v8";
 
 // Asset di base dell'applicazione
 const CORE_ASSETS = [
@@ -9,9 +8,11 @@ const CORE_ASSETS = [
   "/index.html",
   "/manifest.webmanifest",
   "/assets/auth.png",
+  "/assets/table.png",
+  "/cards/back.png",
 ];
 
-// Genero anche qui tutti i percorsi delle carte che prendo dalla cartella cards in public
+// Genera tutti i percorsi delle carte siciliane
 const generateCardAssets = () => {
   const assets = [];
   const suits = ["denari", "bastoni", "spade", "coppe"];
@@ -19,33 +20,28 @@ const generateCardAssets = () => {
 
   for (const seme of suits) {
     for (const value of values) {
-      // Il percorso deve corrispondere a dove si trovano le immagini nella cartella `public`.
-      assets.push(`./cards/${seme}_${value}.png`);
+      assets.push(`/cards/${seme}_${value}.png`);
     }
   }
-
-  assets.push("./cards/back.png"); // inserisco anche l'immagine del back delle carte
-  assets.push("/assets/table.png"); // e l'immagine del tavolo di gioco
 
   return assets;
 };
 
 const CARD_ASSETS = generateCardAssets();
-
-// Uniamo tutti gli asset da mettere in cache all'installazione
 const ASSETS_TO_CACHE = [...CORE_ASSETS, ...CARD_ASSETS];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing Service Worker... Caching assets.");
+  console.log("[SW] Installazione nuova versione:", CACHE_NAME);
+  // Forza l'attivazione immediata del nuovo Service Worker
+  self.skipWaiting();
 
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Usiamo un ciclo for invece di addAll per evitare che un singolo 404 faccia fallire tutto
       for (const asset of ASSETS_TO_CACHE) {
         try {
           await cache.add(asset);
         } catch (err) {
-          console.warn(`Impossibile mettere in cache l'asset: ${asset}`, err);
+          console.warn(`[SW] Impossibile mettere in cache l'asset: ${asset}`, err);
         }
       }
     }),
@@ -53,62 +49,85 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("Activating");
+  console.log("[SW] Attivazione nuova versione:", CACHE_NAME);
 
-  // Elimina le vecchie cache quando aggiorno CACHE_NAME
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log("Service Worker: pulizia vecchia cache", cacheName);
+            console.log("[SW] Pulizia vecchia cache obsoleta:", cacheName);
             return caches.delete(cacheName);
           }
         }),
       );
+    }).then(() => {
+      // Prende subito il controllo dei client aperti
+      return self.clients.claim();
     }),
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  // evento che gestisce il collegamento tra il server e la proxy
   if (event.request.method !== "GET") return;
 
-  // Intercetto le chiamate api che viaggiano tra il client e il server
-  if (event.request.url.includes("/api/v1/")) return;
+  const url = event.request.url;
 
-  event.respondWith(
-    caches
-      .match(event.request.url)
-      .then((cachedResponse) => {
+  // Non intercettare chiamate API, Socket.io o estensioni browser
+  if (
+    url.includes("/api/v1/") ||
+    url.includes("socket.io") ||
+    url.startsWith("chrome-extension")
+  ) {
+    return;
+  }
+
+  // Per le richieste di navigazione HTML (quando l'utente cambia pagina o fa refresh)
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match("/index.html") || caches.match("/");
+      }),
+    );
+    return;
+  }
+
+  // Strategia Cache-First per immagini e carte
+  if (url.includes("/cards/") || url.includes("/assets/")) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) {
-          return cachedResponse; // se troviamo il file in cache lo restituiamo subito
+          return cachedResponse;
         }
 
         return fetch(event.request).then((networkResponse) => {
-          if (
-            !networkResponse ||
-            networkResponse.status !== 200 ||
-            networkResponse.type !== "basic"
-          ) {
-            return networkResponse;
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
+          return networkResponse;
+        });
+      }),
+    );
+    return;
+  }
 
+  // Per il resto degli asset: Network con fallback in cache
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
           });
-          return networkResponse;
-        });
-      })
-      .catch((error) => {
-        // Ignoriamo gli errori di abort dovuti al cambio/aggiornamento pagina
-        if (error.name !== "AbortError" && !error.message.includes("aborted")) {
-          console.log(
-            "Sei offline o la risorsa non è raggiungibile:",
-            event.request.url,
-          );
         }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request);
       }),
   );
 });
