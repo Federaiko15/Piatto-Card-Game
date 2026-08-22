@@ -162,18 +162,7 @@ export default function GameRoom() {
           </div>
         )}
 
-        {/* IL PIATTO */}
-        <div className="grid-cell mid-center">
-          <div className="table-center">
-            <img src={piatto} alt="Piatto" className="pixel-image" />
-            <p className="paragraph-coin">
-              {pot}
-              <img src={coins} alt="Monete" className="pixel-coins" />
-            </p>
-          </div>
-        </div>
-
-        {/* IL CROUPIER E LA CARTA */}
+        {/* IL CROUPIER E LA CARTA (In alto) */}
         <div className="grid-cell high-center">
           {newMazzo && (
             <div className="new-mazzo-message">
@@ -181,7 +170,7 @@ export default function GameRoom() {
             </div>
           )}
           <div className="table-high-center">
-            <img src={croupier} alt="Croupier" className="pixel-image" />
+            <img src={croupier} alt="Croupier" className="pixel-image croupier-img" />
             {displayedCard.value > 0 && (
               <div className="card-display">
                 <Card
@@ -191,6 +180,21 @@ export default function GameRoom() {
                 />
               </div>
             )}
+          </div>
+        </div>
+
+        {/* IL PIATTO E I SOLDI */}
+        <div className="grid-cell mid-center">
+          <div className="table-center">
+            <div className="piatto-container">
+              <img src={piatto} alt="Piatto" className="pixel-image piatto-img" />
+            </div>
+            <div className="pot-container">
+              <p className="paragraph-coin">
+                <span className="pot-amount">{pot}</span>
+                <img src={coins} alt="Monete" className="pixel-coins" />
+              </p>
+            </div>
           </div>
         </div>
 

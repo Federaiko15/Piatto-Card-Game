@@ -53,7 +53,7 @@ const createLobby = async (req, res) => {
       {
         id: creatorUser._id.toString(),
         username: creatorUser.username,
-        balance: creatorUser.balance - starterBet,
+        balance: creatorUser.balance,
         status: "waiting",
         currentBet: 0,
       },
@@ -159,7 +159,7 @@ const joinLobby = async (req, res) => {
     game.activePlayers.push({
       id: user._id.toString(),
       username: user.username,
-      balance: user.balance - existingLobby.starterBet,
+      balance: user.balance,
       status: "waiting",
       currentBet: 0,
     });
@@ -196,6 +196,7 @@ const joinLobby = async (req, res) => {
         giocatoriAlTavolo: game.activePlayers,
         piatto: game.piatto,
         idCreatore: existingLobby.owner.toString(),
+        currentTurn: 0,
       });
     }
 

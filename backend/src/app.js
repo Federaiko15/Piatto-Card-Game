@@ -25,8 +25,10 @@ app.use(express.json()); // questo server a dare la possibilità alla mia app ex
 
 import userRouter from "./routes/user.route.js";
 import lobbyRouter from "./routes/lobby.route.js";
+import steamPollRouter from "./routes/steamPoll.route.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/lobbies", lobbyRouter);
+app.use("/api/v1/steam-poll", steamPollRouter);
 
 export default app;

@@ -42,40 +42,12 @@ export default function Lobbies() {
           <p>Qui puoi vedere i tavoli a cui sederti.</p>
         </div>
         <div className="header-actions">
-          <div className="lobbies-search-section">
-            <button
-              className="btn-general-search"
-              onClick={() => setIsSearching(!isSearching)}
-            >
-              Cerca Tavoli
-            </button>
-            {isSearching && (
-              <form onSubmit={handleSearchSubmit} className="form-search">
-                <select
-                  value={searchStatus}
-                  onChange={(e) => setSearchStatus(e.target.value)}
-                >
-                  <option value="free">Tavoli Liberi</option>
-                  <option value="full">Tavoli Pieni</option>
-                  <option value="all">Tutti i Tavoli</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Starter Bet Max"
-                  value={searchStarterBet === -1 ? "" : searchStarterBet}
-                  onChange={(e) =>
-                    setSearchStarterBet(
-                      e.target.value === "" ? -1 : Number(e.target.value),
-                    )
-                  }
-                  min="1"
-                />
-                <button type="submit" className="btn-common btn-search">
-                  Applica Filtri
-                </button>
-              </form>
-            )}
-          </div>
+          <button
+            className="btn-general-search"
+            onClick={() => setIsSearching(true)}
+          >
+            🔍 Cerca Tavoli
+          </button>
           <button
             onClick={() => setViewProfile(true)}
             className="btn-common btn-profile"
@@ -84,6 +56,64 @@ export default function Lobbies() {
           </button>
         </div>
       </div>
+
+      {/* MODALE DI RICERCA / FILTRI TAVOLO (Posizionato a livello root) */}
+      {isSearching && (
+        <>
+          <div
+            className="search-overlay"
+            onClick={() => setIsSearching(false)}
+          />
+          <form
+            onSubmit={(e) => {
+              handleSearchSubmit(e);
+              setIsSearching(false);
+            }}
+            className="form-search-modal"
+          >
+            <div className="form-search-header">
+              <h4>Filtra Tavoli</h4>
+              <button
+                type="button"
+                className="search-close-btn"
+                onClick={() => setIsSearching(false)}
+                aria-label="Chiudi"
+              >
+                ✕
+              </button>
+            </div>
+
+            <label className="search-field-label">Stato del Tavolo</label>
+            <select
+              value={searchStatus}
+              onChange={(e) => setSearchStatus(e.target.value)}
+              className="search-select"
+            >
+              <option value="free">Tavoli Liberi</option>
+              <option value="full">Tavoli Pieni</option>
+              <option value="all">Tutti i Tavoli</option>
+            </select>
+
+            <label className="search-field-label">Puntata Massima</label>
+            <input
+              type="number"
+              placeholder="Starter Bet Max (es. 50)"
+              value={searchStarterBet === -1 ? "" : searchStarterBet}
+              onChange={(e) =>
+                setSearchStarterBet(
+                  e.target.value === "" ? -1 : Number(e.target.value),
+                )
+              }
+              min="1"
+              className="search-input"
+            />
+
+            <button type="submit" className="btn-common btn-search btn-search-apply">
+              Applica Filtri
+            </button>
+          </form>
+        </>
+      )}
 
       <div className="lobbies-content">
         <div className="lobbies-sidebar">

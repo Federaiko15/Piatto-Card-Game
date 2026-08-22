@@ -6,7 +6,7 @@ export async function handleTurnTimeout(game) {
   const user = game.activePlayers[game.currentTurnIndex];
 
   game.io.to(game.lobbyId).emit("skip_turn", {
-    message: "Turno salvato per inattività.",
+    message: "Turno saltato per inattività.",
     userId: user.id,
     username: user.username,
   });
@@ -15,11 +15,24 @@ export async function handleTurnTimeout(game) {
   );
 
   if (user.status !== "playing" || user.balance < bet) {
+    const reason =
+      user.status !== "playing"
+        ? `${user.username} non è attivo e passa il turno.`
+        : `${user.username} non ha abbastanza soldi per la puntata minima e passa il turno.`;
     game.io.to(game.lobbyId).emit("message_resolved", {
       userId: null,
-      message: `${user.username} non ha abbastanza soldi per la puntata minima e passa il turno.`,
+      message: reason,
     });
     game.nextTurn();
+    game.io.to(game.lobbyId).emit("turn_resolved", {
+      message: reason,
+      card: { seed: "", value: 0 },
+      winnerId: user.id,
+      newBalance: user.balance,
+      newPiatto: game.piatto,
+      nextTurn: game.currentTurnIndex,
+      isGameFinished: false,
+    });
     return;
   }
 

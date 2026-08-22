@@ -80,7 +80,7 @@ export function useGameEngine(lobbyId: string | undefined) {
         setIsGameFinished(false);
         setIsWaitingRematch(false);
         setCard({ seed: "", value: 0 });
-        setCurrentTurn(0);
+        setCurrentTurn(data.currentTurn !== undefined ? data.currentTurn : 0);
       }
     });
 

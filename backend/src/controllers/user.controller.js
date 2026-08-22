@@ -122,12 +122,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    if (existing.online) {
-      return res.status(400).json({
-        message: "User already logged in",
-      });
-    }
-
     // controllo quindi se la password inserita è corretta facendo la verifica tramite la funzione compare di bcrypt
     const isPasswordCorrect = await bcrypt.compare(password, existing.password);
     if (!isPasswordCorrect) {
@@ -155,6 +149,9 @@ const loginUser = async (req, res) => {
         _id: existing._id,
         username: existing.username,
         email: existing.email,
+        balance: existing.balance,
+        hasVotedSteam: existing.hasVotedSteam,
+        steamVote: existing.steamVote,
         accessToken,
       },
     });
@@ -213,6 +210,8 @@ const getUser = async (req, res) => {
         username: player.username,
         email: player.email,
         balance: player.balance,
+        hasVotedSteam: player.hasVotedSteam,
+        steamVote: player.steamVote,
       },
     });
   } catch (error) {

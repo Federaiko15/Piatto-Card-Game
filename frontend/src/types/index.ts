@@ -14,6 +14,8 @@ export interface User {
   username: string;
   balance: number;
   status: string;
+  hasVotedSteam?: boolean;
+  steamVote?: string | null;
 }
 
 export interface Player {
@@ -29,6 +31,8 @@ export interface UserProfile {
   username: string;
   email: string;
   balance: number;
+  hasVotedSteam?: boolean;
+  steamVote?: string | null;
 }
 
 export interface Lobby {
@@ -125,6 +129,7 @@ export interface SocketJoinResponse {
   giocatoriAlTavolo?: Player[];
   piatto?: number;
   idCreatore?: string;
+  currentTurn?: number;
 }
 
 export interface SocketDrawResponse {
@@ -159,7 +164,25 @@ export interface SocketErrorResponse {
 }
 
 // ==========================================
-// 5. COMPONENTI UI & UTILITY
+// 5. SONDAGGIO STEAM (Steam Poll)
+// ==========================================
+export interface SteamPollStats {
+  totalVotes: number;
+  yesCount: number;
+  noCount: number;
+  yesPercentage: number;
+}
+
+export interface SteamPollResponse {
+  success: boolean;
+  message?: string;
+  stats: SteamPollStats;
+  hasVoted: boolean;
+  userVote: string | null;
+}
+
+// ==========================================
+// 6. COMPONENTI UI & UTILITY
 // ==========================================
 export interface AlertProps {
   type?: string;

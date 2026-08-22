@@ -80,26 +80,30 @@ export default function OfflineRoom() {
           className="table-background-image"
         />
 
-        {/* PIATTO (Fisso al centro) */}
-        <div className="grid-cell mid-center">
-          <div className="table-center">
-            <img src={piattoImg} alt="Piatto" className="pixel-image" />
-            <p className="paragraph-coin">
-              {piatto}
-              <img src={coinsImg} alt="Monete" className="pixel-coins" />
-            </p>
-          </div>
-        </div>
-
-        {/* CROUPIER E CARTA (Fissi in alto) */}
+        {/* CROUPIER E CARTA (In alto) */}
         <div className="grid-cell high-center">
           <div className="table-high-center">
-            <img src={croupierImg} alt="Croupier" className="pixel-image" />
+            <img src={croupierImg} alt="Croupier" className="pixel-image croupier-img" />
             {card.value > 0 && (
               <div className="card-display">
                 <Card seed={card.seed} value={card.value} isHidden={false} />
               </div>
             )}
+          </div>
+        </div>
+
+        {/* PIATTO E SOLDI */}
+        <div className="grid-cell mid-center">
+          <div className="table-center">
+            <div className="piatto-container">
+              <img src={piattoImg} alt="Piatto" className="pixel-image piatto-img" />
+            </div>
+            <div className="pot-container">
+              <p className="paragraph-coin">
+                <span className="pot-amount">{piatto}</span>
+                <img src={coinsImg} alt="Monete" className="pixel-coins" />
+              </p>
+            </div>
           </div>
         </div>
 

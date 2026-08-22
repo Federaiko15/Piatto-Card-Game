@@ -63,6 +63,7 @@ const registerGameHandlers = (io, socket) => {
           nuovaPartita: lobbyId,
           piatto: matchInProgress.piatto,
           idCreatore: matchInProgress.idCreatore,
+          currentTurn: matchInProgress.currentTurnIndex,
         });
       } else {
         socket.emit("join_info", {

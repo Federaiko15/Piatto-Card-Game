@@ -6,6 +6,8 @@ import type { SocketMessageChatResponse, Player } from "../types/index.ts";
 import { useNavigate } from "react-router-dom";
 import showSwal from "../services/CustomAlert.ts";
 
+import UserAvatar from "./UserAvatar";
+
 interface NavbarChatProps {
   socket: Socket | null;
   lobbyId: string;
@@ -97,25 +99,32 @@ const NavbarChat = ({
             messages.map((msg, index) => {
               const isSystemMessage = msg.userId === null;
 
-              // render del messaggio di sistema
+              // Messaggio di sistema (es. eventi di gioco)
               if (isSystemMessage) {
                 return (
                   <div key={index} className="chat-message system-message">
-                    <span className="chat-text">{msg.message}</span>
+                    <span className="chat-text">📢 {msg.message}</span>
                   </div>
                 );
               }
 
-              // render di un messaggio di un utente normale
+              // Messaggio inviato da un utente
               const sender = playersInfo.find((p) => p.id === msg.userId);
               const displayName = sender
                 ? sender.username
-                : "Utente sconosciuto";
+                : "Giocatore";
 
               return (
-                <div key={index} className="chat-message">
-                  <span className="chat-username">{displayName}: </span>
-                  <span className="chat-text">{msg.message}</span>
+                <div key={index} className="chat-message-row">
+                  <UserAvatar
+                    username={displayName}
+                    size="xs"
+                    className="chat-avatar"
+                  />
+                  <div className="chat-bubble">
+                    <span className="chat-username">{displayName}</span>
+                    <span className="chat-text">{msg.message}</span>
+                  </div>
                 </div>
               );
             })

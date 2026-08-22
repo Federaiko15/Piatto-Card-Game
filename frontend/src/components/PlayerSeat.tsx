@@ -1,4 +1,5 @@
 import type { Player } from "../types";
+import UserAvatar from "./UserAvatar";
 import "../styles/PlayerSeat.css";
 
 interface PlayerSeatProps {
@@ -12,13 +13,13 @@ export default function PlayerSeat({
   isHero,
   isActive,
 }: PlayerSeatProps) {
-  // Raggruppiamo i controlli sullo status per comodità
+  // Raggruppiamo i controlli sullo status
   const isEliminato = player.status === "eliminato";
   const isLogout = player.status === "logout";
   const isWaiting = player.status === "waiting";
+  const isBot = (player as any).hero === false && (player as any).personality !== undefined;
 
-  // Anche se il backend salta i turni di chi è eliminato/logout,
-  // mettiamo un doppio controllo visivo
+  // Controllo visivo per il turno
   const isReallyActive = isActive && !isEliminato && !isLogout;
 
   return (
@@ -28,15 +29,28 @@ export default function PlayerSeat({
         ${isEliminato ? "seat-eliminato" : ""} 
         ${isLogout ? "seat-logout" : ""}`}
     >
-      {/* Indicatore del turno */}
+      {/* Indicatore del turno (Fumetto) */}
       {isReallyActive && !isHero && (
         <div className="turn-indicator">Tocca a lui!</div>
       )}
 
-      {/* Dettagli Giocatore */}
-      <h4 className="player-name">{player.username}</h4>
+      {/* Avatar del Giocatore */}
+      <div className="seat-avatar-wrapper">
+        <UserAvatar
+          username={player.username}
+          size="sm"
+          isHero={isHero}
+          isBot={isBot}
+        />
+      </div>
 
-      <p className="player-balance">💰 {player.balance}</p>
+      {/* Dettagli Giocatore */}
+      <div className="seat-info">
+        <h4 className="player-name" title={player.username}>
+          {player.username}
+        </h4>
+        <p className="player-balance">💰 {player.balance}</p>
+      </div>
 
       {/* Etichette Dinamiche in base allo status */}
       {isWaiting && <span className="status-badge waiting">In attesa...</span>}

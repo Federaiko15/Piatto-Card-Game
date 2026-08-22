@@ -5,6 +5,8 @@ import showSwal from "../services/CustomAlert";
 import { fetchWithAuth } from "../services/fetchWithAuth";
 import { useNavigate } from "react-router-dom";
 
+import UserAvatar from "./UserAvatar";
+
 interface PlayerProfileProps {
   isOpen: boolean;
   onClose: () => void;
@@ -161,7 +163,13 @@ const PlayerProfile = ({
         <div className="profile-content">
           {userProfile ? (
             <>
-              <div className="profile-avatar">👤</div>
+              <div className="profile-avatar-wrapper">
+                <UserAvatar
+                  username={userProfile.username}
+                  size="xl"
+                  isHero
+                />
+              </div>
               <h3 className="profile-username">{userProfile.username}</h3>
               <p className="profile-email">{userProfile.email}</p>
 

@@ -82,7 +82,7 @@ export const handlePlayerExit = async (lobbyId, socket, io) => {
       }
       existingPlayer.dbSynced = true;
       await User.findByIdAndUpdate(existingPlayer.id, {
-        $set: { balance: existingPlayer.balance },
+        $set: { balance: existingPlayer.balance, online: false },
       });
       io.to(lobbyId).emit("message_resolved", {
         userId: null,
@@ -106,6 +106,23 @@ export const handlePlayerExit = async (lobbyId, socket, io) => {
         "La partita si è conclusa per mancanza di giocatori",
       );
     } else {
+      // Se il giocatore uscito era quello di turno, facciamo avanzare il turno al giocatore successivo
+      if (
+        game.status === "playing" &&
+        game.activePlayers[game.currentTurnIndex]?.id === socket.user.userId
+      ) {
+        game.nextTurn();
+        io.to(lobbyId).emit("turn_resolved", {
+          message: `${username} si è disconnesso durante il suo turno. Il turno passa al prossimo giocatore.`,
+          card: { seed: "", value: 0 },
+          winnerId: existingPlayer.id,
+          newBalance: existingPlayer.balance,
+          newPiatto: game.piatto,
+          nextTurn: game.currentTurnIndex,
+          isGameFinished: false,
+        });
+      }
+
       io.to(lobbyId).emit("player_logout", {
         message: `L'utente ${username} si è disconnesso.`,
         activePlayers: game.activePlayers,
@@ -151,6 +168,7 @@ export const handleGameReset = async (lobbyId, io) => {
       nuovaPartita: lobbyId,
       piatto: game.piatto,
       idCreatore: game.idCreatore,
+      currentTurn: 0,
     });
 
     game.startTurnTimer(); // Facciamo ripartire il timer per il primo turno della nuova partita

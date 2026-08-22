@@ -78,7 +78,7 @@ class ActiveGame {
     if (this.deck.length === 0) {
       throw new Error("Il mazzo è finito!");
     }
-    return this.deck[length - 1];
+    return this.deck[this.deck.length - 1];
   }
 }
 

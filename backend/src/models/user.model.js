@@ -57,6 +57,15 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    hasVotedSteam: {
+      type: Boolean,
+      default: false,
+    },
+    steamVote: {
+      type: String,
+      enum: ["yes", "no", null],
+      default: null,
+    },
   },
   {
     timestamps: true,

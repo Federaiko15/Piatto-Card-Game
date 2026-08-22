@@ -13,10 +13,12 @@ export default function Terms() {
       <div
         className="auth-box"
         style={{
+          width: "100%",
           maxWidth: "800px",
-          maxHeight: "80vh",
+          maxHeight: "85vh",
           overflowY: "auto",
           textAlign: "left",
+          boxSizing: "border-box",
         }}
       >
         <h1 className="auth-title">Note Legali ⚖️</h1>

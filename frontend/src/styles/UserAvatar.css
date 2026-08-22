@@ -1,0 +1,69 @@
+/* =========================================
+   USER AVATAR (RESPONSIVE)
+   ========================================= */
+
+.user-avatar {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  user-select: none;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  line-height: 1;
+}
+
+/* Varianti di dimensione */
+.user-avatar-xs {
+  width: 24px;
+  height: 24px;
+  font-size: 0.65rem;
+  border-width: 1.5px;
+}
+
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.8rem;
+  border-width: 1.5px;
+}
+
+.user-avatar-md {
+  width: 44px;
+  height: 44px;
+  font-size: 1rem;
+  border-width: 2px;
+}
+
+.user-avatar-lg {
+  width: 60px;
+  height: 60px;
+  font-size: 1.4rem;
+  border-width: 3px;
+}
+
+.user-avatar-xl {
+  width: 86px;
+  height: 86px;
+  font-size: 2.2rem;
+  border-width: 3.5px;
+  border-color: #f39c12;
+  box-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
+}
+
+/* Stile speciale per l'Eroe */
+.user-avatar.avatar-hero {
+  border-color: #2ecc71;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.45);
+}
+
+.user-avatar-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+}
