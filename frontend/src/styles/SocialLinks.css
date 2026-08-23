@@ -1,0 +1,142 @@
+/* ==========================================
+   SOCIAL LINKS BUTTONS (RESPONSIVE)
+   ========================================== */
+
+.social-links-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.social-links-container.variant-banner {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.social-links-container.variant-footer {
+  margin: 20px auto 0 auto;
+  max-width: 700px;
+  padding: 16px 20px;
+  background: rgba(18, 26, 36, 0.85);
+  border-radius: 14px;
+  border: 1px solid rgba(243, 156, 18, 0.25);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.social-links-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f1c40f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.social-buttons-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  min-height: 32px;
+  flex: 1 1 auto;
+  min-width: 80px;
+  max-width: 120px;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.social-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.15);
+}
+
+.social-btn:active {
+  transform: scale(0.96);
+}
+
+.social-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.social-name {
+  font-size: 0.75rem;
+  letter-spacing: 0.3px;
+}
+
+/* Stili specifici per piattaforma */
+.social-btn-discord {
+  background: linear-gradient(135deg, #5865F2, #4752C4);
+  border-color: #7289da;
+}
+.social-btn-discord:hover {
+  box-shadow: 0 4px 14px rgba(88, 101, 242, 0.5);
+}
+
+.social-btn-instagram {
+  background: linear-gradient(135deg, #833AB4, #FD1D1D, #F77737);
+  border-color: #fd5949;
+}
+.social-btn-instagram:hover {
+  box-shadow: 0 4px 14px rgba(253, 29, 29, 0.5);
+}
+
+.social-btn-telegram {
+  background: linear-gradient(135deg, #2AABEE, #229ED9);
+  border-color: #229ED9;
+}
+.social-btn-telegram:hover {
+  box-shadow: 0 4px 14px rgba(34, 158, 217, 0.5);
+}
+
+.social-btn-tiktok {
+  background: linear-gradient(135deg, #000000, #1e1e1e);
+  border: 1px solid #fe2c55;
+}
+.social-btn-tiktok:hover {
+  box-shadow: 0 4px 14px rgba(254, 44, 85, 0.5);
+}
+
+.social-btn-youtube {
+  background: linear-gradient(135deg, #FF0000, #CC0000);
+  border-color: #ff3333;
+}
+.social-btn-youtube:hover {
+  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.5);
+}
+
+@media (max-width: 480px) {
+  .social-buttons-grid {
+    gap: 5px;
+  }
+  .social-btn {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    min-width: 70px;
+  }
+  .social-name {
+    font-size: 0.7rem;
+  }
+}

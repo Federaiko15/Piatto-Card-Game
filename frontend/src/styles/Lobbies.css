@@ -110,6 +110,19 @@
   box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
 }
 
+.btn-rules {
+  background: linear-gradient(135deg, #b45309, #78350f);
+  color: #fef3c7;
+  border: 1px solid #d4af37;
+  font-weight: 800;
+}
+
+.btn-rules:hover {
+  background: linear-gradient(135deg, #d97706, #92400e);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.45);
+}
+
 /* Pulsante Ricerca Header */
 .btn-general-search {
   padding: clamp(8px, 1.5vh, 12px) clamp(12px, 2vw, 20px);

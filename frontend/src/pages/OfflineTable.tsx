@@ -41,19 +41,28 @@ export default function OfflineRoom() {
     state.numPlayers,
   );
 
-  const [heroBet, setHeroBet] = useState<number>(state.starterBet || 10);
+  const [heroBet, setHeroBet] = useState<number | string>(state.starterBet || 10);
 
   const handleHeroBetChange = (value: string) => {
     if (value === "") {
-      setHeroBet(1);
+      setHeroBet("");
       return;
     }
     const parsed = parseInt(value, 10);
-    setHeroBet(Number.isNaN(parsed) ? 1 : Math.max(1, parsed));
+    if (!Number.isNaN(parsed)) {
+      setHeroBet(Math.max(1, parsed));
+    }
+  };
+
+  const handleHeroBetBlur = () => {
+    if (heroBet === "" || Number(heroBet) < 1) {
+      setHeroBet(1);
+    }
   };
 
   const handleHeroPlay = () => {
-    playTurn(heroBet);
+    const bet = Math.max(1, Number(heroBet) || 1);
+    playTurn(bet);
   };
 
   return (
@@ -69,7 +78,10 @@ export default function OfflineRoom() {
           Esci
         </button>
 
-        <div className="mode-badge">MODALITÀ ALLENAMENTO</div>
+        <div className="mode-badge">
+          <span className="mode-badge-full">MODALITÀ ALLENAMENTO</span>
+          <span className="mode-badge-short">ALLENAMENTO</span>
+        </div>
       </div>
 
       {/* TAVOLO (GRIGLIA) */}
@@ -130,7 +142,10 @@ export default function OfflineRoom() {
                       <button
                         type="button"
                         onClick={() =>
-                          setHeroBet((prev) => Math.max(1, prev - 5))
+                          setHeroBet((prev) => {
+                            const current = typeof prev === "number" ? prev : parseInt(prev, 10) || 1;
+                            return Math.max(1, current - 5);
+                          })
                         }
                       >
                         -
@@ -142,12 +157,18 @@ export default function OfflineRoom() {
                         step={1}
                         value={heroBet}
                         onChange={(e) => handleHeroBetChange(e.target.value)}
+                        onBlur={handleHeroBetBlur}
                         className="bet-input"
                       />
 
                       <button
                         type="button"
-                        onClick={() => setHeroBet((prev) => prev + 5)}
+                        onClick={() =>
+                          setHeroBet((prev) => {
+                            const current = typeof prev === "number" ? prev : parseInt(prev, 10) || 1;
+                            return current + 5;
+                          })
+                        }
                       >
                         +
                       </button>

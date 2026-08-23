@@ -19,8 +19,10 @@ export default function HeroControls({
   pot,
   controlsDisabled,
 }: HeroControlsProps) {
-  const [betAmount, setBetAmount] = useState<number>(1);
+  const [betAmount, setBetAmount] = useState<number | string>(1);
   const [canDraw, setCanDraw] = useState<boolean>(false);
+
+  const maxBet = Math.max(1, Math.min(player.balance, pot));
 
   // Sincronizziamo canDraw con il server: utile in caso di errori di rete o refresh della pagina
   useEffect(() => {
@@ -32,6 +34,30 @@ export default function HeroControls({
     }
   }, [player.currentBet]);
 
+  const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === "") {
+      setBetAmount("");
+      return;
+    }
+    const parsed = parseInt(val, 10);
+    if (!Number.isNaN(parsed)) {
+      if (parsed > maxBet) {
+        setBetAmount(maxBet);
+      } else if (parsed < 1) {
+        setBetAmount(1);
+      } else {
+        setBetAmount(parsed);
+      }
+    }
+  };
+
+  const handleBetBlur = () => {
+    if (betAmount === "" || Number(betAmount) < 1) {
+      setBetAmount(1);
+    }
+  };
+
   const handlePlacePiatto = async () => {
     const amount = Math.min(player.balance, pot);
     const confirmed = await GameActions.placePiatto(
@@ -42,6 +68,12 @@ export default function HeroControls({
     if (confirmed) {
       setCanDraw(true);
     }
+  };
+
+  const handlePlaceBet = () => {
+    const amount = Math.max(1, Math.min(Number(betAmount) || 1, player.balance, pot));
+    GameActions.placeBet(gameSocket, lobbyId, amount);
+    setCanDraw(true);
   };
 
   return (
@@ -64,17 +96,15 @@ export default function HeroControls({
           className="hero-bet-input"
           type="number"
           value={betAmount}
-          onChange={(e) => setBetAmount(Number(e.target.value))}
+          onChange={handleBetChange}
+          onBlur={handleBetBlur}
           min="1"
-          max={Math.max(1, Math.min(player.balance, pot))}
+          max={maxBet}
           disabled={controlsDisabled}
         />
         <button
           className="btn-hero"
-          onClick={() => {
-            GameActions.placeBet(gameSocket, lobbyId, betAmount);
-            setCanDraw(true);
-          }}
+          onClick={handlePlaceBet}
           disabled={controlsDisabled || canDraw}
         >
           Punta

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import type { SteamPollResponse, SteamPollStats } from "../types";
 import showSwal from "../services/CustomAlert";
+import { fetchWithAuth } from "../services/fetchWithAuth";
+import SocialLinks from "./SocialLinks";
 import "../styles/SteamBanner.css";
 
 export default function SteamBanner() {
@@ -16,34 +18,16 @@ export default function SteamBanner() {
     const fetchPollData = async () => {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem("tokenPiatto");
-        const headers: Record<string, string> = {};
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const res = await fetch(
+        const res = await fetchWithAuth(
           `${import.meta.env.VITE_API_URL}/api/v1/steam-poll`,
-          {
-            headers,
-            credentials: "include",
-          },
         );
 
         if (res.ok) {
           const data: SteamPollResponse = await res.json();
           setStats(data.stats);
-          // Controlliamo se ha già votato da DB o da localStorage come fallback
-          const localVote = localStorage.getItem("piatto_steam_vote");
           if (data.hasVoted) {
             setHasVoted(true);
             setUserVote(data.userVote);
-            if (data.userVote) {
-              localStorage.setItem("piatto_steam_vote", data.userVote);
-            }
-          } else if (localVote) {
-            setHasVoted(true);
-            setUserVote(localVote);
           }
         }
       } catch (err) {
@@ -61,20 +45,10 @@ export default function SteamBanner() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("tokenPiatto");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const res = await fetch(
+      const res = await fetchWithAuth(
         `${import.meta.env.VITE_API_URL}/api/v1/steam-poll/vote`,
         {
           method: "POST",
-          headers,
-          credentials: "include",
           body: JSON.stringify({ vote }),
         },
       );
@@ -85,7 +59,6 @@ export default function SteamBanner() {
         setStats(data.stats);
         setHasVoted(true);
         setUserVote(vote);
-        localStorage.setItem("piatto_steam_vote", vote);
 
         showSwal({
           type: "game-advice",
@@ -96,7 +69,6 @@ export default function SteamBanner() {
         if (data.message?.includes("già espresso")) {
           setHasVoted(true);
           setUserVote(vote);
-          localStorage.setItem("piatto_steam_vote", vote);
         }
         showSwal({
           type: "error",
@@ -148,8 +120,10 @@ export default function SteamBanner() {
             Stiamo valutando la pubblicazione su <strong>Steam</strong> con una
             versione estesa contenente non solo <em>Piatto</em>, ma anche altri
             grandi classici dei <strong>giochi di carte siciliane</strong>{" "}
-            (Cucù, Cavalli, Scopa, Briscola, Tressette e modalità multiplayer
-            online)!
+            (Cucù, Cavalli, Scopa, Briscola, Tressette e multiplayer online)!
+          </p>
+          <p className="steam-banner-invite">
+            📢 <strong>Esprimi il tuo voto e seguici sui nostri canali social</strong> per non perderti novità, anteprime esclusive e annunci sul lancio!
           </p>
 
           {isLoading ? (
@@ -205,6 +179,12 @@ export default function SteamBanner() {
               </button>
             </div>
           )}
+
+          {/* Sezione Canali Social Ufficiali */}
+          <SocialLinks
+            title="Seguici per non perdere nessun aggiornamento 🚀"
+            variant="banner"
+          />
         </div>
       )}
     </aside>

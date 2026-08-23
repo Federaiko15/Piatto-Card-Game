@@ -2,6 +2,8 @@ import { useState } from "react";
 import LobbyCard from "../components/LobbyCard.tsx";
 import "../styles/Lobbies.css";
 import PlayerProfile from "../components/PlayerProfile.tsx";
+import SteamBanner from "../components/SteamBanner.tsx";
+import RulesModal from "../components/RulesModal.tsx";
 import { useLobbies } from "../hooks/useLobbies.ts";
 import lobbiesBg from "../assets/lobbies.png";
 
@@ -22,6 +24,7 @@ export default function Lobbies() {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchStatus, setSearchStatus] = useState<string>("free");
   const [searchStarterBet, setSearchStarterBet] = useState<number>(-1);
+  const [viewRules, setViewRules] = useState<boolean>(false);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +50,13 @@ export default function Lobbies() {
             onClick={() => setIsSearching(true)}
           >
             🔍 Cerca Tavoli
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewRules(true)}
+            className="btn-common btn-rules"
+          >
+            📖 Regole
           </button>
           <button
             onClick={() => setViewProfile(true)}
@@ -117,6 +127,7 @@ export default function Lobbies() {
 
       <div className="lobbies-content">
         <div className="lobbies-sidebar">
+          <SteamBanner />
           <form onSubmit={fetchCreateLobby} className="create-lobby-form">
             <h3>Apri un nuovo tavolo</h3>
 
@@ -174,6 +185,11 @@ export default function Lobbies() {
         onClose={() => setViewProfile(false)}
         userProfile={userProfile}
         onLogout={handleLogout}
+      />
+
+      <RulesModal
+        isOpen={viewRules}
+        onClose={() => setViewRules(false)}
       />
     </div>
   );

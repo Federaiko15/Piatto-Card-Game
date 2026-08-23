@@ -1,27 +1,9 @@
-import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import { SteamPollVote, SteamPollStats } from "../models/steamPoll.model.js";
 
 const POLL_KEY = "steam_release_poll";
 
-// Helper per estrarre l'utente autenticato in modo opzionale dal token
-const getOptionalUserId = (req) => {
-  try {
-    const authHeader = req.headers["authorization"];
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
-      if (token) {
-        const decoded = jwt.verify(token, process.env.ACCESS_WEB_TOKEN);
-        return decoded.userId;
-      }
-    }
-  } catch {
-    // Token non valido o assente, prosegui come utente anonimo
-  }
-  return null;
-};
-
-// Helper per estrarre l'IP del client
+// Helper per estrarre l'IP del client (per audit/tracciamento)
 const getClientIp = (req) => {
   return (
     req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
@@ -41,9 +23,7 @@ export const getSteamPollStatus = async (req, res) => {
       });
     }
 
-    const userId = getOptionalUserId(req);
-    const ip = getClientIp(req);
-
+    const userId = req.user?.userId;
     let hasVoted = false;
     let userVote = null;
 
@@ -52,12 +32,6 @@ export const getSteamPollStatus = async (req, res) => {
       if (user && user.hasVotedSteam) {
         hasVoted = true;
         userVote = user.steamVote;
-      }
-    } else if (ip && ip !== "unknown") {
-      const voteDoc = await SteamPollVote.findOne({ ip });
-      if (voteDoc) {
-        hasVoted = true;
-        userVote = voteDoc.vote;
       }
     }
 
@@ -97,52 +71,39 @@ export const submitSteamPollVote = async (req, res) => {
       });
     }
 
-    const userId = getOptionalUserId(req);
-    const ip = getClientIp(req);
-
-    // Se l'utente è loggato, verifichiamo e aggiorniamo il modello User
-    if (userId) {
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "Utente non trovato",
-        });
-      }
-
-      if (user.hasVotedSteam) {
-        return res.status(400).json({
-          success: false,
-          message: "Hai già espresso il tuo voto per questo account!",
-        });
-      }
-
-      user.hasVotedSteam = true;
-      user.steamVote = vote;
-      await user.save();
-
-      await SteamPollVote.create({
-        userId: user._id,
-        ip,
-        vote,
-      });
-    } else {
-      // Per utenti non loggati / anonimi nella home
-      if (ip && ip !== "unknown") {
-        const existingVote = await SteamPollVote.findOne({ ip });
-        if (existingVote) {
-          return res.status(400).json({
-            success: false,
-            message: "Hai già espresso la tua preferenza da questo dispositivo!",
-          });
-        }
-      }
-
-      await SteamPollVote.create({
-        ip,
-        vote,
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Devi aver effettuato l'accesso per poter votare.",
       });
     }
+
+    const ip = getClientIp(req);
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Utente non trovato",
+      });
+    }
+
+    if (user.hasVotedSteam) {
+      return res.status(400).json({
+        success: false,
+        message: "Hai già espresso il tuo voto per questo account!",
+      });
+    }
+
+    user.hasVotedSteam = true;
+    user.steamVote = vote;
+    await user.save();
+
+    await SteamPollVote.create({
+      userId: user._id,
+      ip,
+      vote,
+    });
 
     // Aggiornamento atomico del contatore globale
     const incField = vote === "yes" ? { yesCount: 1 } : { noCount: 1 };

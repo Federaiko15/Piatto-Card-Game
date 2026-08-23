@@ -4,7 +4,6 @@ import "../styles/Auth.css";
 import "../styles/LoadingButton.css";
 import { useState } from "react";
 import LoadingButton from "../components/LoadingButton";
-import SteamBanner from "../components/SteamBanner";
 
 export default function Auth() {
   const {
@@ -59,7 +58,6 @@ export default function Auth() {
       className="auth-container"
       style={{ backgroundImage: `url(${authBg})`, imageRendering: "pixelated" }}
     >
-      {isOnline && !isForcedOffline && <SteamBanner />}
       <div className="auth-box">
         {/* CONDIZIONE PRINCIPALE: ONLINE vs OFFLINE */}
         {isOnline && !isForcedOffline ? (
