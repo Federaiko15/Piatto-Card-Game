@@ -35,6 +35,9 @@ export function generateOtp() {
 // sempre in base allo stato di sviluppo, mando tramite nodemailer utilizzando ethereal, altrimenti tramite resend utilizzando il dominio del server
 export async function sendOTPEmail(email, otp) {
   if (process.env.NODE_ENV === "development") {
+    if (!transporter) {
+      await initMailer();
+    }
     const info = await transporter.sendMail({
       from: devFromEmail,
       to: email,
@@ -43,12 +46,20 @@ export async function sendOTPEmail(email, otp) {
     });
     console.log("Email preview URL:", nodemailer.getTestMessageUrl(info));
   } else {
-    await resend.emails.send({
+    if (!resend) {
+      await initMailer();
+    }
+    const { data, error } = await resend.emails.send({
       from: `Piatto <${process.env.EMAIL_FROM}>`,
       to: email,
       subject: "Codice di verifica",
       html: `<p>Il tuo codice OTP è: <strong style="font-size:24px">${otp}</strong></p>
              <p>Scade tra <strong>3 minuti</strong>. Non condividerlo con nessuno.</p>`,
     });
+
+    if (error) {
+      console.error("Errore nell'invio email tramite Resend:", error);
+      throw new Error(`Impossibile inviare l'email: ${error.message || error.name}`);
+    }
   }
 }

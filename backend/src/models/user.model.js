@@ -6,7 +6,10 @@ const userSchema = new Schema(
   {
     username: {
       type: String,
-      required: true,
+      required: function () {
+        return this.verified === true;
+      },
+      sparse: true,
       unique: true,
       lowercase: true,
       trim: true,
@@ -16,7 +19,9 @@ const userSchema = new Schema(
 
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return this.verified === true;
+      },
       minLength: 6,
       maxLength: 60,
     },
@@ -80,7 +85,7 @@ userSchema.index(
 // questa funzione pre è un middleware, che parte quando viene chiamata la funzione di mongoose save. Prima infatti di salvare un utente
 // sul db, utilizzo una funzione hash critograficamente sicura tramite bcrypt per hashare la password
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+  if (!this.isModified("password") || !this.password) return;
 
   this.password = await bcrypt.hash(this.password, NUM_HASH);
 });

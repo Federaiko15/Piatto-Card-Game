@@ -10,25 +10,55 @@ dotenv.config({
 });
 
 const sendOtp = async (req, res) => {
-  // questa funzione viene chiamata quando, volendo creare un account, bisogna prima mandare l'email per controllarne la validità
   try {
-    const { email } = req.body;
+    const { email, type } = req.body;
 
-    if (!email) {
+    if (!email || !email.trim()) {
       return res.status(400).json({
-        message: "All fields are important",
+        message: "L'indirizzo email è obbligatorio",
       });
     }
-    // tramite la funzione generateOtp creo il codice, imposto la sua scadenza a 1 minut0, così da evitare attacchi brute force
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Se stiamo inviando l'OTP per la registrazione di un nuovo account
+    if (type !== "reset") {
+      const existingVerifiedUser = await User.findOne({
+        email: normalizedEmail,
+        verified: true,
+      });
+
+      if (existingVerifiedUser) {
+        return res.status(400).json({
+          message: "Questa email è già registrata. Effettua il login o recupera la password.",
+        });
+      }
+    } else {
+      // Se stiamo inviando l'OTP per il recupero password
+      const existingUser = await User.findOne({
+        email: normalizedEmail,
+        verified: true,
+      });
+
+      if (!existingUser) {
+        return res.status(404).json({
+          message: "Nessun account registrato trovato con questa email.",
+        });
+      }
+    }
+
     const otp = generateOtp();
     const otp_expires_at = new Date(Date.now() + 3 * 60 * 1000);
-    // e salvo l'email nel DB, insieme con tutte le info relative al codice otp
+
+    // Salva o aggiorna l'OTP nel database per questa email
     await User.findOneAndUpdate(
-      { email: email.trim().toLowerCase() },
+      { email: normalizedEmail },
       {
-        otp,
-        otp_expires_at,
-        otp_attempts: 0,
+        $set: {
+          otp,
+          otp_expires_at,
+          otp_attempts: 0,
+        },
       },
       {
         returnDocument: "after",
@@ -36,15 +66,15 @@ const sendOtp = async (req, res) => {
       },
     );
 
-    await sendOTPEmail(email, otp); // e chiamo la funzione che tramite RESEND invia l'email dallo stesso dominio del gioco
+    await sendOTPEmail(normalizedEmail, otp);
 
-    res.status(200).json({
-      message: "OTP sent successfully",
+    return res.status(200).json({
+      message: "Codice OTP inviato con successo!",
     });
   } catch (error) {
-    console.log("Error in sendOtp", error);
+    console.error("Error in sendOtp:", error);
     return res.status(500).json({
-      message: "Server Error",
+      message: "Errore durante l'invio del codice OTP",
       error: error.message,
     });
   }
@@ -56,52 +86,113 @@ const registerUser = async (req, res) => {
 
     if (!username || !password || !email || !otp) {
       return res.status(400).json({
-        message: "ALL FIELDS ARE IMPORTANT!",
+        message: "Tutti i campi sono obbligatori!",
       });
     }
-    // controllo se l'utente esiste già nel mio DB. La funzione findOne è una funzione che sostituisce le query
-    // grezze per la comunicazione con MongoDB gestita dalla libreria mongoose, e può essere utilizzata dai
-    // modelli (model) creati proprio per la comunicazioni con il DB
 
-    // deve esistere ma avere il verified a false
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim().toLowerCase();
+
+    if (normalizedUsername.length < 1 || normalizedUsername.length > 30) {
+      return res.status(400).json({
+        message: "Il nickname deve contenere tra 1 e 30 caratteri.",
+      });
+    }
+
+    if (password.length < 6 || password.length > 60) {
+      return res.status(400).json({
+        message: "La password deve contenere tra 6 e 60 caratteri.",
+      });
+    }
+
+    // 1. Controlliamo se l'email è già verificata / registrata
+    const alreadyVerifiedEmail = await User.findOne({
+      email: normalizedEmail,
+      verified: true,
+    });
+    if (alreadyVerifiedEmail) {
+      return res.status(400).json({
+        message: "Questa email è già registrata. Effettua il login.",
+      });
+    }
+
+    // 2. Controlliamo se lo username è già occupato da un altro utente verificato
+    const existingUsername = await User.findOne({
+      username: normalizedUsername,
+      verified: true,
+    });
+    if (existingUsername) {
+      return res.status(400).json({
+        message: "Questo nickname è già in uso. Scegline un altro.",
+      });
+    }
+
+    // 3. Cerchiamo il documento unverified con l'OTP valido
     const existing = await User.findOne({
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       verified: false,
     });
+
     if (!existing) {
-      return res
-        .status(404)
-        .json({ message: "You have to verify you email first!" });
+      return res.status(400).json({
+        message: "Devi prima richiedere il codice OTP per verificare l'email!",
+      });
     }
 
-    // faccio tutti i controlli per verificare la correttezza dell'otp mandato
-    if (existing.otp_expires_at < new Date())
-      return res.status(400).json({ error: "OTP scaduto" });
-    if (existing.otp_attempts >= 5)
-      return res.status(400).json({ error: "Troppi tentativi" });
-    if (existing.otp !== otp) {
-      await User.updateOne({ email }, { $inc: { otp_attempts: 1 } });
-      return res.status(400).json({ error: "OTP non valido" });
+    // 4. Controlli su scadenza, tentativi e valore OTP
+    if (!existing.otp_expires_at || existing.otp_expires_at < new Date()) {
+      return res.status(400).json({
+        message: "Il codice OTP è scaduto. Richiedine uno nuovo.",
+      });
     }
 
-    // OTP corretto
-    existing.username = username;
-    existing.password = password; // hashata dal middleware prima di essere correttamente salvato sul DB
+    if (existing.otp_attempts >= 5) {
+      return res.status(400).json({
+        message: "Hai superato il numero massimo di tentativi. Richiedi un nuovo OTP.",
+      });
+    }
+
+    if (existing.otp !== otp.trim()) {
+      await User.updateOne(
+        { _id: existing._id },
+        { $inc: { otp_attempts: 1 } },
+      );
+      return res.status(400).json({
+        message: "Codice OTP non valido. Controlla la tua email.",
+      });
+    }
+
+    // 5. Completamento registrazione
+    existing.username = normalizedUsername;
+    existing.password = password; // verrà hashata dal middleware pre('save')
     existing.verified = true;
+    existing.balance = 1000;
     existing.otp = undefined;
     existing.otp_expires_at = undefined;
-    existing.otp_attempts = undefined;
+    existing.otp_attempts = 0;
 
     await existing.save();
 
-    res.status(200).json({
-      message: "User successfully registered",
+    return res.status(200).json({
+      message: "Registrazione completata con successo! Ora puoi effettuare il login.",
       existing,
     });
   } catch (error) {
-    console.log("Error in registerUser");
+    console.error("Error in registerUser:", error);
+    if (error.code === 11000) {
+      if (error.keyPattern?.username) {
+        return res.status(400).json({
+          message: "Questo nickname è già in uso. Scegline un altro.",
+        });
+      }
+      if (error.keyPattern?.email) {
+        return res.status(400).json({
+          message: "Questa email è già registrata.",
+        });
+      }
+    }
     return res.status(500).json({
-      message: "Server Error",
+      message: "Errore del server durante la registrazione",
       error: error.message,
     });
   }
@@ -112,13 +203,20 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({
-        message: "ALL FIELDS ARE IMPORTANT",
+        message: "Tutti i campi sono obbligatori",
       });
     }
-    const existing = await User.findOne({ email: email.trim().toLowerCase() });
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await User.findOne({ email: normalizedEmail });
     if (!existing) {
       return res.status(404).json({
-        message: "Invalid email or password",
+        message: "Email o password non validi",
+      });
+    }
+
+    if (!existing.verified) {
+      return res.status(400).json({
+        message: "Devi prima verificare la tua email e completare la registrazione!",
       });
     }
 
@@ -126,7 +224,7 @@ const loginUser = async (req, res) => {
     const isPasswordCorrect = await bcrypt.compare(password, existing.password);
     if (!isPasswordCorrect) {
       return res.status(400).json({
-        message: "Invalid email or password",
+        message: "Email o password non validi",
       });
     }
     // creo i token, quello di accesso che verrà salvato nel localstorage del browser del client, e quello di refresh
@@ -143,7 +241,7 @@ const loginUser = async (req, res) => {
 
     existing.online = true;
     await existing.save();
-    res.status(200).json({
+    return res.status(200).json({
       message: "Login successfully accepted",
       user: {
         _id: existing._id,
@@ -156,10 +254,9 @@ const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log("Error in loginUser", error);
+    console.error("Error in loginUser:", error);
     return res.status(500).json({
-      //500 for Server Error
-      message: "Server Error",
+      message: "Errore del server durante il login",
       error: error.message,
     });
   }
@@ -263,45 +360,57 @@ const resetUserPassword = async (req, res) => {
   const { email, newPassword, confirmPassword, otp } = req.body;
   if (!newPassword || !confirmPassword || !email || !otp) {
     return res.status(400).json({
-      message: "All fields are important",
+      message: "Tutti i campi sono obbligatori",
     });
   }
   if (newPassword !== confirmPassword) {
     return res.status(400).json({
-      message: "The password are different",
+      message: "Le password non coincidono",
+    });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      message: "La nuova password deve contenere almeno 6 caratteri",
     });
   }
   try {
-    // l'utente deve già avere un account precedentemente verificato
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       verified: true,
     });
     if (!user) {
       return res.status(400).json({
-        message: "You have to verify your email first",
+        message: "Nessun account registrato trovato con questa email",
       });
     }
-    // controllo la validità del codice otp mandato per il reset della password
-    if (user.otp_expires_at < new Date())
-      return res.status(400).json({ error: "OTP scaduto" });
-    if (user.otp_attempts >= 5)
-      return res.status(400).json({ error: "Troppi tentativi" });
-    if (user.otp !== otp) {
-      await User.updateOne({ email }, { $inc: { otp_attempts: 1 } });
-      return res.status(400).json({ error: "OTP non valido" });
+
+    // Controllo validità OTP
+    if (!user.otp_expires_at || user.otp_expires_at < new Date()) {
+      return res.status(400).json({ message: "Codice OTP scaduto. Richiedine uno nuovo." });
+    }
+    if (user.otp_attempts >= 5) {
+      return res.status(400).json({ message: "Hai superato il numero massimo di tentativi. Richiedi un nuovo OTP." });
+    }
+    if (user.otp !== otp.trim()) {
+      await User.updateOne({ _id: user._id }, { $inc: { otp_attempts: 1 } });
+      return res.status(400).json({ message: "Codice OTP non valido" });
     }
 
     user.password = newPassword;
+    user.otp = undefined;
+    user.otp_expires_at = undefined;
+    user.otp_attempts = 0;
     await user.save();
 
     return res.status(200).json({
-      message: "Password correttamente reimpostata",
+      message: "Password reimpostata con successo!",
     });
   } catch (error) {
     console.error("Server Error in resetUserPassword: ", error);
     return res.status(500).json({
-      message: "Server Error",
+      message: "Errore del server durante il reset della password",
+      error: error.message,
     });
   }
 };

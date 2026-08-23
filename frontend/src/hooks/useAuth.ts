@@ -62,20 +62,24 @@ export function useAuth() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: form.email }),
+          body: JSON.stringify({ email: form.email, type: "register" }),
           credentials: "include",
         },
       );
 
       const data = await response.json();
       if (!response.ok) {
-        showSwal({ type: "error", title: data.message, alert: true });
+        showSwal({
+          type: "error",
+          title: data.message || "Impossibile inviare il codice OTP",
+          alert: true,
+        });
         return;
       }
 
       showSwal({
         type: "game-advice",
-        title: "Codice OTP inviato!",
+        title: data.message || "Codice OTP inviato!",
         alert: false,
       });
       setRegistrationStep(2);
@@ -84,7 +88,7 @@ export function useAuth() {
       console.error("Errore nell'invio OTP:", error);
       showSwal({
         type: "error",
-        title: "Errore di connessione",
+        title: "Errore di connessione con il server",
         alert: true,
       });
     } finally {
@@ -112,13 +116,13 @@ export function useAuth() {
         },
       );
 
-      const data = (await response.json()) as AuthResponse;
+      const data = (await response.json()) as AuthResponse & { error?: string };
 
       if (!response.ok) {
         console.error("Errore dal server:", data);
         showSwal({
           type: "error",
-          title: data.message,
+          title: data.message || data.error || "Errore durante la registrazione",
           alert: true,
         });
         setHasOtpFailed(true);
@@ -127,10 +131,12 @@ export function useAuth() {
 
       showSwal({
         type: "login_register",
-        title: "Registrazione completata! Ora puoi fare il login",
+        title: data.message || "Registrazione completata! Ora puoi fare il login",
         alert: false,
       });
       setIsLogin(true);
+      setRegistrationStep(1);
+      setForm((prev) => ({ ...prev, otp: "", password: "" }));
     } catch (error) {
       console.error("Errore di rete bloccante:", error);
       showSwal({
@@ -245,15 +251,16 @@ export function useAuth() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: forgotForm.email }),
+          body: JSON.stringify({ email: forgotForm.email, type: "reset" }),
           credentials: "include",
         },
       );
 
+      const data = await response.json();
       if (!response.ok) {
         showSwal({
           type: "error",
-          title: "Errore di connessione",
+          title: data.message || "Errore durante l'invio del codice OTP",
           alert: true,
         });
         return;
@@ -264,15 +271,16 @@ export function useAuth() {
         title:
           forgotStep === 2
             ? "Nuovo codice OTP inviato!"
-            : "Codice OTP inviato!",
+            : data.message || "Codice OTP inviato!",
         alert: false,
       });
       setForgotStep(2);
       setHasForgotOtpFailed(false);
     } catch (error) {
+      console.error("Errore invio OTP recupero password:", error);
       showSwal({
         type: "error",
-        title: "Errore di connessione",
+        title: "Errore di connessione con il server",
         alert: true,
       });
     } finally {
@@ -297,6 +305,16 @@ export function useAuth() {
         return;
       }
 
+      if (forgotForm.newPassword.length < 6) {
+        showSwal({
+          type: "error",
+          title: "La password deve contenere almeno 6 caratteri!",
+          alert: true,
+        });
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/users/resetPassword`,
@@ -313,10 +331,12 @@ export function useAuth() {
           },
         );
 
+        const data = await response.json();
+
         if (!response.ok) {
           showSwal({
             type: "error",
-            title: "Errore nel reimpostare la password",
+            title: data.message || "Errore nel reimpostare la password",
             alert: true,
           });
           setHasForgotOtpFailed(true);
@@ -325,7 +345,7 @@ export function useAuth() {
 
         showSwal({
           type: "game-advice",
-          title: "Password reimpostata con successo!",
+          title: data.message || "Password reimpostata con successo!",
           alert: false,
         });
         setIsForgotPassword(false);
@@ -336,10 +356,11 @@ export function useAuth() {
           newPassword: "",
           confirmPassword: "",
         });
-      } catch {
+      } catch (error) {
+        console.error("Errore reset password:", error);
         showSwal({
           type: "error",
-          title: "Server Error",
+          title: "Errore di connessione con il server",
           alert: true,
         });
       } finally {
