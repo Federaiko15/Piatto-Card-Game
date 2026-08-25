@@ -2,17 +2,33 @@
    CARTE DA GIOCO (EFFETTO 3D & FLIP)
    ========================================= */
 
-/* Contenitore per dare la prospettiva 3D (Formato 1:1 pixel art 64x64) */
+/* Contenitore per dare la prospettiva 3D (Formato 1:1 pixel art 64x64) - Ingrandito e reattivo */
 .card-perspective {
-  width: clamp(70px, 11vw, 105px);
-  height: clamp(70px, 11vw, 105px);
+  width: clamp(110px, 12vw, 160px);
+  height: clamp(110px, 12vw, 160px);
   aspect-ratio: 1 / 1;
   perspective: 1000px;
   display: inline-block;
   margin: clamp(2px, 1vw, 6px);
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.65));
   background: transparent;
 }
+
+@media (max-width: 768px) {
+  .card-perspective {
+    width: clamp(85px, 20vw, 120px);
+    height: clamp(85px, 20vw, 120px);
+    margin: 2px;
+  }
+}
+
+@media (max-width: 380px) {
+  .card-perspective {
+    width: clamp(75px, 18vw, 95px);
+    height: clamp(75px, 18vw, 95px);
+  }
+}
+
 
 /* L'elemento che ruota */
 .card-inner {

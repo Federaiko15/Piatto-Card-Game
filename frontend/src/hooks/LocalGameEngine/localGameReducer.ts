@@ -76,6 +76,7 @@ export const createInitialState = (
     currentTurn: 0,
     currentDeck: shuffleDeck(createDeck()),
     proportionPosNeg: 0,
+    lastTurnOutcome: null,
   };
 };
 
@@ -145,6 +146,14 @@ export const reducer = (
         currentDeck: newDeck,
         proportionPosNeg: getUpdatedProportion(nextProportionBase, drawnCard),
         currentTurn: nextTurn,
+        lastTurnOutcome: {
+          playerId: currentPlayer.playerId,
+          username: currentPlayer.username,
+          action: win ? "preso" : "lasciato",
+          amount: bet,
+          type: win ? "win" : "lose",
+          id: Date.now() + Math.random(),
+        },
       };
     }
 

@@ -24,9 +24,34 @@ const NavbarChat = ({
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState<string>("");
   const [isCooldown, setIsCooldown] = useState<boolean>(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const prevMessagesLengthRef = useRef<number>(messages.length);
   const navigate = useNavigate();
+
+  // Tracciamento messaggi non letti (SOLO messaggi degli utenti, escludendo i messaggi di sistema/turni)
+  useEffect(() => {
+    if (isOpen) {
+      setUnreadCount(0);
+      prevMessagesLengthRef.current = messages.length;
+    } else {
+      if (messages.length > prevMessagesLengthRef.current) {
+        const newMessages = messages.slice(prevMessagesLengthRef.current);
+        const newUserMessages = newMessages.filter((msg) => msg.userId !== null).length;
+        if (newUserMessages > 0) {
+          setUnreadCount((prev) => prev + newUserMessages);
+        }
+      }
+      prevMessagesLengthRef.current = messages.length;
+    }
+  }, [messages, isOpen]);
+
   const toggleNavbar = () => {
-    setIsOpen((prevState) => !prevState);
+    setIsOpen((prevState) => {
+      if (!prevState) {
+        setUnreadCount(0);
+      }
+      return !prevState;
+    });
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -81,8 +106,23 @@ const NavbarChat = ({
 
   return (
     <div className="div-container">
-      <button className="navbar-toggle" onClick={toggleNavbar}>
-        {isOpen ? "X" : "Chat"}
+      <button
+        className={`navbar-toggle ${!isOpen && unreadCount > 0 ? "has-unread" : ""}`}
+        onClick={toggleNavbar}
+        aria-label="Apri o chiudi chat"
+      >
+        {isOpen ? (
+          <span className="toggle-content">✕ Chiudi</span>
+        ) : (
+          <span className="toggle-content">
+            💬 Chat
+            {unreadCount > 0 && (
+              <span className="chat-unread-badge">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </span>
+        )}
       </button>
 
       <nav className={`navbar ${isOpen ? "opened" : "closed"}`}>

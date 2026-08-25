@@ -11,6 +11,8 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
   color: white;
   box-sizing: border-box;
   position: relative;
@@ -87,6 +89,7 @@
   position: relative;
   z-index: 1;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* CROUPIER E CARTA (In Alto - Ingrandito) */
@@ -183,10 +186,8 @@
    CONTROLLI EROE OFFLINE (DESKTOP)
    ========================================= */
 .hero-offline-controls {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  margin-top: 6px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -304,22 +305,44 @@
   justify-content: center;
 }
 
+/* Nascosto di default su Desktop (perché i posti dei giocatori sono visibili intorno al tavolo) */
+.mobile-turn-banner {
+  display: none;
+}
+
 /* =========================================
    RESPONSIVE DESIGN SMARTPHONE (< 768px)
    ========================================= */
 @media (max-width: 768px) {
   .poker-table.offline-table {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1.15fr 1fr 1.25fr;
     height: 100%;
     width: 100%;
     max-width: 100vw;
-    padding: 12px 10px;
+    padding: clamp(48px, 6.5vh, 60px) clamp(10px, 3vw, 16px) clamp(8px, 1.5vh, 14px) clamp(10px, 3vw, 16px);
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .table-background-image {
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 98%;
+    height: 75%;
+    max-height: 480px;
+    object-fit: contain;
+    z-index: 0;
+    pointer-events: none;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.85));
   }
 
   .high-left,
@@ -336,7 +359,8 @@
     top: 10px;
     left: 10px;
     gap: 8px;
-    max-width: calc(100vw - 125px);
+    max-width: calc(100vw - 20px);
+    z-index: 110;
   }
 
   .btn-leave {
@@ -361,112 +385,130 @@
     display: inline;
   }
 
-  /* CROUPIER VICINO AL TAVOLO (In alto a ridosso del panno verde) */
+  /* CROUPIER E CARTA (In Alto, posizionato a ridosso del bordo superiore del tavolo, grande e con carta a destra) */
   .high-center {
+    grid-column: 1;
+    grid-row: 1;
     width: 100%;
-    position: absolute;
-    top: clamp(65px, 9.5vh, 95px);
-    left: 0;
-    right: 0;
-    z-index: 20;
-    pointer-events: none;
+    height: 100%;
+    position: relative;
+    z-index: 10;
     display: flex;
     justify-content: center;
+    align-items: flex-end;
+    margin: 0;
+    padding-bottom: 2px;
   }
 
   .table-high-center {
+    display: flex;
+    flex-direction: row; /* Carta alla DESTRA del croupier! */
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(10px, 3vw, 18px);
+    position: relative;
     transform: none;
-    flex-direction: column;
+  }
+
+  /* CROUPIER INGRANDITO E BEN PROPORZIONATO */
+  .croupier-img {
+    width: clamp(110px, 28vw, 155px);
+    height: clamp(110px, 28vw, 155px);
+    image-rendering: pixelated;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.75));
+  }
+
+  /* CARTA MOSTRATA ALLA DESTRA DEL CROUPIER */
+  .card-display {
+    display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    pointer-events: auto;
+    transform: translateY(-8px);
+    z-index: 15;
   }
 
-  /* CROUPIER INGRANDITO E VICINO AL TAVOLO */
-  .croupier-img {
-    width: clamp(85px, 24vw, 115px);
-    height: clamp(85px, 24vw, 115px);
-  }
-
-  /* CARTA MOSTRATA AL CENTRO SUL PANNO VERDE DEL TAVOLO */
-  .card-display {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 25;
-  }
-
-  /* RIMOSSA L'IMMAGINE DEL PIATTO SU MOBILE */
-  .piatto-container {
-    display: none !important;
-  }
-
-  /* SOLDI / POT IN ALTO A DESTRA SULLA BARRA SUPERIORE */
+  /* PIATTO E SOLDI (Al centro esatto del tavolo verde) */
   .mid-center {
-    width: auto;
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 110;
-    pointer-events: auto;
-    display: block;
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
   }
 
   .table-center {
-    transform: none;
-    flex-direction: row;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    width: auto;
-    padding: 0;
-    box-sizing: border-box;
+    justify-content: center;
+    color: white;
+    position: relative;
+    transform: translateY(-34px); /* Alzato per non toccare la cornice inferiore del tavolo */
+    gap: 2px;
   }
 
-  /* BADGE SOLDI IN ALTO A DESTRA */
+  .piatto-container {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .piatto-img {
+    width: clamp(70px, 17vw, 98px);
+    height: clamp(70px, 17vw, 98px);
+    image-rendering: pixelated;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+  }
+
   .pot-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(15, 23, 42, 0.95);
-    padding: 4px 10px;
-    border-radius: 18px;
-    border: 1.5px solid #ffd700;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
   }
 
   .paragraph-coin {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: clamp(1.05rem, 3.6vw, 1.35rem);
     font-weight: 800;
     color: #ffd700;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.5), 2px 2px 0px #000;
   }
 
   .pixel-coins {
-    width: 20px;
-    height: 20px;
+    width: clamp(22px, 5vw, 28px);
+    height: clamp(22px, 5vw, 28px);
+    image-rendering: pixelated;
   }
 
-  /* BOTTOM HERO AREA */
+  /* BOTTOM HERO AREA (Sotto al tavolo con comoda spaziatura e controlli sotto il riquadro) */
   .bottom-center {
+    grid-column: 1;
+    grid-row: 3;
     width: 100%;
-    position: absolute;
-    bottom: 10px;
-    left: 0;
-    right: 0;
+    height: 100%;
+    position: relative;
+    z-index: 20;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    z-index: 20;
-    transform: none;
+    justify-content: flex-start;
+    gap: 4px;
+    margin: 0;
     box-sizing: border-box;
-    padding: 0 8px;
+    padding: 4px 8px 0 8px;
   }
 
   .seat-wrapper {
@@ -474,11 +516,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   .hero-offline-controls {
-    position: static;
+    position: relative;
+    top: auto;
+    left: auto;
     transform: none;
     margin-top: 2px;
     width: 100%;
@@ -515,5 +559,70 @@
     font-size: 0.82rem;
     min-height: 34px;
     flex-shrink: 0;
+  }
+
+  /* BANNER ESITO TURNO MOBILE (Mostrato in alto su smartphone per tracciare tutti i giocatori) */
+  .mobile-turn-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: fixed;
+    top: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 120;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: clamp(0.8rem, 2.9vw, 0.92rem);
+    font-weight: 800;
+    color: #ffffff;
+    max-width: 90vw;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    pointer-events: none;
+    animation: mobileBannerPop 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .mobile-turn-banner.banner-win {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.96), rgba(5, 150, 105, 0.96));
+    border: 1.5px solid #34d399;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.5), 0 0 12px rgba(0, 0, 0, 0.6);
+  }
+
+  .mobile-turn-banner.banner-lose {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.96), rgba(220, 38, 38, 0.96));
+    border: 1.5px solid #f87171;
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.5), 0 0 12px rgba(0, 0, 0, 0.6);
+  }
+
+  .banner-icon {
+    font-size: 1.05rem;
+  }
+
+  .banner-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .banner-text strong {
+    color: #ffd700;
+  }
+}
+
+@keyframes mobileBannerPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -18px) scale(0.85);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 2px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
   }
 }

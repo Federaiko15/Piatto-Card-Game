@@ -9,24 +9,24 @@
   z-index: 100;
 }
 
-/* Il bottone per aprire/chiudere la chat */
+/* Il bottone per aprire/chiudere la chat (Ingrandito e con badge notifica) */
 .navbar-toggle {
   position: fixed;
-  top: 12px;
-  right: 14px;
+  top: 14px;
+  right: 16px;
   z-index: 110;
-  padding: 8px 18px;
+  padding: 10px 22px;
   background: linear-gradient(135deg, #f39c12, #e67e22);
   color: #111827;
-  border: 1px solid #f1c40f;
-  border-radius: 20px;
+  border: 1.5px solid #f1c40f;
+  border-radius: 24px;
   cursor: pointer;
   font-weight: 800;
-  font-size: clamp(0.85rem, 1vw, 0.95rem);
+  font-size: clamp(0.92rem, 1.2vw, 1.05rem);
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   transition: all 0.2s ease;
-  min-height: 38px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,12 +34,67 @@
 
 .navbar-toggle:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(243, 156, 18, 0.4);
+  box-shadow: 0 6px 20px rgba(243, 156, 18, 0.55);
   background: #f1c40f;
 }
 
 .navbar-toggle:active {
   transform: scale(0.96);
+}
+
+.toggle-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+/* Badge messaggi non letti */
+.chat-unread-badge {
+  position: absolute;
+  top: -12px;
+  right: -18px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  border: 2px solid #0b1120;
+  border-radius: 12px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font-size: 0.75rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+  animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Effetto pulsante quando arrivano nuovi messaggi a chat chiusa */
+.navbar-toggle.has-unread {
+  animation: chatNoticePulse 1.8s infinite ease-in-out;
+  border-color: #ffd700;
+}
+
+@keyframes chatNoticePulse {
+  0%, 100% {
+    box-shadow: 0 4px 18px rgba(243, 156, 18, 0.45);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(243, 156, 18, 0.85), 0 0 10px rgba(239, 68, 68, 0.6);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* La Sidebar / Drawer - Ingrandita su Desktop */
@@ -223,6 +278,14 @@
 
 /* Mobile full-width drawer */
 @media (max-width: 480px) {
+  .navbar-toggle {
+    top: 10px;
+    right: 12px;
+    padding: 8px 18px;
+    min-height: 42px;
+    font-size: 0.94rem;
+  }
+
   .navbar {
     width: 100vw;
     padding: 55px 12px 12px 12px;

@@ -1,5 +1,5 @@
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocalGameEngine } from "../hooks/LocalGameEngine/useLocalGameEngine";
 import PlayerSeat from "../components/PlayerSeat";
 import Card from "../components/Cards";
@@ -33,15 +33,27 @@ export default function OfflineRoom() {
   const navigate = useNavigate();
   const state = location.state;
 
+  const { players, piatto, card, currentTurn, playTurn, lastTurnOutcome } =
+    useLocalGameEngine(
+      state?.username || "Giocatore",
+      state?.starterBet || 10,
+      state?.numPlayers || 4,
+    );
+
+  const [visibleOutcome, setVisibleOutcome] = useState(lastTurnOutcome);
+
+  useEffect(() => {
+    setVisibleOutcome(lastTurnOutcome);
+    if (!lastTurnOutcome) return;
+    const timer = window.setTimeout(() => {
+      setVisibleOutcome(null);
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [lastTurnOutcome?.id, lastTurnOutcome]);
+
+  const [heroBet, setHeroBet] = useState<number | string>(state?.starterBet || 10);
+
   if (!state) return <Navigate to="/" replace />;
-
-  const { players, piatto, card, currentTurn, playTurn } = useLocalGameEngine(
-    state.username,
-    state.starterBet,
-    state.numPlayers,
-  );
-
-  const [heroBet, setHeroBet] = useState<number | string>(state.starterBet || 10);
 
   const handleHeroBetChange = (value: string) => {
     if (value === "") {
@@ -92,6 +104,19 @@ export default function OfflineRoom() {
           className="table-background-image"
         />
 
+        {/* BANNER MOBILE ESITO TURNO GIOCATORE */}
+        {visibleOutcome && (
+          <div key={visibleOutcome.id} className={`mobile-turn-banner banner-${visibleOutcome.type}`}>
+            <span className="banner-icon">
+              {visibleOutcome.type === "win" ? "🎉" : "💸"}
+            </span>
+            <span className="banner-text">
+              <strong>{visibleOutcome.username}</strong> ha{" "}
+              {visibleOutcome.action} <strong>{visibleOutcome.amount}</strong> monete
+            </span>
+          </div>
+        )}
+
         {/* CROUPIER E CARTA (In alto) */}
         <div className="grid-cell high-center">
           <div className="table-high-center">
@@ -126,13 +151,28 @@ export default function OfflineRoom() {
           const isMyTurn = currentTurn === index;
           const isHero = player.hero;
 
+          const playerOutcome =
+            visibleOutcome &&
+            (visibleOutcome.playerId === player.playerId ||
+              visibleOutcome.playerId === player.id)
+              ? {
+                  text: `${player.username} ha ${visibleOutcome.action} ${visibleOutcome.amount}`,
+                  type: visibleOutcome.type,
+                }
+              : null;
+
           return (
             <div key={player.playerId} className={`grid-cell ${positionGrid}`}>
               <div className="seat-wrapper">
+                {isHero && isMyTurn && (
+                  <div className="my-turn-alert">🌟 È IL TUO TURNO! 🌟</div>
+                )}
+
                 <PlayerSeat
                   player={player}
                   isHero={isHero}
                   isActive={isMyTurn}
+                  lastOutcome={playerOutcome}
                 />
 
                 {/* CONTROLLI EROE */}

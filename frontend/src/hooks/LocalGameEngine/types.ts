@@ -18,6 +18,15 @@ export interface SingleCard {
   value: number;
 }
 
+export interface TurnOutcome {
+  playerId: number | string;
+  username: string;
+  action: "preso" | "lasciato";
+  amount: number;
+  type: "win" | "lose";
+  id: number;
+}
+
 export interface LocalGameState {
   players: OfflinePlayer[];
   piatto: number;
@@ -25,7 +34,9 @@ export interface LocalGameState {
   currentTurn: number;
   currentDeck: SingleCard[];
   proportionPosNeg: number;
+  lastTurnOutcome?: TurnOutcome | null;
 }
+
 
 export type Action =
   | { type: "RESET_DECK"; payload: { deck: SingleCard[] } }

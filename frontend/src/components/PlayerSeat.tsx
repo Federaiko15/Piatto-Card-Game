@@ -2,16 +2,23 @@ import type { Player } from "../types";
 import UserAvatar from "./UserAvatar";
 import "../styles/PlayerSeat.css";
 
+export interface TurnOutcomeData {
+  text: string;
+  type: "win" | "lose";
+}
+
 interface PlayerSeatProps {
   player: Player;
   isHero?: boolean;
   isActive?: boolean;
+  lastOutcome?: TurnOutcomeData | null;
 }
 
 export default function PlayerSeat({
   player,
   isHero,
   isActive,
+  lastOutcome,
 }: PlayerSeatProps) {
   // Raggruppiamo i controlli sullo status
   const isEliminato = player.status === "eliminato";
@@ -29,8 +36,18 @@ export default function PlayerSeat({
         ${isEliminato ? "seat-eliminato" : ""} 
         ${isLogout ? "seat-logout" : ""}`}
     >
+      {/* Messaggio esito fine turno ("nome_utente ha preso/lasciato valore_puntato") */}
+      {lastOutcome && (
+        <div
+          key={lastOutcome.text + lastOutcome.type}
+          className={`turn-outcome-bubble outcome-${lastOutcome.type}`}
+        >
+          {lastOutcome.text}
+        </div>
+      )}
+
       {/* Indicatore del turno (Fumetto) */}
-      {isReallyActive && !isHero && (
+      {!lastOutcome && isReallyActive && !isHero && (
         <div className="turn-indicator">Tocca a lui!</div>
       )}
 

@@ -63,6 +63,81 @@
   border-color: #f39c12 transparent transparent transparent;
 }
 
+/* Messaggio Esito Fine Turno ("nome_utente ha preso/lasciato valore_puntato") */
+.turn-outcome-bubble {
+  position: absolute;
+  top: clamp(-36px, -5vw, -28px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: clamp(0.7rem, 1.2vw, 0.82rem);
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+  z-index: 60;
+  letter-spacing: 0.4px;
+  pointer-events: none;
+  animation: outcomeFloat 3.5s forwards ease-in-out;
+}
+
+.turn-outcome-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px 5px 0;
+  border-style: solid;
+}
+
+.turn-outcome-bubble.outcome-win {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  border: 1.5px solid #34d399;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.55);
+}
+
+.turn-outcome-bubble.outcome-win::after {
+  border-color: #059669 transparent transparent transparent;
+}
+
+.turn-outcome-bubble.outcome-lose {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  border: 1.5px solid #f87171;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.55);
+}
+
+.turn-outcome-bubble.outcome-lose::after {
+  border-color: #dc2626 transparent transparent transparent;
+}
+
+@keyframes outcomeFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.85);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.05);
+  }
+  20% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.92);
+  }
+}
+
+
 /* Avatar Wrapper */
 .seat-avatar-wrapper {
   display: flex;

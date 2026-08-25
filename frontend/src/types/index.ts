@@ -189,3 +189,13 @@ export interface AlertProps {
   title: string;
   alert: boolean;
 }
+
+export interface TurnOutcome {
+  playerId: string;
+  username: string;
+  action: "preso" | "lasciato";
+  amount: number;
+  type: "win" | "lose";
+  id: number;
+}
+

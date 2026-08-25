@@ -13,6 +13,7 @@ import type {
   SocketMessageChatResponse,
   SocketLogOutResponse,
   SocketErrorResponse,
+  TurnOutcome,
 } from "../types";
 import showSwal from "../services/CustomAlert";
 import { notificationManager } from "../services/NotificationManager.ts";
@@ -34,6 +35,8 @@ export function useGameEngine(lobbyId: string | undefined) {
   const [isGameFinished, setIsGameFinished] = useState<boolean>(false);
   const [isWaitingRematch, setIsWaitingRematch] = useState<boolean>(false);
   const [newMazzo, setNewMazzo] = useState<boolean>(false);
+  const [lastTurnOutcome, setLastTurnOutcome] = useState<TurnOutcome | null>(null);
+
 
   const personalId = getIdFromToken();
 
@@ -141,8 +144,26 @@ export function useGameEngine(lobbyId: string | undefined) {
         setCurrentTurn(data.nextTurn);
       }
 
-      // Aggiornamento dei giocatori per il frontend
+      // Aggiornamento dei giocatori per il frontend e tracciamento esito turno
       setPlayers((prev) => {
+        const playerWhoPlayed = prev.find((p) => p.id === data.winnerId);
+        if (playerWhoPlayed) {
+          const isWin = data.card.value > 5;
+          const betAmount =
+            playerWhoPlayed.currentBet > 0
+              ? playerWhoPlayed.currentBet
+              : Math.abs(data.newBalance - playerWhoPlayed.balance);
+
+          setLastTurnOutcome({
+            playerId: data.winnerId,
+            username: playerWhoPlayed.username,
+            action: isWin ? "preso" : "lasciato",
+            amount: betAmount,
+            type: isWin ? "win" : "lose",
+            id: Date.now() + Math.random(),
+          });
+        }
+
         const updated = prev.map((p) =>
           p.id === data.winnerId
             ? { ...p, balance: data.newBalance, currentBet: 0 }
@@ -252,6 +273,15 @@ export function useGameEngine(lobbyId: string | undefined) {
     }
   }, [isMyTurn]);
 
+  // Timer per nascondere il messaggio dell'esito del turno dopo 3.5 secondi
+  useEffect(() => {
+    if (!lastTurnOutcome) return;
+    const timer = window.setTimeout(() => {
+      setLastTurnOutcome(null);
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [lastTurnOutcome?.id]);
+
   // Calcolo anche l'id dell'utente che deve giocare
   const activePlayerId = players?.length > 0 ? players[currentTurn]?.id : null;
   // E restituisco alla GameRoom.tsx, che chiamerà questo custom hook, le variabili di cui ha bisogno
@@ -269,5 +299,7 @@ export function useGameEngine(lobbyId: string | undefined) {
     isGameFinished,
     isWaitingRematch,
     newMazzo,
+    lastTurnOutcome,
   };
 }
+

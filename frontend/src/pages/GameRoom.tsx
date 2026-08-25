@@ -34,6 +34,7 @@ export default function GameRoom() {
     isGameFinished,
     isWaitingRematch,
     newMazzo,
+    lastTurnOutcome,
   } = useGameEngine(lobbyId);
 
   const [isCardHidden, setIsCardHidden] = useState<boolean>(true);
@@ -162,6 +163,22 @@ export default function GameRoom() {
           </div>
         )}
 
+        {/* BANNER MOBILE ESITO TURNO GIOCATORE */}
+        {lastTurnOutcome && (
+          <div
+            key={lastTurnOutcome.id}
+            className={`mobile-turn-banner banner-${lastTurnOutcome.type}`}
+          >
+            <span className="banner-icon">
+              {lastTurnOutcome.type === "win" ? "🎉" : "💸"}
+            </span>
+            <span className="banner-text">
+              <strong>{lastTurnOutcome.username}</strong> ha{" "}
+              {lastTurnOutcome.action} <strong>{lastTurnOutcome.amount}</strong> monete
+            </span>
+          </div>
+        )}
+
         {/* IL CROUPIER E LA CARTA (In alto) */}
         <div className="grid-cell high-center">
           {newMazzo && (
@@ -207,15 +224,34 @@ export default function GameRoom() {
           const controlsDisabled =
             !isMyTurn || isGameFinished || isWaitingRematch;
 
+          const playerOutcome =
+            lastTurnOutcome && lastTurnOutcome.playerId === player.id
+              ? {
+                  text: `${player.username} ha ${lastTurnOutcome.action} ${lastTurnOutcome.amount}`,
+                  type: lastTurnOutcome.type,
+                }
+              : null;
+
           return (
             <div key={player.id} className={`grid-cell ${positionGrid}`}>
-              {/* INTERFACCIA DELLO USER PRINCIPALE (Comandi) */}
-              {isHero && (
-                <>
-                  {isMyTurn && !isGameFinished && !isWaitingRematch && (
-                    <div className="my-turn-alert">🌟 È IL TUO TURNO! 🌟</div>
-                  )}
+              <div className="seat-wrapper">
+                {/* INTERFACCIA DELLO USER PRINCIPALE (Allerta Turno) */}
+                {isHero && isMyTurn && !isGameFinished && !isWaitingRematch && (
+                  <div className="my-turn-alert">🌟 È IL TUO TURNO! 🌟</div>
+                )}
 
+                {/* IL COMPONENTE DEL POSTO */}
+                <PlayerSeat
+                  player={player}
+                  isHero={isHero}
+                  isActive={
+                    isThisSetActive && !isGameFinished && !isWaitingRematch
+                  }
+                  lastOutcome={playerOutcome}
+                />
+
+                {/* INTERFACCIA DELLO USER PRINCIPALE (Comandi SOTTO il nome/posto) */}
+                {isHero && (
                   <HeroControls
                     gameSocket={gameSocket}
                     lobbyId={lobbyId!}
@@ -223,17 +259,8 @@ export default function GameRoom() {
                     pot={pot}
                     controlsDisabled={controlsDisabled}
                   />
-                </>
-              )}
-
-              {/* IL COMPONENTE DEL POSTO */}
-              <PlayerSeat
-                player={player}
-                isHero={isHero}
-                isActive={
-                  isThisSetActive && !isGameFinished && !isWaitingRematch
-                }
-              />
+                )}
+              </div>
             </div>
           );
         })}
