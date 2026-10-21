@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { useLocalGameEngine } from "../hooks/LocalGameEngine/useLocalGameEngine";
 import PlayerSeat from "../components/PlayerSeat";
 import Card from "../components/Cards";
+import BetControls from "../components/BetControls";
+import OpponentsStrip from "../components/OpponentsStrip";
+import showSwal from "../services/CustomAlert";
 import piattoImg from "../assets/piatto.png";
 import croupierImg from "../assets/croupier.png";
 import coinsImg from "../assets/coins.png";
@@ -47,42 +50,40 @@ export default function OfflineRoom() {
       state?.numPlayers || 4,
     );
 
-  const [visibleOutcome, setVisibleOutcome] = useState(lastTurnOutcome);
+  // l'esito dell'ultimo turno resta visibile per qualche secondo, poi si nasconde
+  const [hiddenOutcomeId, setHiddenOutcomeId] = useState<number | null>(null);
 
   useEffect(() => {
-    setVisibleOutcome(lastTurnOutcome);
     if (!lastTurnOutcome) return;
-    const timer = window.setTimeout(() => {
-      setVisibleOutcome(null);
-    }, 2500);
+    const { id } = lastTurnOutcome;
+    const timer = window.setTimeout(() => setHiddenOutcomeId(id), 2500);
     return () => window.clearTimeout(timer);
-  }, [lastTurnOutcome?.id, lastTurnOutcome]);
+  }, [lastTurnOutcome]);
 
-  const [heroBet, setHeroBet] = useState<number | string>(state?.starterBet || 10);
+  const visibleOutcome =
+    lastTurnOutcome && lastTurnOutcome.id !== hiddenOutcomeId ? lastTurnOutcome : null;
 
-  if (!state) return <Navigate to="/" replace />;
+  if (!state) return <Navigate to="/offline" replace />;
 
-  const handleHeroBetChange = (value: string) => {
-    if (value === "") {
-      setHeroBet("");
-      return;
+  const hero = players.find((p) => p.hero);
+  const heroId = hero?.id ?? "";
+
+  // uscire a metà partita la fa perdere: chiediamo conferma
+  const handleLeave = async () => {
+    if (!finished) {
+      const confirmed = await showSwal({
+        type: "leave_table",
+        title: "Vuoi lasciare il tavolo?",
+        alert: true,
+      });
+      if (!confirmed) return;
     }
-    const parsed = parseInt(value, 10);
-    if (!Number.isNaN(parsed)) {
-      setHeroBet(Math.max(1, parsed));
-    }
+    navigate("/");
   };
 
-  const handleHeroBetBlur = () => {
-    if (heroBet === "" || Number(heroBet) < 1) {
-      setHeroBet(1);
-    }
-  };
-
-  const handleHeroPlay = () => {
-    const bet = Math.max(1, Number(heroBet) || 1);
-    playTurn(bet);
-  };
+  const winner = finished
+    ? players.reduce((best, p) => (p.balance > best.balance ? p : best))
+    : null;
 
   return (
     // CONTENITORE PRINCIPALE
@@ -91,7 +92,7 @@ export default function OfflineRoom() {
       <div className="offline-header">
         <button
           type="button"
-          onClick={() => navigate("/")}
+          onClick={handleLeave}
           className="btn-leave"
         >
           Esci
@@ -104,7 +105,9 @@ export default function OfflineRoom() {
       </div>
 
       {/* TAVOLO (GRIGLIA) */}
-      <div className="poker-table offline-table">
+      <OpponentsStrip players={players} heroId={heroId} currentTurn={currentTurn} />
+
+      <div className="poker-table offline-table with-strip">
         <img
           src={tableBg}
           alt="Tavolo da gioco"
@@ -126,15 +129,36 @@ export default function OfflineRoom() {
 
         {/* FINE PARTITA */}
         {finished && (
-          <div className="offline-game-over">
-            <p>
+          <div className="offline-game-over" role="dialog" aria-label="Fine partita">
+            <p className="offline-game-over-reason">
               {finished === "pot_emptied"
                 ? "Il piatto è vuoto: partita finita!"
                 : "È rimasto un solo giocatore: partita finita!"}
             </p>
-            <button type="button" className="btn-draw" onClick={() => navigate("/")}>
-              Torna alla home
-            </button>
+            {winner && (
+              <p className="offline-game-over-winner">
+                {winner.hero
+                  ? "🏆 Hai chiuso con più monete di tutti!"
+                  : `🏆 Il più ricco al tavolo è ${winner.username}`}
+              </p>
+            )}
+            {hero && (
+              <p className="offline-game-over-hero">
+                Le tue monete: <strong>{hero.balance}</strong>
+              </p>
+            )}
+            <div className="offline-game-over-actions">
+              <button
+                type="button"
+                className="btn-draw"
+                onClick={() => navigate("/offline", { state })}
+              >
+                Gioca ancora
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => navigate("/")}>
+                Menu
+              </button>
+            </div>
           </div>
         )}
 
@@ -144,7 +168,12 @@ export default function OfflineRoom() {
             <img src={croupierImg} alt="Croupier" className="pixel-image croupier-img" />
             {card.value > 0 && (
               <div className="card-display">
-                <Card seed={card.seed} value={card.value} isHidden={false} />
+                <Card
+                  key={lastTurnOutcome?.id}
+                  seed={card.seed}
+                  value={card.value}
+                  reveal
+                />
               </div>
             )}
           </div>
@@ -198,51 +227,12 @@ export default function OfflineRoom() {
 
                 {/* CONTROLLI EROE */}
                 {isHero && isMyTurn && !finished && (
-                  <div className="hero-offline-controls">
-                    <div className="bet-controls">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setHeroBet((prev) => {
-                            const current = typeof prev === "number" ? prev : parseInt(prev, 10) || 1;
-                            return Math.max(1, current - 5);
-                          })
-                        }
-                      >
-                        -
-                      </button>
-
-                      <input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={heroBet}
-                        onChange={(e) => handleHeroBetChange(e.target.value)}
-                        onBlur={handleHeroBetBlur}
-                        className="bet-input"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setHeroBet((prev) => {
-                            const current = typeof prev === "number" ? prev : parseInt(prev, 10) || 1;
-                            return current + 5;
-                          })
-                        }
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="btn-draw"
-                      onClick={handleHeroPlay}
-                    >
-                      Conferma e Pesca
-                    </button>
-                  </div>
+                  <BetControls
+                    max={Math.max(1, Math.min(player.balance, piatto))}
+                    potIsMax={piatto <= player.balance}
+                    initialBet={state.starterBet}
+                    onConfirm={playTurn}
+                  />
                 )}
 
                 {/* BADGE PERSONALITÀ */}

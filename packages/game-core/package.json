@@ -18,7 +18,8 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "simulate": "SIMULATE=1 vitest run roguelike.sim"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

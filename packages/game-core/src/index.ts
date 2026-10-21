@@ -5,3 +5,4 @@ export * from "./core/turns.js";
 export * from "./core/bet.js";
 export * from "./classic/table.js";
 export * from "./classic/bots.js";
+export * from "./roguelike/run.js";

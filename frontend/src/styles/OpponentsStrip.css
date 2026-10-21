@@ -1,0 +1,90 @@
+/* =========================================
+   STRISCIA AVVERSARI (SOLO SMARTPHONE)
+   ========================================= */
+.opponents-strip {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .opponents-strip {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    z-index: 105;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0 10px;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .opponents-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .opponent-chip {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 72px;
+    max-width: 110px;
+    padding: 4px 8px;
+    border-radius: 10px;
+    border: 1.5px solid #475569;
+    background: rgba(30, 41, 59, 0.94);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .opponent-chip--active {
+    border-color: #f39c12;
+    box-shadow: 0 0 12px rgba(243, 156, 18, 0.6);
+  }
+
+  .opponent-chip--out {
+    opacity: 0.5;
+    filter: grayscale(100%);
+  }
+
+  .opponent-chip-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #ffffff;
+  }
+
+  .opponent-chip-balance {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #ffd700;
+  }
+
+  /* la striscia occupa lo spazio libero sopra il croupier: il banner degli esiti si sposta sotto */
+  .with-strip .mobile-turn-banner {
+    top: 100px;
+  }
+
+  /* posto dell'eroe compatto, per lasciare spazio ai controlli della puntata */
+  .with-strip .bottom-center .placeholder-box {
+    flex-direction: row;
+    width: auto;
+    gap: 8px;
+    padding: 5px 12px;
+  }
+
+  .with-strip .bottom-center .seat-info {
+    align-items: flex-start;
+  }
+
+  .with-strip .bet-hint {
+    display: none;
+  }
+}

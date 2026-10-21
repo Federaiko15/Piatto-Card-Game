@@ -89,7 +89,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         }
 
         localStorage.removeItem("tokenPiatto");
-        window.location.href = "/"; // Reindirizzamento forzato al login
+        window.location.href = "/login"; // Reindirizzamento forzato al login
       }
     } catch (error) {
       console.error("Errore durante il refresh del token", error);

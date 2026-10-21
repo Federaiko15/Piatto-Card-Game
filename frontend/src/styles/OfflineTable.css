@@ -648,3 +648,46 @@
   text-align: center;
   box-shadow: 0 0 15px rgba(243, 156, 18, 0.5);
 }
+
+.offline-game-over p {
+  margin: 0;
+}
+
+.offline-game-over-reason {
+  font-size: 1.05rem;
+  color: #ffd700;
+}
+
+.offline-game-over-winner,
+.offline-game-over-hero {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.offline-game-over-hero strong {
+  color: #ffd700;
+}
+
+.offline-game-over-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-secondary {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1.5px solid #64748b;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  border-color: #f39c12;
+  background: #273449;
+}

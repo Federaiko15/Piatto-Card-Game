@@ -13,11 +13,7 @@ export default function Auth() {
     setIsLogin,
     registrationStep,
     isOnline,
-    isForcedOffline,
-    setIsForcedOffline,
     isLoading,
-    offlineForm,
-    setOfflineForm,
     handleSubmit,
     navigate,
     isForgotPassword,
@@ -35,16 +31,6 @@ export default function Auth() {
 
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
 
-  const handleOfflineChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setOfflineForm((prev) => ({
-      ...prev,
-      [name]: name === "username" ? value : Number(value),
-    }));
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prevForm) => ({
@@ -59,8 +45,8 @@ export default function Auth() {
       style={{ backgroundImage: `url(${authBg})`, imageRendering: "pixelated" }}
     >
       <div className="auth-box">
-        {/* CONDIZIONE PRINCIPALE: ONLINE vs OFFLINE */}
-        {isOnline && !isForcedOffline ? (
+        {/* senza connessione non si può accedere: proponiamo il tavolo contro i bot */}
+        {isOnline ? (
           isForgotPassword ? (
             <>
               <h1 className="auth-title">Recupera Password 🔐</h1>
@@ -268,14 +254,6 @@ export default function Auth() {
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  className="auth-submit-btn"
-                  style={{ marginTop: "10px", backgroundColor: "#d35400" }}
-                  onClick={() => setIsForcedOffline(true)}
-                >
-                  Gioca in Modalità Offline
-                </button>
               </form>
 
               <p className="auth-switch-text">
@@ -299,6 +277,15 @@ export default function Auth() {
                 </p>
               )}
 
+              <p className="auth-switch-text">
+                <button
+                  onClick={() => navigate("/")}
+                  className="auth-switch-btn"
+                >
+                  ← Scegli un'altra modalità
+                </button>
+              </p>
+
               <div
                 className="auth-footer"
                 style={{
@@ -320,77 +307,17 @@ export default function Auth() {
         ) : (
           /* SEZIONE MOSTRATA SOLO QUANDO OFFLINE */
           <div className="offline-box">
-            <h2 className="offline-title">
-              {!isOnline ? "Connessione Assente 📡" : "Modalità Offline 📡"}
-            </h2>
+            <h2 className="offline-title">Connessione Assente 📡</h2>
             <p className="offline-subtitle">
-              Imposta il tuo tavolo locale e gioca contro i Bot!
+              Per giocare online serve internet, ma puoi sempre sfidare i Bot!
             </p>
-
-            <form
-              className="auth-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                // Navighiamo alla rotta offline PASSANDO I DATI!
-                navigate("/offline-room", { state: offlineForm });
-              }}
+            <button
+              type="button"
+              className="offline-submit-btn"
+              onClick={() => navigate("/offline")}
             >
-              <input
-                type="text"
-                name="username"
-                value={offlineForm.username}
-                onChange={handleOfflineChange}
-                placeholder="Il tuo nome"
-                className="offline-input"
-                required
-              />
-
-              <div className="offline-row">
-                <div className="offline-col">
-                  <label className="offline-label">Puntata Iniziale</label>
-                  <input
-                    type="number"
-                    name="starterBet"
-                    value={offlineForm.starterBet}
-                    onChange={handleOfflineChange}
-                    min="1"
-                    className="offline-input"
-                    required
-                  />
-                </div>
-                <div className="offline-col">
-                  <label className="offline-label">Num. Giocatori</label>
-                  <select
-                    name="numPlayers"
-                    value={offlineForm.numPlayers}
-                    onChange={handleOfflineChange}
-                    className="offline-input"
-                  >
-                    <option value={2}>2 Giocatori</option>
-                    <option value={3}>3 Giocatori</option>
-                    <option value={4}>4 Giocatori</option>
-                    <option value={5}>5 Giocatori</option>
-                    <option value={6}>6 Giocatori</option>
-                    <option value={7}>7 Giocatori</option>
-                  </select>
-                </div>
-              </div>
-
-              <button type="submit" className="offline-submit-btn">
-                Crea Tavolo Offline
-              </button>
-
-              {isOnline && (
-                <button
-                  type="button"
-                  className="offline-submit-btn"
-                  style={{ marginTop: "10px", backgroundColor: "#c0392b" }}
-                  onClick={() => setIsForcedOffline(false)}
-                >
-                  Torna al Login
-                </button>
-              )}
-            </form>
+              Gioca contro i Bot
+            </button>
           </div>
         )}
       </div>

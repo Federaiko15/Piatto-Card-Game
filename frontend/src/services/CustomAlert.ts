@@ -130,6 +130,17 @@ export default function showSwal(props: AlertProps) {
 
         return result.isConfirmed;
       });
+    } else if (props.type === "leave_table") {
+      return MySwal.fire({
+        title: props.title,
+        text: "La partita in corso andrà persa.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Sì, esco",
+        cancelButtonText: "Resto al tavolo",
+      }).then((result) => result.isConfirmed);
     } else if (props.type === "piatto") {
       return MySwal.fire({
         title: props.title,

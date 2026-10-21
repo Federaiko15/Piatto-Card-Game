@@ -259,7 +259,7 @@ export default function Terms() {
         </section>
 
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/login")}
           className="auth-submit-btn"
           style={{ marginTop: "20px" }}
         >

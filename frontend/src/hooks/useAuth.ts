@@ -32,7 +32,6 @@ export function useAuth() {
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [registrationStep, setRegistrationStep] = useState<1 | 2>(1);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [isForcedOffline, setIsForcedOffline] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasOtpFailed, setHasOtpFailed] = useState<boolean>(false);
 
@@ -46,13 +45,6 @@ export function useAuth() {
     confirmPassword: "",
   });
   const [hasForgotOtpFailed, setHasForgotOtpFailed] = useState<boolean>(false);
-
-  // Stato per il form della modalità Offline
-  const [offlineForm, setOfflineForm] = useState({
-    username: "Giocatore 1",
-    starterBet: 10,
-    numPlayers: 4,
-  });
 
   const handleSendOtp = async () => {
     setIsLoading(true);
@@ -376,11 +368,7 @@ export function useAuth() {
     setIsLogin,
     registrationStep,
     isOnline,
-    isForcedOffline,
-    setIsForcedOffline,
     isLoading,
-    offlineForm,
-    setOfflineForm,
     handleSubmit,
     navigate,
     isForgotPassword,

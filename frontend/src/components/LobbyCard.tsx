@@ -20,7 +20,7 @@ export default function LobbyCard({ lobby }: LobbyCardProps) {
         title: "Sessione scaduta o non valida, effettua l'accesso.",
         alert: true,
       });
-      navigate("/");
+      navigate("/login");
       return;
     }
     try {

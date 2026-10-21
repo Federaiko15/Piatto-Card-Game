@@ -59,7 +59,7 @@ export function useGameEngine(lobbyId: string | undefined) {
         title: "Devi effettuare il login!",
         alert: false,
       });
-      navigate("/");
+      navigate("/login");
       return;
     }
 
