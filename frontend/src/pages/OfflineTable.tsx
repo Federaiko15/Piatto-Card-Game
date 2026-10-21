@@ -33,8 +33,15 @@ export default function OfflineRoom() {
   const navigate = useNavigate();
   const state = location.state;
 
-  const { players, piatto, card, currentTurn, playTurn, lastTurnOutcome } =
-    useLocalGameEngine(
+  const {
+    players,
+    piatto,
+    card,
+    currentTurn,
+    finished,
+    playTurn,
+    lastTurnOutcome,
+  } = useLocalGameEngine(
       state?.username || "Giocatore",
       state?.starterBet || 10,
       state?.numPlayers || 4,
@@ -117,6 +124,20 @@ export default function OfflineRoom() {
           </div>
         )}
 
+        {/* FINE PARTITA */}
+        {finished && (
+          <div className="offline-game-over">
+            <p>
+              {finished === "pot_emptied"
+                ? "Il piatto è vuoto: partita finita!"
+                : "È rimasto un solo giocatore: partita finita!"}
+            </p>
+            <button type="button" className="btn-draw" onClick={() => navigate("/")}>
+              Torna alla home
+            </button>
+          </div>
+        )}
+
         {/* CROUPIER E CARTA (In alto) */}
         <div className="grid-cell high-center">
           <div className="table-high-center">
@@ -164,7 +185,7 @@ export default function OfflineRoom() {
           return (
             <div key={player.playerId} className={`grid-cell ${positionGrid}`}>
               <div className="seat-wrapper">
-                {isHero && isMyTurn && (
+                {isHero && isMyTurn && !finished && (
                   <div className="my-turn-alert">🌟 È IL TUO TURNO! 🌟</div>
                 )}
 
@@ -176,7 +197,7 @@ export default function OfflineRoom() {
                 />
 
                 {/* CONTROLLI EROE */}
-                {isHero && isMyTurn && (
+                {isHero && isMyTurn && !finished && (
                   <div className="hero-offline-controls">
                     <div className="bet-controls">
                       <button

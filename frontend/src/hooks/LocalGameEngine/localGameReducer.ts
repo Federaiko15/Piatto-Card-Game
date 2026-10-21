@@ -1,13 +1,10 @@
-import type {
-  LocalGameState,
-  OfflinePlayer,
-  SingleCard,
-  TypeOfPlayer,
-  Action,
-} from "./types.ts";
-
-import { shuffleDeck, createDeck } from "./deck.ts";
-import { getNextTurnIndex } from "./turn.ts";
+import {
+  applyClassicAction,
+  createClassicTable,
+  BOT_PERSONALITIES,
+  type Rng,
+} from "@piatto/game-core";
+import type { LocalGameState, OfflinePlayer, Action } from "./types.ts";
 
 const BOT_NAMES = [
   "Giovannino",
@@ -18,17 +15,10 @@ const BOT_NAMES = [
   "Giovanna",
 ] as const;
 
-const PERSONALITIES: TypeOfPlayer[] = [
-  "Aggressivo",
-  "Calmo",
-  "Tirchio",
-  "Pazzo",
-  "Calcolatore",
-];
-
 const buildPlayers = (
   userName: string,
   numPlayers: number,
+  rng: Rng,
 ): OfflinePlayer[] => {
   const initialPlayers: OfflinePlayer[] = [
     {
@@ -52,112 +42,73 @@ const buildPlayers = (
       status: "playing",
       currentBet: 0,
       personality:
-        PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)],
+        BOT_PERSONALITIES[Math.floor(rng() * BOT_PERSONALITIES.length)],
     });
   }
 
   return initialPlayers;
 };
 
-const getUpdatedProportion = (current: number, card: SingleCard): number => {
-  if (card.value <= 5) return current - 1;
-  return current + 1;
-};
-
 export const createInitialState = (
   userName: string,
   starterBet: number,
   numPlayers: number,
+  rng: Rng,
 ): LocalGameState => {
   return {
-    players: buildPlayers(userName, numPlayers),
-    piatto: starterBet * numPlayers,
+    table: createClassicTable(
+      buildPlayers(userName, numPlayers, rng),
+      starterBet * numPlayers,
+      rng,
+    ),
     card: { seed: "", value: 0 },
-    currentTurn: 0,
-    currentDeck: shuffleDeck(createDeck()),
-    proportionPosNeg: 0,
     lastTurnOutcome: null,
   };
 };
 
-export const reducer = (
-  state: LocalGameState,
-  action: Action,
-): LocalGameState => {
-  switch (action.type) {
-    case "RESET_DECK":
-      return {
-        ...state,
-        currentDeck: action.payload.deck,
-        proportionPosNeg: 0,
-      };
+// Il reducer riceve il generatore casuale della partita, usato da game-core quando deve rimescolare il mazzo
+export const createReducer =
+  (rng: Rng) =>
+  (state: LocalGameState, action: Action): LocalGameState => {
+    switch (action.type) {
+      case "PLAY_TURN": {
+        const currentPlayer = state.table.players[state.table.currentTurn];
+        if (!currentPlayer) return state;
 
-    case "PLAY_TURN": {
-      const currentPlayer = state.players[state.currentTurn];
+        // Offline puntata e pescata avvengono insieme: applichiamo le due mosse di fila
+        const bet = applyClassicAction(
+          state.table,
+          { type: "bet", playerId: currentPlayer.id, amount: action.payload.bet },
+          rng,
+        );
+        if (!bet.ok) return state;
 
-      if (!currentPlayer || currentPlayer.status !== "playing") {
+        const draw = applyClassicAction(
+          bet.table,
+          { type: "draw", playerId: currentPlayer.id },
+          rng,
+        );
+        if (!draw.ok) return state;
+
+        const drawn = draw.events.find((e) => e.type === "card_drawn");
+        if (!drawn) return state;
+        const win = drawn.outcome === "win";
+
+        return {
+          table: draw.table,
+          card: drawn.card,
+          lastTurnOutcome: {
+            playerId: currentPlayer.id,
+            username: currentPlayer.username,
+            action: win ? "preso" : "lasciato",
+            amount: drawn.bet,
+            type: win ? "win" : "lose",
+            id: Date.now() + Math.random(),
+          },
+        };
+      }
+
+      default:
         return state;
-      }
-
-      const bet = action.payload.bet;
-
-      if (bet < 1 || bet > currentPlayer.balance || bet > state.piatto) {
-        return state;
-      }
-
-      let workingDeck = state.currentDeck;
-      let nextProportionBase = state.proportionPosNeg;
-
-      if (workingDeck.length === 0) {
-        workingDeck = shuffleDeck(createDeck());
-        nextProportionBase = 0;
-      }
-
-      const drawnCard = workingDeck[workingDeck.length - 1];
-      if (!drawnCard) return state;
-
-      const newDeck = workingDeck.slice(0, -1); // questo rimuove la carta "dall'alto", dall'ultima posizione
-      const win = drawnCard.value > 5;
-
-      const updatedPlayers: OfflinePlayer[] = state.players.map(
-        (player, index) => {
-          if (index !== state.currentTurn) {
-            return { ...player, currentBet: 0 };
-          }
-
-          const newBalance = win ? player.balance + bet : player.balance - bet;
-
-          return {
-            ...player,
-            balance: newBalance,
-            status: newBalance <= 0 ? "eliminato" : "playing",
-            currentBet: 0,
-          };
-        },
-      );
-
-      const nextTurn = getNextTurnIndex(updatedPlayers, state.currentTurn);
-
-      return {
-        ...state,
-        players: updatedPlayers,
-        piatto: win ? state.piatto - bet : state.piatto + bet,
-        card: drawnCard,
-        currentDeck: newDeck,
-        proportionPosNeg: getUpdatedProportion(nextProportionBase, drawnCard),
-        currentTurn: nextTurn,
-        lastTurnOutcome: {
-          playerId: currentPlayer.playerId,
-          username: currentPlayer.username,
-          action: win ? "preso" : "lasciato",
-          amount: bet,
-          type: win ? "win" : "lose",
-          id: Date.now() + Math.random(),
-        },
-      };
     }
-
-    default:
-      return state;
-  }
-};
+  };

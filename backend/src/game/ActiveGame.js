@@ -1,11 +1,18 @@
-import createDeck from "./deck.js";
+import {
+  applyClassicAction,
+  createClassicTable,
+  createRng,
+  nextTurnIndex,
+  randomSeed,
+} from "@piatto/game-core";
 import app from "../app.js";
 import { handleTurnTimeout } from "../services/activeGameService.js";
 
 const TURN_DURATION = 60000; // 1 minuto per turno
 
 class ActiveGame {
-  //questa classe gestisce semplicemente tutte le informazioni relative ad una partita in corso, come i turni della partita o il mazzo di carte
+  // questa classe tiene le informazioni "da server" di una partita in corso (stanza, timer, rivincita),
+  // mentre lo stato del tavolo (giocatori, piatto, mazzo, turno) e le regole stanno in game-core
   constructor(lobbyId, starterBet, activePlayers, piattoIniziale, idCreatore) {
     // Prendiamo subito l'istanza di Socket.IO per comunicare con i client
     this.io = app.get("io");
@@ -15,21 +22,63 @@ class ActiveGame {
 
     this.lobbyId = lobbyId;
     this.starterBet = starterBet;
-    this.activePlayers = activePlayers;
-    this.piatto = Number(piattoIniziale) || 0; // soldi totali nel piatto
     this.idCreatore = idCreatore;
 
-    this.deck = createDeck();
-    this.currentTurnIndex = 0;
+    // il seed ci permette di riprodurre una partita identica se dovessimo indagare un bug
+    this.seed = randomSeed();
+    this.rng = createRng(this.seed);
+    this.table = createClassicTable(
+      activePlayers,
+      Number(piattoIniziale) || 0, // soldi totali nel piatto
+      this.rng,
+    );
+
     this.status = "waiting";
     this.rematchPlayer = [];
     this.turnTimer = null;
   }
 
+  // Questi getter/setter permettono al resto del server di continuare a usare game.activePlayers, game.piatto, ecc.
+  get activePlayers() {
+    return this.table.players;
+  }
+  set activePlayers(players) {
+    this.table = { ...this.table, players };
+  }
+
+  get piatto() {
+    return this.table.piatto;
+  }
+  set piatto(value) {
+    this.table = { ...this.table, piatto: value };
+  }
+
+  get currentTurnIndex() {
+    return this.table.currentTurn;
+  }
+
+  get deck() {
+    return this.table.deck;
+  }
+
+  // Applica una mossa con le regole di game-core: se è valida aggiorna il tavolo e restituisce gli eventi
+  apply(action) {
+    const result = applyClassicAction(this.table, action, this.rng);
+    if (result.ok) {
+      this.table = result.table;
+    }
+    return result;
+  }
+
+  // Nuova partita nella stessa lobby (rivincita): nuovo mazzo, piatto e turno ripartono da zero
+  resetTable(players, piatto) {
+    this.table = createClassicTable(players, piatto, this.rng);
+  }
+
   // Questo metodo viene chiamato appena comincia una partita, quindi appena si riempie del tutto all'ultimo login
   starterMatch() {
     console.log(
-      `[Game ${this.lobbyId}] Partita iniziata, avvio il primo turno.`,
+      `[Game ${this.lobbyId}] Partita iniziata (seed ${this.seed}), avvio il primo turno.`,
     );
     this.startTurnTimer();
   }
@@ -49,36 +98,13 @@ class ActiveGame {
     }
   }
 
-  drawCard() {
-    if (this.deck.length === 0) {
-      this.deck = createDeck();
-      this.io.to(this.lobbyId).emit("new_mazzo"); // avviso il client che farà mostrare un messaggio
-    }
-    return this.deck.pop();
-  }
-
+  // Passa il turno senza una mossa (es. il giocatore di turno si è disconnesso) e fa ripartire il timer
   nextTurn() {
-    // Passa al prossimo, se arriva alla fine dell'array ricomincia da 0
-    let attempts = 0;
-    do {
-      this.currentTurnIndex =
-        (this.currentTurnIndex + 1) % this.activePlayers.length;
-      attempts++;
-      // Se abbiamo fatto un giro completo e sono tutti eliminati (improbabile), usciamo
-    } while (
-      this.activePlayers[this.currentTurnIndex].status !== "playing" &&
-      attempts < this.activePlayers.length
-    );
-
-    // Una volta trovato il prossimo giocatore, facciamo partire il suo timer
+    this.table = {
+      ...this.table,
+      currentTurn: nextTurnIndex(this.table.players, this.table.currentTurn),
+    };
     this.startTurnTimer();
-  }
-
-  nextCard() {
-    if (this.deck.length === 0) {
-      throw new Error("Il mazzo è finito!");
-    }
-    return this.deck[this.deck.length - 1];
   }
 }
 

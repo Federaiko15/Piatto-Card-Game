@@ -2,7 +2,6 @@ import { getGame, deleteGame } from "../game/GameStateManager.js";
 import { deleteLobby } from "../controllers/lobby.controller.js";
 import User from "../models/user.model.js";
 import Lobby from "../models/lobby.model.js";
-import createDeck from "../game/deck.js";
 
 export const handleGameOver = async (lobbyId, io, messaggio) => {
   try {
@@ -148,19 +147,17 @@ export const handleGameReset = async (lobbyId, io) => {
       return;
     }
 
-    game.activePlayers = [...game.rematchPlayer];
+    // ogni giocatore che rientra versa di nuovo la puntata iniziale nel piatto
+    const players = game.rematchPlayer.map((player) => ({
+      ...player,
+      balance: player.balance - game.starterBet,
+      currentBet: 0,
+      status: "playing",
+    }));
     game.rematchPlayer = [];
-    game.piatto = 0;
-    game.activePlayers.forEach((player) => {
-      player.balance -= game.starterBet;
-      game.piatto += game.starterBet;
-      player.currentBet = 0;
-      player.status = "playing";
-    });
+    game.resetTable(players, players.length * game.starterBet);
 
     game.status = "playing";
-    game.currentTurnIndex = 0;
-    game.deck = createDeck();
 
     io.to(lobbyId).emit("new_game", {
       message: "La nuova partita è iniziata! Buona fortuna!",

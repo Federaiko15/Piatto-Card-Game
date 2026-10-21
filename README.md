@@ -57,7 +57,16 @@ git clone <INSERIRE_URL_DELLA_REPOSITORY_QUI>
 cd <NOME_CARTELLA_PROGETTO>
 ```
 
-### 2. Configurazione e Avvio del Backend
+### 2. Installazione delle regole di gioco (game-core)
+
+Le regole del gioco stanno in `packages/game-core` e sono usate sia dal backend sia dal frontend. Dalla cartella principale del progetto:
+
+```bash
+npm run setup   # installa game-core, backend e frontend e compila game-core
+npm test        # esegue i test delle regole
+```
+
+### 3. Configurazione e Avvio del Backend
 
 Spostarsi nella directory del server e installare le dipendenze:
 
@@ -77,7 +86,7 @@ npm run dev
 
 _Il terminale mostrerà un messaggio di conferma dell'avvenuta connessione al database e la porta in ascolto._
 
-### 3. Configurazione e Avvio del Frontend
+### 4. Configurazione e Avvio del Frontend
 
 Aprire una **nuova finestra del terminale**, tornare alla root del progetto e spostarsi nella directory client:
 
@@ -96,7 +105,7 @@ npm run dev
 
 _Il terminale mostrerà un URL in `localhost` (es. `http://localhost:5713`). Cliccare sul link per aprire il gioco nel browser._
 
-### 4. Account di Prova
+### 5. Account di Prova
 
 Per agevolare il testing e la valutazione del progetto, sono presenti nel database **7 account di prova** già verificati e pronti all'uso.
 È possibile effettuare l'accesso utilizzando le seguenti credenziali (dove la password coincide esattamente con l'indirizzo email):

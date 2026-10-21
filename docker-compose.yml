@@ -10,8 +10,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend # Usa il Dockerfile dentro la cartella frontend
-      dockerfile: Dockerfile
+      context: . # La radice del progetto, perché il frontend usa anche packages/game-core
+      dockerfile: frontend/Dockerfile
     ports:
       - "5173:80" # Mappa la porta 5173 del tuo computer alla porta 80 di NGINX
     depends_on:

@@ -1,30 +1,36 @@
 import User from "../models/user.model.js";
 import { handleGameOver, handleGameReset } from "./gameHandlerService.js";
 
-export async function handleTurnTimeout(game) {
-  const bet = 1; // La puntata forzata per inattività è sempre 1
-  const user = game.activePlayers[game.currentTurnIndex];
+// Traduce gli eventi restituiti da game-core nei messaggi socket che il frontend conosce già,
+// sia per le mosse dei giocatori sia per quelle automatiche del timer
+export async function broadcastTurnResult(game, events) {
+  const io = game.io;
+  const lobbyId = game.lobbyId;
 
-  game.io.to(game.lobbyId).emit("skip_turn", {
-    message: "Turno saltato per inattività.",
-    userId: user.id,
-    username: user.username,
-  });
-  console.log(
-    `[Timer] Il giocatore ${user.username} non ha risposto in tempo.`,
-  );
+  const drawn = events.find((e) => e.type === "card_drawn");
+  const skipped = events.find((e) => e.type === "turn_skipped");
+  const gameOver = events.find((e) => e.type === "game_over");
+  const isGameFinished = Boolean(gameOver);
 
-  if (user.status !== "playing" || user.balance < bet) {
+  // a partita finita il timer si ferma, altrimenti riparte per il prossimo giocatore
+  if (isGameFinished) {
+    game.stopTurnTimer();
+    if (gameOver.reason === "pot_emptied") game.status = "waiting_rematch";
+  } else {
+    game.startTurnTimer();
+  }
+
+  if (skipped) {
+    const user = game.activePlayers.find((p) => p.id === skipped.playerId);
     const reason =
-      user.status !== "playing"
+      skipped.reason === "not_playing"
         ? `${user.username} non è attivo e passa il turno.`
         : `${user.username} non ha abbastanza soldi per la puntata minima e passa il turno.`;
-    game.io.to(game.lobbyId).emit("message_resolved", {
+    io.to(lobbyId).emit("message_resolved", {
       userId: null,
       message: reason,
     });
-    game.nextTurn();
-    game.io.to(game.lobbyId).emit("turn_resolved", {
+    io.to(lobbyId).emit("turn_resolved", {
       message: reason,
       card: { seed: "", value: 0 },
       winnerId: user.id,
@@ -36,84 +42,85 @@ export async function handleTurnTimeout(game) {
     return;
   }
 
-  const card = game.drawCard();
+  if (!drawn) return;
+  const user = game.activePlayers.find((p) => p.id === drawn.playerId);
 
-  if (card.value <= 5) {
-    user.balance -= bet;
-    game.piatto += bet;
-
-    if (user.balance <= 0) {
-      user.balance = 0;
-      user.status = "eliminato";
-      user.dbSynced = true;
-      await User.findByIdAndUpdate(user.id, { $set: { balance: 0 } });
-      game.io.to(game.lobbyId).emit("message_resolved", {
-        userId: null,
-        message: `${user.username} ha finito i soldi ed è stato eliminato!`,
-      });
-    }
-
-    const activeCount = game.activePlayers.filter(
-      (p) => p.status === "playing",
-    ).length;
-    const isGameFinished = activeCount <= 1;
-
-    // Passiamo al prossimo turno PRIMA di inviare il messaggio al client,
-    // così l'indice sarà calcolato e aggiornato correttamente (evitando l'out of bounds)
-    if (!isGameFinished) {
-      game.nextTurn();
-    }
-
-    game.io.to(game.lobbyId).emit("turn_resolved", {
-      message: `${user.username} non ha giocato, ha pescato ${card.value} di ${card.seed} e ha perso!`,
-      card,
-      winnerId: user.id,
-      newBalance: user.balance,
-      newPiatto: game.piatto,
-      nextTurn: isGameFinished ? null : game.currentTurnIndex, // Usiamo l'indice reale, non +1
-      isGameFinished,
-    });
-
-    if (isGameFinished) {
-      setTimeout(async () => {
-        await handleGameOver(
-          game.lobbyId,
-          game.io,
-          "Partita finita: è rimasto solo un giocatore!",
-        );
-      }, 3000);
-    }
-  } else {
-    user.balance += bet;
-    game.piatto -= bet;
-    const isGameFinished = game.piatto <= 0;
-
-    // Come sopra, calcoliamo il prossimo turno prima dell'emit
-    if (!isGameFinished) {
-      game.nextTurn();
-    } else {
-      game.status = "waiting_rematch";
-    }
-
-    game.io.to(game.lobbyId).emit("turn_resolved", {
-      message: `${user.username} non ha giocato, ha pescato ${card.value} di ${card.seed} e ha vinto!`,
-      card,
-      winnerId: user.id,
-      newBalance: user.balance,
-      newPiatto: game.piatto,
-      nextTurn: isGameFinished ? null : game.currentTurnIndex, // Usiamo l'indice reale
-      isGameFinished,
-    });
-
-    if (isGameFinished) {
-      setTimeout(() => {
-        game.io.to(game.lobbyId).emit("ask_rematch", {
-          message: "Volete rigiocare la partita nella stessa lobby?",
-        });
-        setTimeout(async () => {
-          await handleGameReset(game.lobbyId, game.io);
-        }, 15000);
-      }, 1800);
-    }
+  if (events.some((e) => e.type === "deck_reshuffled")) {
+    io.to(lobbyId).emit("new_mazzo"); // avviso il client che farà mostrare un messaggio
   }
+
+  if (events.some((e) => e.type === "player_eliminated")) {
+    user.dbSynced = true; // marchiamo il nostro utente come "già salvato", nel senso che già lo avremo sincronizzato con il db
+    await User.findByIdAndUpdate(user.id, { $set: { balance: 0 } });
+
+    io.to(lobbyId).emit("message_resolved", {
+      userId: null,
+      message: `${user.username} ha finito i soldi e resterà fuori dal tavolo ad osservare!`,
+    });
+  }
+
+  const { card } = drawn;
+  const azione = drawn.automatic
+    ? `${user.username} non ha giocato, ha pescato`
+    : `${user.username} ha pescato`;
+  const esito = drawn.outcome === "win" ? "vinto" : "perso";
+  console.log(
+    `${drawn.outcome === "win" ? "✅" : "❌"} ${user.username} ha ${esito} ${drawn.bet} monete. Piatto a ${game.piatto}`,
+  );
+
+  io.to(lobbyId).emit("turn_resolved", {
+    message: `${azione} ${card.value} di ${card.seed} e ha ${esito}!`,
+    card,
+    winnerId: user.id,
+    newBalance: user.balance,
+    newPiatto: game.piatto,
+    nextTurn: isGameFinished ? null : game.currentTurnIndex,
+    isGameFinished,
+  });
+
+  if (!gameOver) return;
+
+  if (gameOver.reason === "last_player_standing") {
+    setTimeout(async () => {
+      await handleGameOver(
+        lobbyId,
+        io,
+        "Partita finita: è rimasto solo un giocatore attivo!",
+      );
+    }, 3000); // Ritardo di 3 secondi per lasciare tempo alla UI di animare la carta!
+    return;
+  }
+
+  setTimeout(() => {
+    io.to(lobbyId).emit("ask_rematch", {
+      message: "Volete rigiocare la partita nella stessa lobby?",
+    });
+
+    setTimeout(async () => {
+      await handleGameReset(lobbyId, io);
+    }, 15000);
+  }, 1800);
+}
+
+export async function handleTurnTimeout(game) {
+  const user = game.activePlayers[game.currentTurnIndex];
+  if (!user) return;
+
+  game.io.to(game.lobbyId).emit("skip_turn", {
+    message: "Turno saltato per inattività.",
+    userId: user.id,
+    username: user.username,
+  });
+  console.log(
+    `[Timer] Il giocatore ${user.username} non ha risposto in tempo.`,
+  );
+
+  // La puntata forzata per inattività (1 moneta) e il salto di chi non è attivo sono regole di game-core
+  const result = game.apply({ type: "timeout" });
+  if (!result.ok) {
+    console.log(`[Timer] Mossa automatica rifiutata: ${result.error}`);
+    return;
+  }
+
+  await broadcastTurnResult(game, result.events);
 }

@@ -1,21 +1,12 @@
-import type { Player } from "../../types";
+import type { BotPersonality, ClassicTable } from "@piatto/game-core";
+import type { Player, SingleCard } from "../../types";
 
-export type TypeOfPlayer =
-  | "Aggressivo"
-  | "Calmo"
-  | "Tirchio"
-  | "Pazzo"
-  | "Calcolatore";
+export type TypeOfPlayer = BotPersonality;
 
 export interface OfflinePlayer extends Player {
   playerId: number;
   hero: boolean;
   personality?: TypeOfPlayer;
-}
-
-export interface SingleCard {
-  seed: string;
-  value: number;
 }
 
 export interface TurnOutcome {
@@ -28,16 +19,10 @@ export interface TurnOutcome {
 }
 
 export interface LocalGameState {
-  players: OfflinePlayer[];
-  piatto: number;
-  card: SingleCard;
-  currentTurn: number;
-  currentDeck: SingleCard[];
-  proportionPosNeg: number;
-  lastTurnOutcome?: TurnOutcome | null;
+  // giocatori, piatto, mazzo e turno: lo stato del tavolo gestito dalle regole di game-core
+  table: ClassicTable<OfflinePlayer>;
+  card: SingleCard; // l'ultima carta pescata, da mostrare sul tavolo
+  lastTurnOutcome: TurnOutcome | null;
 }
 
-
-export type Action =
-  | { type: "RESET_DECK"; payload: { deck: SingleCard[] } }
-  | { type: "PLAY_TURN"; payload: { bet: number } };
+export type Action = { type: "PLAY_TURN"; payload: { bet: number } };

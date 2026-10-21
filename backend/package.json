@@ -4,6 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "predev": "npm --prefix ../packages/game-core run build",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
@@ -12,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@piatto/game-core": "file:../packages/game-core",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
