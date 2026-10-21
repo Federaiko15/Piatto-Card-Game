@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "predev": "npm --prefix ../packages/game-core run build",
+    "postinstall": "npm --prefix ../packages/game-core install --include=dev && npm --prefix ../packages/game-core run build",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
