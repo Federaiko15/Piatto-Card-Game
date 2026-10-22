@@ -6,3 +6,5 @@ export * from "./core/bet.js";
 export * from "./classic/table.js";
 export * from "./classic/bots.js";
 export * from "./roguelike/run.js";
+export * from "./roguelike/items.js";
+export * from "./roguelike/modifiers.js";

@@ -1,0 +1,224 @@
+/* =========================================
+   COMPONENTI DI BASE (prefisso ui-)
+   Pannelli, bottoni, cartigli ed etichette comuni a menu, tavolo e bottega.
+   ========================================= */
+
+/* Pannello di legno con cornice dorata */
+.ui-panel {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%),
+    var(--c-wood);
+  box-shadow: var(--frame-wood);
+  border-radius: var(--radius);
+  color: var(--c-text);
+}
+
+/* Cartiglio di carta, come un santino stampato */
+.ui-paper {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.5), transparent 70%),
+    var(--c-paper);
+  box-shadow: var(--frame-paper);
+  border-radius: 4px;
+  color: var(--c-ink);
+}
+
+.ui-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 400;
+  color: var(--c-gold);
+  text-shadow:
+    2px 2px 0 var(--c-ink),
+    -1px -1px 0 var(--c-ink),
+    1px -1px 0 var(--c-ink),
+    -1px 1px 0 var(--c-ink);
+  letter-spacing: 1px;
+}
+
+.ui-label {
+  font-family: var(--font-label);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--c-text-faint);
+}
+
+/* Bottoni con smusso pixel: si "schiacciano" quando premuti */
+.ui-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 46px;
+  padding: 8px 16px 10px;
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 2px var(--c-ink), var(--bevel);
+  font-family: var(--font-title);
+  font-size: 1.45rem;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.ui-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 2px var(--c-ink), var(--bevel-pressed);
+}
+
+.ui-btn:focus-visible {
+  outline: 3px solid var(--c-gold-light);
+  outline-offset: 3px;
+}
+
+.ui-btn:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.7) brightness(0.7);
+}
+
+.ui-btn--gold {
+  background: linear-gradient(180deg, var(--c-gold-light), var(--c-gold) 45%, var(--c-gold-deep));
+  color: var(--c-ink);
+}
+
+.ui-btn--wood {
+  background: linear-gradient(180deg, var(--c-wood-light), var(--c-wood));
+  color: var(--c-text);
+}
+
+.ui-btn--red {
+  background: linear-gradient(180deg, var(--c-red-light), var(--c-red));
+  color: var(--c-text);
+}
+
+.ui-btn--small {
+  min-height: 34px;
+  padding: 4px 10px 6px;
+  font-size: 1.2rem;
+}
+
+.ui-btn-detail {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* Etichetta con il colore della rarità o del tipo */
+.ui-tag {
+  display: inline-block;
+  padding: 1px 6px 2px;
+  border-radius: 3px;
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink);
+  background: var(--tag-color, var(--c-rarity-comune));
+  box-shadow: 0 0 0 1px var(--c-ink);
+}
+
+.ui-tag--comune {
+  --tag-color: var(--c-rarity-comune);
+}
+.ui-tag--raro {
+  --tag-color: var(--c-rarity-raro);
+}
+.ui-tag--leggendario {
+  --tag-color: var(--c-rarity-leggendario);
+}
+.ui-tag--consumabile {
+  --tag-color: var(--c-gold);
+}
+.ui-tag--malocchio,
+.ui-tag--boss {
+  --tag-color: var(--c-curse);
+}
+.ui-tag--evento {
+  --tag-color: var(--c-green-light);
+}
+
+/* Moneta: l'icona pixel e il numero, ovunque si parli di soldi */
+.ui-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-title);
+  font-weight: 400;
+  color: var(--c-gold);
+  text-shadow: 1px 1px 0 var(--c-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-coins img {
+  width: 1.1em;
+  height: 1.1em;
+  image-rendering: pixelated;
+}
+
+/* Barra di avanzamento (quota) */
+.ui-meter {
+  position: relative;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--c-night);
+  box-shadow: 0 0 0 2px var(--c-ink);
+  overflow: hidden;
+}
+
+.ui-meter > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(180deg, var(--c-gold-light), var(--c-gold-deep));
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+.ui-meter--done > span {
+  background: linear-gradient(180deg, #9cf0b8, var(--c-green));
+}
+
+/* Velo scuro dietro ai pannelli in primo piano */
+.ui-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(22, 12, 16, 0.65), rgba(10, 5, 8, 0.9));
+  overflow-y: auto;
+  animation: uiFadeIn var(--dur) ease-out;
+}
+
+.ui-pop {
+  animation: uiPop var(--dur-slow) var(--ease-back) both;
+}
+
+@keyframes uiFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes uiPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+}

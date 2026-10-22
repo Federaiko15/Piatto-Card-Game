@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { RUN_TABLES, createRun, getHero, randomSeed } from "@piatto/game-core";
 import authBg from "../assets/auth.png";
 import { loadHeroName, loadRun, saveHeroName, saveRun } from "../services/runStorage";
-import "../styles/Auth.css";
 import "../styles/ModeSelect.css";
 import "../styles/Roguelike.css";
 
@@ -13,6 +12,8 @@ const RULES = [
   "A ogni tavolo si gioca un solo mazzo: le carte uscite non tornano più.",
   "Se il piatto si svuota tutti rimettono la posta; quando il mazzo finisce, quello che resta si divide.",
   "Ogni tavolo ha una quota: alla fine devi avere almeno quelle monete, altrimenti la notte è finita.",
+  "Le figure hanno un effetto, per tutti: il fante ruba una moneta, il cavallo fa saltare un turno, il re raddoppia la vincita.",
+  "Tra un tavolo e l'altro passi dalla bottega: santini e consumabili ti aiutano, ma costano monete che poi non hai al tavolo.",
 ];
 
 export default function RoguelikeMenu() {
@@ -45,16 +46,34 @@ export default function RoguelikeMenu() {
         </p>
       </header>
 
-      <div className="run-menu-box">
+      <div className="run-menu-box ui-panel">
+        <ol className="run-night" aria-label="I tavoli della notte">
+          {RUN_TABLES.map((table, i) => {
+            const state = !savedRun
+              ? ""
+              : i < savedRun.tableIndex || (i === savedRun.tableIndex && savedRun.phase === "shop")
+                ? "is-done"
+                : i === savedRun.tableIndex
+                  ? "is-current"
+                  : "";
+            return (
+              <li key={table.name} className={state}>
+                <span className="run-night-dot">{table.boss ? "👑" : i + 1}</span>
+                <span className="run-night-name">{table.name}</span>
+              </li>
+            );
+          })}
+        </ol>
+
         {savedRun && (
           <button
             type="button"
-            className="run-btn-primary"
+            className="ui-btn ui-btn--gold"
             onClick={() => navigate("/roguelike/run")}
           >
             Continua la notte
-            <span className="run-btn-detail">
-              Tavolo {savedRun.tableIndex + 1}/{RUN_TABLES.length} ·{" "}
+            <span className="ui-btn-detail">
+              {savedRun.phase === "shop" ? "In bottega" : `Tavolo ${savedRun.tableIndex + 1}/${RUN_TABLES.length}`} ·{" "}
               {savedRun.phase === "table"
                 ? getHero(savedRun).balance
                 : savedRun.bankroll}{" "}
@@ -70,19 +89,19 @@ export default function RoguelikeMenu() {
             startNewRun();
           }}
         >
-          <label className="offline-label" htmlFor="run-hero-name">
+          <label className="ui-label" htmlFor="run-hero-name">
             Il tuo nome
           </label>
           <input
             id="run-hero-name"
-            className="offline-input"
+            className="run-name-input"
             value={heroName}
             maxLength={16}
             onChange={(e) => setHeroName(e.target.value)}
           />
           <button
             type="submit"
-            className={savedRun ? "run-btn-secondary" : "run-btn-primary"}
+            className={`ui-btn ${savedRun ? "ui-btn--wood" : "ui-btn--gold"}`}
           >
             {confirmingNew
               ? "Sicuro? La notte salvata andrà persa"

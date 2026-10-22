@@ -7,6 +7,7 @@ interface BetControlsProps {
   onConfirm: (bet: number) => void;
   initialBet?: number;
   disabled?: boolean;
+  limitLabel?: string; // perché il massimo è quello (di serie: il piatto o il saldo)
 }
 
 // Controlli della puntata usati ai tavoli giocati in locale: la puntata non può mai superare il massimo,
@@ -17,12 +18,12 @@ export default function BetControls({
   onConfirm,
   initialBet = 1,
   disabled = false,
+  limitLabel,
 }: BetControlsProps) {
   const [rawBet, setRawBet] = useState<number | "">(initialBet);
 
   // il piatto e il saldo cambiano a ogni turno: la puntata mostrata si adatta da sola al nuovo massimo
   const bet = Math.min(max, Math.max(1, rawBet === "" ? 1 : rawBet));
-  const step = max > 20 ? 5 : 1;
 
   const handleInput = (value: string) => {
     if (value === "") {
@@ -36,7 +37,7 @@ export default function BetControls({
   const quickBets = [
     { label: "Min", value: 1 },
     { label: "Metà", value: Math.max(1, Math.floor(max / 2)) },
-    { label: potIsMax ? "Piatto" : "Tutto", value: max },
+    { label: limitLabel ? "Max" : potIsMax ? "Piatto" : "Tutto", value: max },
   ];
 
   return (
@@ -60,7 +61,7 @@ export default function BetControls({
           <button
             type="button"
             aria-label="Diminuisci la puntata"
-            onClick={() => setRawBet(Math.max(1, bet - step))}
+            onClick={() => setRawBet(Math.max(1, bet - 1))}
             disabled={disabled || bet <= 1}
           >
             −
@@ -80,7 +81,7 @@ export default function BetControls({
           <button
             type="button"
             aria-label="Aumenta la puntata"
-            onClick={() => setRawBet(Math.min(max, bet + step))}
+            onClick={() => setRawBet(Math.min(max, bet + 1))}
             disabled={disabled || bet >= max}
           >
             +
@@ -98,7 +99,7 @@ export default function BetControls({
       </div>
 
       <p className="bet-hint">
-        Massimo {max} {potIsMax ? "(il piatto)" : "(il tuo saldo)"}
+        Massimo {max} ({limitLabel ?? (potIsMax ? "il piatto" : "il tuo saldo")})
       </p>
     </div>
   );

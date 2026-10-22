@@ -9,11 +9,13 @@ import {
   getHero,
   maxHeroBet,
   type RunState,
+  type SantinoId,
 } from "../src/index.js";
 
 // Simulatore di bilanciamento: gioca migliaia di run con strategie diverse e stampa le percentuali di vittoria.
 // Non parte con `npm test`; si lancia con `npm run simulate`. Le quote da provare si passano con
 // QUOTAS='[[100,105,115],[95,100,110]]' npm run simulate
+// Per misurare un santino lo si dà all'eroe dall'inizio: SANTINI='["corno_rosso"]' npm run simulate
 
 type Strategy = (run: RunState, rng: () => number) => number;
 
@@ -39,6 +41,7 @@ const RUNS = 4000;
 const quotaSets: number[][] = process.env.QUOTAS
   ? JSON.parse(process.env.QUOTAS)
   : [RUN_TABLES.map((t) => t.quota)];
+const santini: SantinoId[] = process.env.SANTINI ? JSON.parse(process.env.SANTINI) : [];
 
 it.runIf(process.env.SIMULATE).each(quotaSets)("quote %j", (...quotas: number[]) => {
   quotas.forEach((quota, i) => ((RUN_TABLES[i] as { quota: number }).quota = quota));
@@ -48,15 +51,18 @@ it.runIf(process.env.SIMULATE).each(quotaSets)("quote %j", (...quotas: number[])
     const lost: Record<string, number> = {};
 
     for (let seed = 1; seed <= RUNS; seed++) {
-      let run = createRun(seed * 7919, "Eroe");
+      let run: RunState = { ...createRun(seed * 7919, "Eroe"), santini };
       const rng = createRng(seed);
-      while (run.phase === "table" || run.phase === "table_cleared") {
+      while (run.phase !== "won" && run.phase !== "lost") {
         const current = run.table.players[run.table.currentTurn];
+        // il simulatore non compra nulla in bottega: misura la difficoltà dei tavoli
         const result = applyRunAction(
           run,
           run.phase === "table_cleared"
-            ? { type: "next_table" }
-            : current.hero
+            ? { type: "enter_shop" }
+            : run.phase === "shop"
+              ? { type: "next_table" }
+              : current.hero
               ? { type: "play", amount: Math.min(strategy(run, rng), maxHeroBet(run)) }
               : { type: "bot_turn" },
         );

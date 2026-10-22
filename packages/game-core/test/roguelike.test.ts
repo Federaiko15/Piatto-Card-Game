@@ -12,7 +12,7 @@ import {
   type RunState,
 } from "../src/index.js";
 
-const card = (value: number): Card => ({ seed: "coppe", value });
+const card = (value: number): Card => ({ seed: "bastoni", value }); // bastoni: il seme senza effetti
 
 // Una run al primo tavolo con mazzo, piatto e saldi scelti dal test (l'ultima carta del mazzo è la prossima)
 const runWith = (
@@ -88,7 +88,7 @@ describe("turni", () => {
 
   it("registra l'ultima carta pescata e conta le pescate", () => {
     const { run } = apply(runWith([card(2), card(3), card(9)]), { type: "play", amount: 4 });
-    expect(run.lastDraw).toEqual({ playerId: HERO_ID, card: card(9), bet: 4, outcome: "win" });
+    expect(run.lastDraw).toEqual({ playerId: HERO_ID, card: card(9), bet: 4, outcome: "win", delta: 4 });
     expect(run.draws).toBe(1);
   });
 
@@ -147,7 +147,9 @@ describe("fine del tavolo", () => {
     expect(cleared.bankroll).toBe(quota + 11);
     expect(events).toContainEqual({ type: "table_cleared", balance: quota + 11, quota });
 
-    const { run: second, events: started } = apply(cleared, { type: "next_table" });
+    expect(applyRunAction(cleared, { type: "next_table" })).toEqual({ ok: false, error: "wrong_phase" });
+    const shop = apply(cleared, { type: "enter_shop" }).run;
+    const { run: second, events: started } = apply(shop, { type: "next_table" });
     expect(started).toEqual([{ type: "table_started", tableIndex: 1 }]);
     expect(second.phase).toBe("table");
     expect(second.tableIndex).toBe(1);

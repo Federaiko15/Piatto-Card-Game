@@ -1,312 +1,238 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import {
-  RUN_TABLES,
-  getHero,
-  getTableConfig,
-  maxHeroBet,
-  type RunEvent,
-  type RunState,
-} from "@piatto/game-core";
+import { getHero, type RunPlayer } from "@piatto/game-core";
 import { useRunEngine } from "../hooks/useRunEngine";
-import PlayerSeat from "../components/PlayerSeat";
 import Card from "../components/Cards";
-import BetControls from "../components/BetControls";
-import OpponentsStrip from "../components/OpponentsStrip";
+import RunPanel from "../components/run/RunPanel";
+import RunShop from "../components/run/RunShop";
+import RunHelp from "../components/run/RunHelp";
+import RunEndPanel from "../components/run/RunEndPanel";
+import { noticesFor } from "../components/run/notices";
+import { CHARACTERS, SEED_SYMBOLS, sceneArt, sceneInfo, type Expression } from "../art/manifest";
+import { AnchorContext, useAnchor, useAnchorRegistry } from "../scene/anchors";
+import { directScene } from "../scene/cues";
+import FxLayer from "../scene/FxLayer";
+import AnimatedNumber from "../scene/AnimatedNumber";
+import Portrait from "../scene/Portrait";
 import piattoImg from "../assets/piatto.png";
-import croupierImg from "../assets/croupier.png";
 import coinsImg from "../assets/coins.png";
-import tableBg from "../assets/table.png";
-import "../styles/GameRoom.css";
-import "../styles/OfflineTable.css";
-import "../styles/Roguelike.css";
+import "../styles/RunScene.css";
 
-// Eroe in basso al centro, avversari intorno al tavolo (stesse posizioni del tavolo offline)
-const SEAT_POSITIONS = ["bottom-center", "low-right", "low-left", "mid-right", "mid-left"];
-
+// Per quanto restano visibili esito, scritte ed espressioni dopo ogni mossa
 const OUTCOME_DURATION = 2500;
 
-// Avviso sul tavolo per le regole che il giocatore potrebbe non aspettarsi
-const noticeFor = (events: RunEvent[], run: RunState): string | null => {
-  const nameOf = (id: string) =>
-    run.table.players.find((p) => p.id === id)?.username ?? id;
-  for (const event of events) {
-    if (event.type === "pot_refilled") {
-      const out = event.eliminated.map(nameOf);
-      return `Piatto vuoto! Tutti rimettono la posta: ora ci sono ${event.amount} monete.${
-        out.length ? ` Non può pagare ed esce: ${out.join(", ")}.` : ""
-      }`;
-    }
-  }
-  return null;
-};
+// Le bottiglie sulla mensola del bar, finché non arriva il fondale disegnato
+const BOTTLES = ["#2f8f5b", "#c8372d", "#f2c14e", "#5aa0d8", "#6b1f33", "#2f8f5b", "#e85a4b"];
+
+interface SeatProps {
+  player: RunPlayer;
+  active: boolean;
+  expression: Expression;
+}
+
+// Un avversario seduto di fronte, dall'altra parte del tavolo: le sue monete stanno sul bordo del tavolo
+function OpponentSeat({ player, active, expression }: SeatProps) {
+  const anchor = useAnchor(player.id);
+  const out = player.status !== "playing";
+  return (
+    <li
+      className={`rk-seat${active ? " is-active" : ""}${out ? " is-out" : ""}`}
+      title={CHARACTERS[player.character]?.tagline}
+    >
+      <Portrait character={player.character} expression={out ? "sad" : expression} size="bust" />
+      <span ref={anchor} className="rk-seat-plate">
+        <span className="rk-seat-name">{player.username}</span>
+        {out ? (
+          <span className="rk-seat-out">fuori</span>
+        ) : (
+          <span className="ui-coins">
+            <img src={coinsImg} alt="" />
+            <AnimatedNumber value={player.balance} />
+          </span>
+        )}
+      </span>
+    </li>
+  );
+}
+
+function PotView({ piatto }: { piatto: number }) {
+  const anchor = useAnchor("pot");
+  return (
+    <div ref={anchor} className="rk-pot" aria-label={`Piatto: ${piatto} monete`}>
+      <img src={piattoImg} alt="" className="rk-pot-plate" />
+      <span className="ui-coins rk-pot-amount">
+        <img src={coinsImg} alt="" />
+        <AnimatedNumber value={piatto} />
+      </span>
+    </div>
+  );
+}
 
 export default function RoguelikeRun() {
   const navigate = useNavigate();
-  const { run, events, moveId, play, nextTable, startNewRun } = useRunEngine();
+  const { run, events, moveId, play, nextTable, enterShop, buy, reroll, peek, consume, startNewRun } =
+    useRunEngine();
+  const registry = useAnchorRegistry();
+  const [helpOpen, setHelpOpen] = useState(false);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
+  const sceneRef = useCallback(
+    (el: HTMLElement | null) => {
+      if (el) registry.set("scene", el);
+      else registry.delete("scene");
+    },
+    [registry],
+  );
 
-  // esito della pescata e avvisi restano visibili per qualche secondo dopo ogni mossa
+  // esito, scritte ed espressioni restano visibili per qualche secondo dopo ogni mossa
   const [hiddenMoveId, setHiddenMoveId] = useState(-1);
   useEffect(() => {
     const timer = window.setTimeout(() => setHiddenMoveId(moveId), OUTCOME_DURATION);
     return () => window.clearTimeout(timer);
   }, [moveId]);
 
+  const direction = useMemo(
+    () => (run ? directScene(events, run) : { cues: [], expressions: {} }),
+    [events, run],
+  );
+
   if (!run) return <Navigate to="/roguelike" replace />;
 
-  const config = getTableConfig(run);
-  const hero = getHero(run);
-  const { players, piatto, currentTurn, deck } = run.table;
-  const atTable = run.phase === "table";
-  const heroTurn = atTable && players[currentTurn]?.hero;
-  const recent = hiddenMoveId !== moveId;
-  const lastDraw = recent ? run.lastDraw : null;
-  const drawer = lastDraw && players.find((p) => p.id === lastDraw.playerId);
-  const notice = recent ? noticeFor(events, run) : null;
-  const quotaProgress = Math.min(100, Math.round((hero.balance / config.quota) * 100));
-
-  return (
-    <div className="game-room-container offline-theme run-theme">
-      <div className="offline-header run-header">
-        <button
-          type="button"
-          onClick={() => navigate("/roguelike")}
-          className="btn-leave"
-          title="La notte resta salvata"
-        >
-          Menu
-        </button>
-
-        <div className="run-hud">
-          <span className="run-hud-step">
-            Tavolo {run.tableIndex + 1}/{RUN_TABLES.length}
-          </span>
-          <span className="run-hud-name">
-            {config.boss && "👑 "}
-            {config.name}
-          </span>
-        </div>
-      </div>
-
-      <OpponentsStrip players={players} heroId={hero.id} currentTurn={currentTurn} />
-
-      <div className="poker-table offline-table with-strip">
-        <img src={tableBg} alt="" className="table-background-image" />
-
-        {/* ESITO DELL'ULTIMA PESCATA (smartphone) */}
-        {lastDraw && drawer && (
-          <div key={moveId} className={`mobile-turn-banner banner-${lastDraw.outcome}`}>
-            <span className="banner-icon">{lastDraw.outcome === "win" ? "🎉" : "💸"}</span>
-            <span className="banner-text">
-              <strong>{drawer.hero ? "Tu" : drawer.username}</strong>{" "}
-              {lastDraw.outcome === "win"
-                ? `${drawer.hero ? "prendi" : "prende"}`
-                : `${drawer.hero ? "lasci" : "lascia"}`}{" "}
-              <strong>{lastDraw.bet}</strong> monete
-            </span>
-          </div>
-        )}
-
-        {notice && (
-          <div key={`notice-${moveId}`} className="run-notice" role="status">
-            {notice}
-          </div>
-        )}
-
-        {/* CROUPIER E CARTA */}
-        <div className="grid-cell high-center">
-          <div className="table-high-center">
-            <img src={croupierImg} alt="Croupier" className="pixel-image croupier-img" />
-            {run.lastDraw && (
-              <div className="card-display">
-                <Card
-                  key={`${run.tableIndex}-${run.draws}`}
-                  seed={run.lastDraw.card.seed}
-                  value={run.lastDraw.card.value}
-                  reveal
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* PIATTO E MAZZO */}
-        <div className="grid-cell mid-center">
-          <div className="table-center">
-            <div className="piatto-container">
-              <img src={piattoImg} alt="Piatto" className="pixel-image piatto-img" />
-            </div>
-            <div className="pot-container">
-              <p className="paragraph-coin">
-                <span className="pot-amount">{piatto}</span>
-                <img src={coinsImg} alt="Monete nel piatto" className="pixel-coins" />
-              </p>
-            </div>
-            <p className="run-deck-count">
-              {deck.length === 1 ? "Ultima carta nel mazzo" : `${deck.length} carte nel mazzo`}
-            </p>
-          </div>
-        </div>
-
-        {/* GIOCATORI */}
-        {players.map((player, index) => {
-          const isHero = player.hero;
-          const outcome =
-            lastDraw && lastDraw.playerId === player.id
-              ? {
-                  text: `${lastDraw.outcome === "win" ? "+" : "−"}${lastDraw.bet}`,
-                  type: lastDraw.outcome,
-                }
-              : null;
-
-          return (
-            <div key={player.id} className={`grid-cell ${SEAT_POSITIONS[index]}`}>
-              <div className="seat-wrapper">
-                {heroTurn && isHero && (
-                  <div className="my-turn-alert">È il tuo turno!</div>
-                )}
-
-                <PlayerSeat
-                  player={player}
-                  isHero={isHero}
-                  isActive={atTable && currentTurn === index}
-                  lastOutcome={outcome}
-                />
-
-                {isHero && (
-                  <div
-                    className={`quota-meter${hero.balance >= config.quota ? " quota-meter--met" : ""}`}
-                    aria-label={`Quota del tavolo: ${hero.balance} su ${config.quota}`}
-                  >
-                    <span className="quota-meter-label">
-                      Quota {hero.balance}/{config.quota}
-                      {hero.balance >= config.quota && " ✓"}
-                    </span>
-                    <span className="quota-meter-bar">
-                      <span style={{ width: `${quotaProgress}%` }} />
-                    </span>
-                  </div>
-                )}
-
-                {isHero && heroTurn && (
-                  <BetControls
-                    key={run.tableIndex}
-                    max={maxHeroBet(run)}
-                    potIsMax={piatto <= hero.balance}
-                    initialBet={Math.max(1, Math.floor(hero.balance / 10))}
-                    onConfirm={play}
-                  />
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {!atTable && (
-        <RunResultPanel
-          run={run}
-          events={events}
-          onNextTable={nextTable}
-          onNewRun={() => startNewRun(run.heroName)}
-          onMenu={() => navigate("/roguelike")}
-        />
-      )}
-    </div>
-  );
-}
-
-interface RunResultPanelProps {
-  run: RunState;
-  events: RunEvent[];
-  onNextTable: () => void;
-  onNewRun: () => void;
-  onMenu: () => void;
-}
-
-// Pannello di fine tavolo: tavolo superato (con l'anteprima del prossimo), notte vinta o persa
-function RunResultPanel({ run, events, onNextTable, onNewRun, onMenu }: RunResultPanelProps) {
-  const config = getTableConfig(run);
-  const split = events.find((e) => e.type === "pot_split");
-  const collected = events.find((e) => e.type === "pot_collected");
-
-  const endLine =
-    run.tableEndReason === "opponents_out"
-      ? "Hai lasciato tutti gli avversari senza monete!"
-      : run.tableEndReason === "deck_empty"
-        ? "Il mazzo è finito."
-        : null;
-  const potLine = collected
-    ? `Il piatto è tuo: +${collected.amount} monete.`
-    : split && split.share > 0
-      ? `Il piatto rimasto si divide: ${split.share} monete a testa.`
-      : null;
-
-  if (run.phase === "table_cleared") {
-    const next = RUN_TABLES[run.tableIndex + 1];
+  if (run.phase === "shop") {
     return (
-      <div className="run-panel-backdrop">
-        <div className="run-panel" role="dialog" aria-labelledby="run-panel-title">
-          <h2 id="run-panel-title" className="run-panel-title">
-            Tavolo superato!
-          </h2>
-          {endLine && <p>{endLine}</p>}
-          {potLine && <p>{potLine}</p>}
-          <p className="run-panel-coins">
-            Ti alzi con <strong>{run.bankroll}</strong> monete (quota {config.quota})
-          </p>
-
-          <div className="run-next-table">
-            <span className="run-next-label">Prossimo tavolo</span>
-            <span className="run-next-name">
-              {next.boss && "👑 "}
-              {next.name}
-            </span>
-            <span className="run-next-detail">
-              Posta {next.ante} · Quota {next.quota}
-            </span>
-            <span className="run-next-detail">
-              Al tavolo: {next.opponents.map((o) => o.name).join(", ")}
-            </span>
-          </div>
-
-          <button type="button" className="run-btn-primary" onClick={onNextTable}>
-            Siediti al tavolo
-          </button>
+      <AnchorContext.Provider value={registry}>
+        <div className="rk-screen rk-screen--shop">
+          <RunShop run={run} onBuy={buy} onReroll={reroll} onNextTable={nextTable} />
+          <FxLayer cues={direction.cues} moveId={moveId} registry={registry} />
         </div>
-      </div>
+      </AnchorContext.Provider>
     );
   }
 
-  const won = run.phase === "won";
-  const tablesCleared = won ? RUN_TABLES.length : run.tableIndex;
+  const { players, piatto, currentTurn, deck } = run.table;
+  const atTable = run.phase === "table";
+  const current = players[currentTurn];
+  const heroTurn = atTable && Boolean(current?.hero);
+  const recent = hiddenMoveId !== moveId;
+  const expressions = recent ? direction.expressions : {};
+  const notices = recent ? noticesFor(events, run) : [];
+  const opponents = players.filter((p) => !p.hero);
+  const scene = sceneInfo(run.tableIndex);
+  const art = sceneArt(run.tableIndex);
+  const sceneStyle = {
+    "--scene-wall": scene.wall,
+    "--scene-wainscot": scene.wainscot,
+    "--scene-lamp": scene.lamp,
+    ...(art ? { "--scene-art": `url(${art})` } : {}),
+  } as CSSProperties;
+
   return (
-    <div className="run-panel-backdrop">
-      <div className="run-panel" role="dialog" aria-labelledby="run-panel-title">
-        <h2 id="run-panel-title" className="run-panel-title">
-          {won ? "Hai sbancato l'osteria! 🏆" : "La notte finisce qui"}
-        </h2>
-        {endLine && <p>{endLine}</p>}
-        {potLine && <p>{potLine}</p>}
-        <p className="run-panel-coins">
-          {won
-            ? `Chiudi la notte con ${run.bankroll} monete.`
-            : run.lossReason === "bankrupt"
-              ? "Sei rimasto senza monete."
-              : `Ti alzi con ${run.bankroll} monete, ma la quota era ${config.quota}.`}
-        </p>
-        <p>
-          Tavoli superati: {tablesCleared}/{RUN_TABLES.length}
-        </p>
-        <div className="run-panel-actions">
-          <button type="button" className="run-btn-primary" onClick={onNewRun}>
-            Nuova notte
-          </button>
-          <button type="button" className="run-btn-secondary" onClick={onMenu}>
-            Menu
-          </button>
-        </div>
+    <AnchorContext.Provider value={registry}>
+      <div className="rk-screen" style={sceneStyle}>
+        <RunPanel
+          run={run}
+          heroTurn={heroTurn}
+          expression={expressions[getHero(run).id] ?? "neutral"}
+          waitingFor={atTable && current && !current.hero ? current.username : null}
+          onPlay={play}
+          onPeek={peek}
+          onConsume={consume}
+          onHelp={() => setHelpOpen(true)}
+          onMenu={() => navigate("/roguelike")}
+        />
+
+        <main ref={sceneRef} className="rk-stage">
+          {/* livelli della scena, dal fondo al primo piano: fondale, oggetti, personaggi, tavolo, luce */}
+          <div className="rk-layer rk-backdrop" aria-hidden="true" />
+          <div className="rk-layer rk-props" aria-hidden="true">
+            {!art && (
+              <span className="rk-shelf">
+                {BOTTLES.map((color, i) => (
+                  <span key={i} className="rk-bottle" style={{ "--bottle": color } as CSSProperties} />
+                ))}
+              </span>
+            )}
+            <span className="rk-lamp" />
+            <span className="rk-smoke rk-smoke--1" />
+            <span className="rk-smoke rk-smoke--2" />
+          </div>
+
+          <div className="rk-room">
+            <ul className="rk-opponents" aria-label="Avversari">
+              {opponents.map((player) => (
+                <OpponentSeat
+                  key={player.id}
+                  player={player}
+                  active={atTable && current?.id === player.id}
+                  expression={expressions[player.id] ?? "neutral"}
+                />
+              ))}
+            </ul>
+
+            {/* il tavolo visto da chi è seduto: il bordo vicino esce dallo schermo */}
+            <div className="rk-table">
+              <div className="rk-felt">
+                <div className="rk-deck" aria-label={`${deck.length} carte nel mazzo`}>
+                  <span className="rk-deck-stack">
+                    <img src="/cards/back.png" alt="" />
+                  </span>
+                  <span className="ui-label rk-deck-count">
+                    {deck.length === 1 ? "ultima carta" : `${deck.length} carte`}
+                  </span>
+                </div>
+
+                <PotView piatto={piatto} />
+
+                <div className="rk-drawn">
+                  {run.lastDraw ? (
+                    <Card
+                      key={`${run.tableIndex}-${run.draws}`}
+                      seed={run.lastDraw.card.seed}
+                      value={run.lastDraw.card.value}
+                      reveal
+                    />
+                  ) : (
+                    <span className="rk-drawn-empty ui-label">la prima carta</span>
+                  )}
+                  {run.peeked && (
+                    <span className="rk-peeked" title="La prossima carta, vista con la Coppola del nonno">
+                      <span className="ui-label">prossima</span>
+                      <span className="rk-mini-card">
+                        {run.peeked.value}
+                        <span aria-label={run.peeked.seed}>{SEED_SYMBOLS[run.peeked.seed]}</span>
+                      </span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {notices.length > 0 && (
+            <ul key={moveId} className="rk-notices" role="status">
+              {notices.slice(0, 3).map((notice, i) => (
+                <li key={i} className={`rk-notice rk-notice--${notice.tone}`} style={{ animationDelay: `${i * 120}ms` }}>
+                  {notice.text}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="rk-layer rk-light" aria-hidden="true" />
+        </main>
+
+        <FxLayer cues={direction.cues} moveId={moveId} registry={registry} />
+
+        {!atTable && (
+          <RunEndPanel
+            run={run}
+            events={events}
+            onEnterShop={enterShop}
+            onNewRun={() => startNewRun(run.heroName)}
+            onMenu={() => navigate("/roguelike")}
+          />
+        )}
+        {helpOpen && <RunHelp run={run} onClose={closeHelp} />}
       </div>
-    </div>
+    </AnchorContext.Provider>
   );
 }

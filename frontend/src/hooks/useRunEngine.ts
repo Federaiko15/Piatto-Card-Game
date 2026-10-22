@@ -3,6 +3,7 @@ import {
   applyRunAction,
   createRun,
   randomSeed,
+  type ConsumableId,
   type RunAction,
   type RunEvent,
   type RunState,
@@ -10,7 +11,13 @@ import {
 import { clearRun, loadRun, saveRun } from "../services/runStorage";
 
 const BOT_DELAY = 1300;
-const BOT_DELAY_AFTER_NOTICE = 2400; // dopo un piatto rimesso lasciamo il tempo di leggere l'avviso
+const BOT_DELAY_AFTER_NOTICE = 2400; // dopo un avviso (piatto rimesso, santino) lasciamo il tempo di leggerlo
+const NOTICE_EVENTS = new Set<RunEvent["type"]>([
+  "pot_refilled",
+  "santino_triggered",
+  "card_effect",
+  "modifier_triggered",
+]);
 
 interface EngineState {
   run: RunState | null;
@@ -58,7 +65,7 @@ export function useRunEngine() {
     const current = run.table.players[run.table.currentTurn];
     if (!current || current.hero) return;
 
-    const delay = events.some((e) => e.type === "pot_refilled")
+    const delay = events.some((e) => NOTICE_EVENTS.has(e.type))
       ? BOT_DELAY_AFTER_NOTICE
       : BOT_DELAY;
     const timer = window.setTimeout(
@@ -72,13 +79,29 @@ export function useRunEngine() {
     dispatch({ type: "act", action: { type: "play", amount } });
   }, []);
 
-  const nextTable = useCallback(() => {
-    dispatch({ type: "act", action: { type: "next_table" } });
-  }, []);
+  const act = useCallback((action: RunAction) => dispatch({ type: "act", action }), []);
+  const nextTable = useCallback(() => act({ type: "next_table" }), [act]);
+  const enterShop = useCallback(() => act({ type: "enter_shop" }), [act]);
+  const buy = useCallback((index: number) => act({ type: "buy", index }), [act]);
+  const reroll = useCallback(() => act({ type: "reroll" }), [act]);
+  const peek = useCallback(() => act({ type: "peek" }), [act]);
+  const consume = useCallback((item: ConsumableId) => act({ type: "use", item }), [act]);
 
   const startNewRun = useCallback((heroName: string) => {
     dispatch({ type: "start", seed: randomSeed(), heroName });
   }, []);
 
-  return { run, events, moveId: state.moveId, play, nextTable, startNewRun };
+  return {
+    run,
+    events,
+    moveId: state.moveId,
+    play,
+    nextTable,
+    enterShop,
+    buy,
+    reroll,
+    peek,
+    consume,
+    startNewRun,
+  };
 }

@@ -1,0 +1,103 @@
+/* =========================================
+   DESIGN TOKEN DI PIATTO
+   La palette viene dal carretto siciliano e dalle maioliche di Caltagirone (vedi il documento di
+   game design): gialli, rossi, blu e verdi saturi su un fondo caldo da osteria di notte.
+   Ogni colore, font, durata e livello della scena passa da qui: cambiare stile = cambiare questi valori.
+   ========================================= */
+:root {
+  /* fondo: la notte dentro l'osteria */
+  --c-night: #160c10;
+  --c-night-2: #22121a;
+  --c-wine: #4a1626;
+  --c-wine-2: #6b1f33;
+  --c-wood-dark: #2a1810;
+  --c-wood: #3d2416;
+  --c-wood-light: #5e3a22;
+  --c-felt: #1d5a3c;
+  --c-felt-dark: #123826;
+
+  /* carretto e maioliche */
+  --c-gold: #f2c14e;
+  --c-gold-light: #ffe08a;
+  --c-gold-deep: #b9862a;
+  --c-red: #c8372d;
+  --c-red-light: #e85a4b;
+  --c-blue: #1f5fa8;
+  --c-blue-light: #5aa0d8;
+  --c-green: #2f8f5b;
+  --c-green-light: #5fd38a;
+
+  /* carta: santini, offerte, cartigli */
+  --c-paper: #f6ead2;
+  --c-paper-shade: #e5d2ad;
+  --c-ink: #2a1a12;
+  --c-ink-soft: #6b5440;
+
+  /* testo sul fondo scuro */
+  --c-text: #f8eedd;
+  --c-text-soft: #cbb79a;
+  --c-text-faint: #8f7a63;
+
+  /* significati */
+  --c-win: var(--c-green-light);
+  --c-lose: var(--c-red-light);
+  --c-turn: var(--c-gold);
+  --c-rarity-comune: #a8977d;
+  --c-rarity-raro: var(--c-blue-light);
+  --c-rarity-leggendario: #c98cf0;
+  --c-curse: #9b6bd6;
+
+  /* font: titoli e numeri grossi alla Balatro, testo pixel ma leggibile anche piccolo */
+  --font-title: "Jersey 10", sans-serif;
+  --font-body: "Pixelify Sans", sans-serif;
+  --font-label: "Pixelify Sans", sans-serif;
+  /* Jersey 10 ha un solo peso: niente grassetto finto, che sui font pixel sbava */
+  font-synthesis-weight: none;
+
+  /* bordi in stile pixel: ombre a gradini invece dei bordi arrotondati */
+  --px: 3px;
+  --radius: 6px;
+  --frame-wood: 0 0 0 var(--px) var(--c-ink), 0 0 0 calc(var(--px) * 2) var(--c-gold-deep),
+    0 0 0 calc(var(--px) * 3) var(--c-ink), 0 10px 30px rgba(0, 0, 0, 0.6);
+  --frame-paper: 0 0 0 2px var(--c-ink), inset 0 0 0 3px var(--c-paper),
+    inset 0 0 0 5px var(--c-gold-deep), 0 6px 16px rgba(0, 0, 0, 0.5);
+  --bevel: inset 0 -4px 0 rgba(0, 0, 0, 0.3), inset 0 3px 0 rgba(255, 255, 255, 0.25);
+  --bevel-pressed: inset 0 3px 0 rgba(0, 0, 0, 0.3);
+
+  /* motivo a maiolica, usato per pareti e sfondi finché non arrivano i fondali disegnati */
+  --pattern-maiolica: radial-gradient(circle at 50% 50%, rgba(242, 193, 78, 0.16) 0 18%, transparent 19%),
+    conic-gradient(
+      from 45deg at 50% 50%,
+      rgba(31, 95, 168, 0.22) 0 25%,
+      transparent 0 50%,
+      rgba(31, 95, 168, 0.22) 0 75%,
+      transparent 0
+    );
+  --pattern-maiolica-size: 48px 48px;
+
+  /* movimento: una sola scala di durate e curve per tutto il gioco */
+  --dur-fast: 140ms;
+  --dur: 280ms;
+  --dur-slow: 600ms;
+  --dur-card: 750ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* livelli della scena (gli stessi della futura scena PixiJS) */
+  --z-backdrop: 0;
+  --z-props: 10;
+  --z-characters: 20;
+  --z-table: 30;
+  --z-light: 40;
+  --z-fx: 50;
+  --z-ui: 60;
+  --z-overlay: 200;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+    --dur-slow: 0ms;
+  }
+}

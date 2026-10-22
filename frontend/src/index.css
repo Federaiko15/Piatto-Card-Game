@@ -1,15 +1,18 @@
 /* 2. Importa i tuoi Font da Google */
-@import url("https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400..700&family=Silkscreen:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Jersey+10&family=Pixelify+Sans:wght@400..700&display=swap");
 /* 1. Importa Tailwind */
 @import "tailwindcss";
+/* Palette, font, durate e componenti di base del gioco */
+@import "./theme/tokens.css";
+@import "./theme/ui.css";
 /* 3. Diciamo a Tailwind di usare il tuo font come default globale! */
 @theme {
-  /* Questo sovrascrive il font standard (sans) di tutto il sito con il DotGothic16 */
-  --font-sans: "DotGothic16", sans-serif;
+  /* Questo sovrascrive il font standard (sans) di tutto il sito con il Pixelify Sans, pixel ma leggibile */
+  --font-sans: "Pixelify Sans", sans-serif;
 
   /* Opzionale: puoi creare variabili personalizzate per gli altri font se vuoi usarli in specifici bottoni o titoli */
   --font-pixel: "Pixelify Sans", sans-serif;
-  --font-silk: "Silkscreen", sans-serif;
+  --font-jersey: "Jersey 10", sans-serif;
 }
 
 /* 4. Reset globale per evitare lo scrolling che mostra lo sfondo bianco */
