@@ -66,6 +66,9 @@ export const SCENES: SceneInfo[] = [
 export const sceneArt = (tableIndex: number): string | undefined =>
   sceneFiles[`table-${tableIndex}`];
 
+// shop.png: il fondale della bottega
+export const SHOP_ART: string | undefined = sceneFiles.shop;
+
 export const sceneInfo = (tableIndex: number): SceneInfo =>
   SCENES[tableIndex] ?? SCENES[SCENES.length - 1];
 

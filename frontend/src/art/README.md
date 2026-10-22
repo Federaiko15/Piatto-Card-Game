@@ -2,13 +2,13 @@
 
 I file messi in queste cartelle vengono presi in automatico da `manifest.ts`: basta usare il nome giusto, senza toccare il codice. Finché un file manca il gioco mostra un segnaposto (emoji, colori, motivo a maiolica).
 
-Regole di stile (dal documento di game design): pixel art a risoluzione nativa 640×360, scalata per multipli interi, palette unica di 30–40 colori presi dal carretto siciliano e dalle maioliche di Caltagirone, contorno pieno a un colore.
+Regole di stile (dal documento di game design): pixel art semplice e piatta, risoluzione nativa 256×144 per i fondali, grandi campiture con pochi dettagli, circa 50 colori caldi e terrosi con accenti blu e gialli delle maioliche, contorno scuro pieno, luce serale di una lampada. Il riferimento è `scenes/table-0.png`. Tutti gli asset vanno disegnati alla stessa densità di pixel del fondale: i file si salvano alla dimensione nativa (se il generatore li dà ingranditi ×4, vanno rimpiccioliti senza sfumature).
 
 ## `characters/`
 
 | File | Cosa contiene | Dimensione consigliata |
 | --- | --- | --- |
-| `zio_turi.png` | mezzobusto neutro, seduto di fronte al giocatore (il tavolo copre il resto) | 128×148, sfondo trasparente |
+| `zio_turi.png` | mezzobusto neutro, seduto di fronte al giocatore (il tavolo copre il resto) | 64×72, sfondo trasparente |
 | `zio_turi.happy.png` | espressione contenta | come sopra |
 | `zio_turi.sad.png` | espressione delusa | come sopra |
 | `zio_turi.suspicious.png` | espressione sospettosa | come sopra |
@@ -17,11 +17,15 @@ Personaggi previsti: `zio_turi`, `picciotto`, `zingara`, `ragioniere`, `prete`, 
 
 ## `scenes/`
 
-Un fondale per tavolo della notte: `table-0.png` (il bar della piazza), `table-1.png` (la bisca del retrobottega), `table-2.png` (il tavolo del Prete). 640×360: l'interno di un bar siciliano visto da chi è seduto al tavolo (bancone, mensole, parete), senza tavolo né personaggi, che stanno su livelli separati. La metà bassa resta coperta dal tavolo.
+Un fondale per tavolo della notte: `table-0.png` (il bar della piazza), `table-1.png` (la bisca del retrobottega), `table-2.png` (il tavolo del Prete). 256×144: la stanza vista da chi è seduto al tavolo, senza tavolo né personaggi, che stanno su livelli separati. La metà bassa resta coperta dal tavolo, e i personaggi siedono davanti alla fascia centrale.
+
+`shop.png` è il fondale della bottega, stessa dimensione: se c'è, sostituisce il motivo a maiolica della schermata.
+
+`cantina.png` è già pronto per un futuro tavolo della notte: il gioco non lo usa finché non diventa `table-3.png` (o non gli si dà un altro posto nel codice).
 
 ## `santini/`
 
-Un'illustrazione per santino e consumabile con lo stesso nome dell'id del motore (`san_giuseppe.png`, `corno_rosso.png`, `brucia.png`...). 64×80, verticale come un santino stampato.
+Un'illustrazione per santino e consumabile con lo stesso nome dell'id del motore (`san_giuseppe.png`, `corno_rosso.png`, `brucia.png`...). 32×40, verticale come un santino stampato.
 
 ## `sfx/`
 

@@ -8,7 +8,7 @@ import RunShop from "../components/run/RunShop";
 import RunHelp from "../components/run/RunHelp";
 import RunEndPanel from "../components/run/RunEndPanel";
 import { noticesFor } from "../components/run/notices";
-import { CHARACTERS, SEED_SYMBOLS, sceneArt, sceneInfo, type Expression } from "../art/manifest";
+import { CHARACTERS, SEED_SYMBOLS, SHOP_ART, sceneArt, sceneInfo, type Expression } from "../art/manifest";
 import { AnchorContext, useAnchor, useAnchorRegistry } from "../scene/anchors";
 import { directScene } from "../scene/cues";
 import FxLayer from "../scene/FxLayer";
@@ -100,7 +100,10 @@ export default function RoguelikeRun() {
   if (run.phase === "shop") {
     return (
       <AnchorContext.Provider value={registry}>
-        <div className="rk-screen rk-screen--shop">
+        <div
+          className={`rk-screen rk-screen--shop${SHOP_ART ? " rk-screen--shop-art" : ""}`}
+          style={SHOP_ART ? ({ "--scene-art": `url(${SHOP_ART})` } as CSSProperties) : undefined}
+        >
           <RunShop run={run} onBuy={buy} onReroll={reroll} onNextTable={nextTable} />
           <FxLayer cues={direction.cues} moveId={moveId} registry={registry} />
         </div>
@@ -142,7 +145,7 @@ export default function RoguelikeRun() {
 
         <main ref={sceneRef} className="rk-stage">
           {/* livelli della scena, dal fondo al primo piano: fondale, oggetti, personaggi, tavolo, luce */}
-          <div className="rk-layer rk-backdrop" aria-hidden="true" />
+          <div className={`rk-layer rk-backdrop${art ? " rk-backdrop--art" : ""}`} aria-hidden="true" />
           <div className="rk-layer rk-props" aria-hidden="true">
             {!art && (
               <span className="rk-shelf">
