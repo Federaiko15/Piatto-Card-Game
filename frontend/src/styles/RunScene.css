@@ -454,6 +454,7 @@
 .rk-stage {
   grid-area: stage;
   position: relative;
+  container-type: size;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -486,6 +487,11 @@
 .rk-backdrop--art {
   bottom: calc(var(--table-h) - 48px);
   background: var(--scene-art) center 55% / cover no-repeat, var(--scene-wall);
+}
+
+/* il tavolo disegnato lascia vedere la stanza ai lati del bordo lontano: il fondale arriva fino in fondo */
+.rk-backdrop--art.rk-backdrop--full {
+  bottom: 0;
 }
 
 /* Oggetti di scena: la mensola delle bottiglie, la lampada sopra il tavolo e il fumo */
@@ -588,16 +594,30 @@
 
 /* ---------- Personaggi ---------- */
 .rk-opponents {
+  --seat-gap: clamp(8px, 4cqw, 64px);
   list-style: none;
   margin: 0 0 -58px;
   padding: 0 16px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: clamp(24px, 7vw, 110px);
+  gap: var(--seat-gap);
 }
 
+/* sul tavolo disegnato il bordo lontano è più spesso: le braccia ci finiscono dietro */
+.rk-room:has(.rk-table--art) .rk-opponents {
+  margin-bottom: -72px;
+}
+
+/* I mezzobusti sono disegnati alla stessa densità del fondale (64 px su 256): qui prendono l'80% della
+   sua scala, così i pixel restano simili a quelli della stanza senza che i personaggi la riempiano.
+   Si fermano prima se gli avversari al tavolo non ci stanno in larghezza o se coprirebbero troppa scena */
 .rk-seat {
+  --bust-w: min(
+    0.8 * 64 * max(100cqw / 256, 100cqh / 144),
+    (100cqw - 32px) / var(--seats, 2) - var(--seat-gap),
+    42cqh / 1.15
+  );
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -713,6 +733,17 @@
   border-radius: 0;
 }
 
+/* i personaggi al tavolo prendono la luce della stanza; l'ombra sotto le braccia li appoggia sul legno */
+.rk-seat .portrait-art {
+  filter: url(#rk-lamp-tint) brightness(0.94) drop-shadow(0 6px 4px rgba(20, 8, 4, 0.55));
+}
+
+.rk-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
 .portrait-placeholder {
   line-height: 1;
   animation: breathe 3.2s ease-in-out infinite;
@@ -781,6 +812,23 @@
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0 2px, transparent 2px 38px),
     linear-gradient(180deg, var(--c-wood-light), var(--c-wood) 30%, var(--c-wood-dark));
   clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%);
+}
+
+/* il tavolo disegnato: si vede dal bordo lontano in giù, il bordo vicino esce dallo schermo */
+.rk-table--art {
+  filter: drop-shadow(0 -2px 0 var(--c-ink)) drop-shadow(0 -10px 14px rgba(0, 0, 0, 0.35));
+}
+
+.rk-table--art::before {
+  background: var(--table-art) center top / cover no-repeat;
+  clip-path: none;
+  image-rendering: pixelated;
+}
+
+.rk-table--art .rk-felt {
+  background: none;
+  box-shadow: none;
+  clip-path: none;
 }
 
 .rk-felt {

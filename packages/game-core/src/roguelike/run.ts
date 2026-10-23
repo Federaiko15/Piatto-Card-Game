@@ -62,7 +62,7 @@ export const RUN_TABLES: readonly RunTableConfig[] = [
   {
     name: "Il bar della piazza",
     ante: 5,
-    quota: 100,
+    quota: 110,
     opponents: [
       { character: "zio_turi", name: "Zio Turi", personality: "Tirchio", balance: 80 },
       { character: "picciotto", name: "Il Picciotto", personality: "Pazzo", balance: 80 },
@@ -71,7 +71,7 @@ export const RUN_TABLES: readonly RunTableConfig[] = [
   {
     name: "La bisca del retrobottega",
     ante: 10,
-    quota: 105,
+    quota: 120,
     opponents: [
       { character: "zingara", name: "'A Zingara", personality: "Calcolatore", balance: 120 },
       { character: "ragioniere", name: "Il Ragioniere", personality: "Calmo", balance: 120 },
@@ -80,7 +80,7 @@ export const RUN_TABLES: readonly RunTableConfig[] = [
   {
     name: "Il tavolo del Prete",
     ante: 15,
-    quota: 115,
+    quota: 135,
     boss: true,
     modifiers: ["niente_piatto"],
     opponents: [
@@ -416,10 +416,13 @@ const resolveDraw = (run: RunState, index: number, amount: number, rng: Rng): Dr
   let { lossStreak, refundUsed } = run;
 
   if (win) {
-    // i bonus si sommano alla puntata, ma nessuno può prendere più di quello che c'è nel piatto
+    // i bonus si sommano alla puntata, ma nessuno può prendere più di quello che c'è nel piatto.
+    // Il re fa eccezione: il piatto paga solo la puntata e il raddoppio lo mette il banco,
+    // altrimenti un re svuoterebbe il piatto in un colpo
     let gain = amount;
+    let bankBonus = 0;
     if (figure === "re") {
-      gain += amount * figureTimes;
+      bankBonus = amount * figureTimes;
       effect("re");
     }
     if (rule(run, "festa_del_patrono")) gain += 1;
@@ -429,7 +432,7 @@ const resolveDraw = (run: RunState, index: number, amount: number, rng: Rng): Dr
     }
     gain = Math.min(gain, piatto);
     piatto -= gain;
-    balance += gain;
+    balance += gain + bankBonus;
     if (player.hero) lossStreak = 0;
   } else {
     let loss = amount;

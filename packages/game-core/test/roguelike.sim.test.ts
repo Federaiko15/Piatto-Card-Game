@@ -14,7 +14,7 @@ import {
 
 // Simulatore di bilanciamento: gioca migliaia di run con strategie diverse e stampa le percentuali di vittoria.
 // Non parte con `npm test`; si lancia con `npm run simulate`. Le quote da provare si passano con
-// QUOTAS='[[100,105,115],[95,100,110]]' npm run simulate
+// QUOTAS='[[110,120,135],[105,115,125]]' npm run simulate
 // Per misurare un santino lo si dà all'eroe dall'inizio: SANTINI='["corno_rosso"]' npm run simulate
 
 type Strategy = (run: RunState, rng: () => number) => number;

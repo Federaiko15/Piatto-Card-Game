@@ -66,6 +66,17 @@ export const SCENES: SceneInfo[] = [
 export const sceneArt = (tableIndex: number): string | undefined =>
   sceneFiles[`table-${tableIndex}`];
 
+// ---------- Tavoli ----------
+
+const tableFiles = files(
+  import.meta.glob<string>("./tables/*.{png,webp}", { eager: true, import: "default" }),
+);
+
+// tables/table-0.png, table-1.png...: il tavolo visto da seduti. Un tavolo senza disegno proprio
+// usa quello del primo, e se non c'è nessun disegno resta il tavolo fatto in CSS
+export const tableArt = (tableIndex: number): string | undefined =>
+  tableFiles[`table-${tableIndex}`] ?? tableFiles["table-0"];
+
 // shop.png: il fondale della bottega
 export const SHOP_ART: string | undefined = sceneFiles.shop;
 

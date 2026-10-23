@@ -63,9 +63,14 @@ describe("semi", () => {
 });
 
 describe("figure", () => {
-  it("re: raddoppia la vincita, entro il piatto", () => {
-    expect(heroPlays(runWith([card(2), card(10)], { piatto: 40 }), 10).run.lastDraw?.delta).toBe(20);
-    expect(heroPlays(runWith([card(2), card(10)], { piatto: 15 }), 10).run.lastDraw?.delta).toBe(15);
+  it("re: raddoppia la vincita, ma dal piatto esce solo la puntata", () => {
+    const { run } = heroPlays(runWith([card(2), card(10)], { piatto: 40 }), 10);
+    expect(run.lastDraw?.delta).toBe(20);
+    expect(run.table.piatto).toBe(30);
+    // il raddoppio lo paga il banco anche quando il piatto non basterebbe
+    const low = heroPlays(runWith([card(2), card(10)], { piatto: 15 }), 10).run;
+    expect(low.lastDraw?.delta).toBe(20);
+    expect(low.table.piatto).toBe(5);
   });
 
   it("gli effetti valgono anche per gli avversari", () => {

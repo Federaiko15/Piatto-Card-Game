@@ -23,6 +23,10 @@ Un fondale per tavolo della notte: `table-0.png` (il bar della piazza), `table-1
 
 `cantina.png` è già pronto per un futuro tavolo della notte: il gioco non lo usa finché non diventa `table-3.png` (o non gli si dà un altro posto nel codice).
 
+## `tables/`
+
+Il tavolo visto da chi è seduto, con lo sfondo trasparente: `table-0.png`, `table-1.png`... come i fondali. Si vede dal bordo lontano (dove i personaggi appoggiano le braccia) fino al piano del bordo vicino, che sugli schermi larghi esce dal basso: il panno al centro va lasciato quasi vuoto, perché sopra ci stanno mazzo, piatto e carta pescata. Larghezza nativa intorno ai 256 px, niente lampada né gambe. Un tavolo senza disegno proprio usa `table-0.png`; senza nessun disegno resta il tavolo fatto in CSS.
+
 ## `santini/`
 
 Un'illustrazione per santino e consumabile con lo stesso nome dell'id del motore (`san_giuseppe.png`, `corno_rosso.png`, `brucia.png`...). 32×40, verticale come un santino stampato.

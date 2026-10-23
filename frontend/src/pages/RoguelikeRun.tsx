@@ -8,7 +8,7 @@ import RunShop from "../components/run/RunShop";
 import RunHelp from "../components/run/RunHelp";
 import RunEndPanel from "../components/run/RunEndPanel";
 import { noticesFor } from "../components/run/notices";
-import { CHARACTERS, SEED_SYMBOLS, SHOP_ART, sceneArt, sceneInfo, type Expression } from "../art/manifest";
+import { CHARACTERS, SEED_SYMBOLS, SHOP_ART, sceneArt, sceneInfo, tableArt, type Expression } from "../art/manifest";
 import { AnchorContext, useAnchor, useAnchorRegistry } from "../scene/anchors";
 import { directScene } from "../scene/cues";
 import FxLayer from "../scene/FxLayer";
@@ -121,11 +121,13 @@ export default function RoguelikeRun() {
   const opponents = players.filter((p) => !p.hero);
   const scene = sceneInfo(run.tableIndex);
   const art = sceneArt(run.tableIndex);
+  const table = tableArt(run.tableIndex);
   const sceneStyle = {
     "--scene-wall": scene.wall,
     "--scene-wainscot": scene.wainscot,
     "--scene-lamp": scene.lamp,
     ...(art ? { "--scene-art": `url(${art})` } : {}),
+    ...(table ? { "--table-art": `url(${table})` } : {}),
   } as CSSProperties;
 
   return (
@@ -143,9 +145,25 @@ export default function RoguelikeRun() {
           onMenu={() => navigate("/roguelike")}
         />
 
+        {/* la luce della lampada sui personaggi: bianchi e grigi virano al caldo, il contorno nero diventa marrone scuro */}
+        <svg className="rk-filters" aria-hidden="true">
+          <filter id="rk-lamp-tint" colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values="0.95 0.10 0.02 0 0.07
+                      0.05 0.82 0.05 0 0.035
+                      0.02 0.08 0.62 0 0.015
+                      0    0    0    1 0"
+            />
+          </filter>
+        </svg>
+
         <main ref={sceneRef} className="rk-stage">
           {/* livelli della scena, dal fondo al primo piano: fondale, oggetti, personaggi, tavolo, luce */}
-          <div className={`rk-layer rk-backdrop${art ? " rk-backdrop--art" : ""}`} aria-hidden="true" />
+          <div
+            className={`rk-layer rk-backdrop${art ? " rk-backdrop--art" : ""}${table ? " rk-backdrop--full" : ""}`}
+            aria-hidden="true"
+          />
           <div className="rk-layer rk-props" aria-hidden="true">
             {!art && (
               <span className="rk-shelf">
@@ -160,7 +178,11 @@ export default function RoguelikeRun() {
           </div>
 
           <div className="rk-room">
-            <ul className="rk-opponents" aria-label="Avversari">
+            <ul
+              className="rk-opponents"
+              aria-label="Avversari"
+              style={{ "--seats": opponents.length } as CSSProperties}
+            >
               {opponents.map((player) => (
                 <OpponentSeat
                   key={player.id}
@@ -172,7 +194,7 @@ export default function RoguelikeRun() {
             </ul>
 
             {/* il tavolo visto da chi è seduto: il bordo vicino esce dallo schermo */}
-            <div className="rk-table">
+            <div className={`rk-table${table ? " rk-table--art" : ""}`}>
               <div className="rk-felt">
                 <div className="rk-deck" aria-label={`${deck.length} carte nel mazzo`}>
                   <span className="rk-deck-stack">
