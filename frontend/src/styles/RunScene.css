@@ -831,6 +831,15 @@
   clip-path: none;
 }
 
+/* sui tavoli disegnati le scritte poggiano su un fondino scuro: sul marmo bianco dell'altare non si leggerebbero */
+.rk-table--art .rk-deck-count,
+.rk-table--art .rk-drawn-empty {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(22, 12, 16, 0.72);
+  color: var(--c-text);
+}
+
 .rk-felt {
   position: relative;
   height: 100%;
