@@ -1,5 +1,6 @@
 import {
   CONSUMABLES,
+  FOODS,
   HERO_ID,
   SANTINI,
   TABLE_MODIFIERS,
@@ -20,6 +21,7 @@ export const noticesFor = (events: RunEvent[], run: RunState): Notice[] => {
   const nameOf = (id: string) =>
     id === HERO_ID ? "Tu" : (run.table.players.find((p) => p.id === id)?.username ?? id);
   const verb = (id: string, hero: string, other: string) => (id === HERO_ID ? hero : other);
+  const coins = (amount = 0) => `${amount} ${amount === 1 ? "moneta" : "monete"}`;
 
   return events.flatMap((event): Notice[] => {
     switch (event.type) {
@@ -58,13 +60,27 @@ export const noticesFor = (events: RunEvent[], run: RunState): Notice[] => {
           case "san_giuseppe":
             return [{ text: `${name}: il 5 vince!`, tone: "santino" }];
           case "corno_rosso":
-            return [{ text: `${name}: ti restituisce ${event.amount} monete.`, tone: "santino" }];
+            return [{ text: `${name}: ti restituisce ${coins(event.amount)}.`, tone: "santino" }];
           case "santa_rosalia":
-            return [{ text: `${name}: vincita doppia, +${event.amount} monete.`, tone: "santino" }];
+            return [{ text: `${name}: vincita doppia, +${coins(event.amount)}.`, tone: "santino" }];
           case "fico_d_india":
             return [{ text: `${name}: esce un bastoni, +1 moneta.`, tone: "santino" }];
           case "pupo_di_orlando":
             return [{ text: `${name}: la figura vale doppio!`, tone: "santino" }];
+          case "patto":
+            return [{ text: `${name}: perdi solo metà, risparmi ${coins(event.amount)}.`, tone: "santino" }];
+          case "sant_agata":
+            return [{ text: `${name}: il 4 vince!`, tone: "santino" }];
+          case "testa_di_moro":
+            return [{ text: `${name}: le coppe vincono!`, tone: "santino" }];
+          case "trinacria":
+            return [{ text: `${name}: la prima carta bassa del tavolo vince!`, tone: "santino" }];
+          case "carretto_siciliano":
+            return [{ text: `${name}: esce un denari, +1 moneta.`, tone: "santino" }];
+          case "paladino_rinaldo":
+            return [{ text: `${name}: il fante ruba ${coins(event.amount)}.`, tone: "santino" }];
+          case "corona_di_ruggero":
+            return [{ text: `${name}: il banco ti paga +${coins(event.amount)}.`, tone: "santino" }];
           default:
             return [];
         }
@@ -77,11 +93,21 @@ export const noticesFor = (events: RunEvent[], run: RunState): Notice[] => {
           case "malocchio":
             return [{ text: `${name}! Il 7 di spade perde.`, tone: "curse" }];
           case "finanza":
-            return [{ text: `${name}: ti porta via ${event.amount} monete.`, tone: "curse" }];
+            return [{ text: `${name}: ti porta via ${coins(event.amount)}.`, tone: "curse" }];
           default:
             return [];
         }
       }
+      case "blessing_chosen":
+        return [{ text: `La nonna ti ha dato ${SANTINI[event.santino].name}.`, tone: "santino" }];
+      case "food_eaten":
+        return [
+          event.food === "mpanata"
+            ? { text: `${FOODS.mpanata.name}: +${coins(event.amount)}. Ora sì che si ragiona.`, tone: "gold" }
+            : { text: `${FOODS[event.food].name}: sei sazio, le perdite si dimezzano per qualche turno.`, tone: "gold" },
+        ];
+      case "food_effect":
+        return [{ text: `${FOODS[event.food].name}: perdi solo metà, risparmi ${coins(event.amount)}.`, tone: "gold" }];
       case "consumable_used":
         return [{ text: `Hai usato ${CONSUMABLES[event.item].name}.`, tone: "info" }];
       default:

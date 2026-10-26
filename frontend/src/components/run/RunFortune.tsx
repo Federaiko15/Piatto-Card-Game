@@ -1,12 +1,16 @@
 import {
   CONSUMABLES,
+  FOODS,
   MAX_CONSUMABLES,
+  MAX_FOODS,
   MAX_SANTINI,
   SANTINI,
   rememberedCards,
   type ConsumableId,
+  type FoodId,
   type RunState,
 } from "@piatto/game-core";
+import { useState } from "react";
 import { SEED_SYMBOLS } from "../../art/manifest";
 import { useAnchor } from "../../scene/anchors";
 import ItemArt from "./ItemArt";
@@ -16,17 +20,38 @@ interface RunFortuneProps {
   heroTurn: boolean;
   onPeek: () => void;
   onConsume: (item: ConsumableId) => void;
+  onEat: (food: FoodId) => void;
 }
 
-function SantinoSlot({ id }: { id: RunState["santini"][number] }) {
+type SantinoId = RunState["santini"][number];
+
+// I santini che valgono una volta per tavolo restano spenti dopo l'uso, fino al tavolo successivo
+const isSpent = (run: RunState, id: SantinoId) =>
+  (id === "corno_rosso" && run.refundUsed) || (id === "coppola_del_nonno" && run.peekUsed);
+
+function SantinoSlot({ id, spent }: { id: SantinoId; spent: boolean }) {
   const anchor = useAnchor(`santino:${id}`);
   const info = SANTINI[id];
+  // quando torna buono (al tavolo nuovo) il santino luccica un momento
+  const [wasSpent, setWasSpent] = useState(spent);
+  const [revived, setRevived] = useState(false);
+  if (wasSpent !== spent) {
+    setWasSpent(spent);
+    if (!spent) setRevived(true);
+  }
+
   return (
-    <li ref={anchor} className={`rk-santino ui-paper rk-santino--${info.rarity}`}>
+    <li
+      ref={anchor}
+      className={`rk-santino ui-paper rk-santino--${info.rarity}${spent ? " rk-santino--spent" : ""}${
+        revived ? " rk-santino--revived" : ""
+      }`}
+      onAnimationEnd={() => setRevived(false)}
+    >
       <ItemArt id={id} className="rk-santino-art" />
       <span className="rk-santino-text">
         <span className="rk-santino-name">{info.name}</span>
-        <span className="rk-santino-effect">{info.effect}</span>
+        <span className="rk-santino-effect">{spent ? "Usato a questo tavolo: torna buono al prossimo." : info.effect}</span>
       </span>
     </li>
   );
@@ -34,7 +59,7 @@ function SantinoSlot({ id }: { id: RunState["santini"][number] }) {
 
 // La "fortuna" dell'eroe: santini equipaggiati, consumabili in tasca e quello che i santini fanno vedere.
 // Su desktop sta nel pannello a sinistra, sotto la puntata; su smartphone è una striscia scorrevole.
-export default function RunFortune({ run, heroTurn, onPeek, onConsume }: RunFortuneProps) {
+export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: RunFortuneProps) {
   const memory = rememberedCards(run);
   const hasCoppola = run.santini.includes("coppola_del_nonno");
   const emptySlots = MAX_SANTINI - run.santini.length;
@@ -47,7 +72,7 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume }: RunFort
         </h2>
         <ul className="rk-santini">
           {run.santini.map((id) => (
-            <SantinoSlot key={id} id={id} />
+            <SantinoSlot key={id} id={id} spent={isSpent(run, id)} />
           ))}
           {Array.from({ length: emptySlots }, (_, i) => (
             <li key={`empty-${i}`} className="rk-santino rk-santino--empty" aria-hidden="true" />
@@ -84,6 +109,29 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume }: RunFort
               >
                 <ItemArt id={id} />
                 <span className="rk-pocket-name">{CONSUMABLES[id].name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {run.foods.length > 0 && (
+        <section className="rk-side-section">
+          <h2 className="ui-label">
+            Panaru {run.foods.length}/{MAX_FOODS}
+          </h2>
+          <div className="rk-pocket">
+            {run.foods.map((id, i) => (
+              <button
+                key={`${id}-${i}`}
+                type="button"
+                className="ui-btn ui-btn--gold ui-btn--small rk-pocket-btn"
+                disabled={!heroTurn}
+                onClick={() => onEat(id)}
+                title={FOODS[id].effect}
+              >
+                <ItemArt id={id} />
+                <span className="rk-pocket-name">{FOODS[id].name}</span>
               </button>
             ))}
           </div>

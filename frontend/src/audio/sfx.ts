@@ -1,3 +1,4 @@
+import type { MouseEvent } from "react";
 import { sfxFiles } from "../art/manifest";
 
 // I suoni del gioco: ogni momento ha un nome, e il file con quel nome in src/art/sfx viene suonato.
@@ -5,14 +6,14 @@ import { sfxFiles } from "../art/manifest";
 
 export type SfxName =
   | "card_flip"
-  | "card_slap"
   | "coins"
-  | "win"
   | "lose"
   | "big_win"
   | "curse"
   | "santino"
   | "shop_buy"
+  | "chair"
+  | "victory"
   | "button";
 
 const MUTE_KEY = "piattoMuted";
@@ -32,4 +33,9 @@ export const playSfx = (name: SfxName, volume = 0.7) => {
   audio.volume = volume;
   // il browser può bloccare l'audio prima che il giocatore abbia toccato la pagina: non è un errore
   audio.play().catch(() => {});
+};
+
+// Il clic dei bottoni di legno: si mette come onClickCapture sul contenitore di una schermata
+export const buttonSound = (event: MouseEvent) => {
+  if ((event.target as Element).closest(".ui-btn:not(:disabled)")) playSfx("button", 0.5);
 };

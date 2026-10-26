@@ -17,7 +17,7 @@ const MODES: Mode[] = [
     icon: "🍷",
     title: "Notte all'Osteria",
     description:
-      "Tre tavoli sempre più difficili in una sola notte: raggiungi la quota di ogni tavolo per arrivare fino in fondo.",
+      "Quattro tavoli sempre più difficili in una sola notte: raggiungi la quota di ogni tavolo per arrivare fino in fondo.",
     tag: "Giocatore singolo",
   },
   {

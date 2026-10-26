@@ -16,6 +16,7 @@ import {
 // Non parte con `npm test`; si lancia con `npm run simulate`. Le quote da provare si passano con
 // QUOTAS='[[110,120,135],[105,115,125]]' npm run simulate
 // Per misurare un santino lo si dà all'eroe dall'inizio: SANTINI='["corno_rosso"]' npm run simulate
+// Dall'incappucciato prende le monete; per prendere il suo oggetto: REWARD=santino npm run simulate
 
 type Strategy = (run: RunState, rng: () => number) => number;
 
@@ -42,6 +43,7 @@ const quotaSets: number[][] = process.env.QUOTAS
   ? JSON.parse(process.env.QUOTAS)
   : [RUN_TABLES.map((t) => t.quota)];
 const santini: SantinoId[] = process.env.SANTINI ? JSON.parse(process.env.SANTINI) : [];
+const reward = process.env.REWARD === "santino" ? "santino" : "coins";
 
 it.runIf(process.env.SIMULATE).each(quotaSets)("quote %j", (...quotas: number[]) => {
   quotas.forEach((quota, i) => ((RUN_TABLES[i] as { quota: number }).quota = quota));
@@ -59,7 +61,9 @@ it.runIf(process.env.SIMULATE).each(quotaSets)("quote %j", (...quotas: number[])
         const result = applyRunAction(
           run,
           run.phase === "table_cleared"
-            ? { type: "enter_shop" }
+            ? run.strangerReward
+              ? { type: "choose_reward", reward: reward === "santino" && run.strangerReward.santino ? "santino" : "coins" }
+              : { type: "enter_shop" }
             : run.phase === "shop"
               ? { type: "next_table" }
               : current.hero

@@ -9,6 +9,10 @@
   --panel-width: clamp(300px, 26vw, 380px);
   --bust-w: clamp(120px, 12.5vw, 180px);
   --table-h: clamp(200px, 34vh, 330px);
+  /* il bordo lontano del tavolo in frazione della sua larghezza, e quanto il tavolo è più largo della scena:
+     li misura il gioco dal disegno (scene/tableEdge.ts); questi sono i valori del tavolo fatto in CSS */
+  --table-far: 0.88;
+  --table-zoom: 1;
   position: relative;
   width: 100%;
   height: 100vh;
@@ -372,6 +376,31 @@
     inset 0 0 0 5px var(--c-rarity-leggendario), 0 0 18px rgba(201, 140, 240, 0.5);
 }
 
+/* usato a questo tavolo (Corno rosso, Coppola): grigio fino al tavolo successivo */
+.rk-santino--spent .rk-santino-art {
+  filter: grayscale(0.85) brightness(0.75);
+}
+
+.rk-santino--spent .rk-santino-name {
+  color: var(--c-ink-soft);
+}
+
+.rk-santino--revived {
+  animation: rk-santino-revive 900ms ease-out;
+}
+
+@keyframes rk-santino-revive {
+  0% {
+    filter: brightness(1);
+  }
+  30% {
+    filter: brightness(1.6) drop-shadow(0 0 10px var(--c-gold-light));
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
 .rk-santino-art {
   flex: none;
   width: 40px;
@@ -604,19 +633,34 @@
   gap: var(--seat-gap);
 }
 
-/* sul tavolo disegnato il bordo lontano è più spesso: le braccia ci finiscono dietro */
+/* sul tavolo disegnato il cartellino scende sul bordo lontano e le braccia ci si appoggiano sopra:
+   il bordo cresce con la larghezza della scena, il cartellino no */
 .rk-room:has(.rk-table--art) .rk-opponents {
-  margin-bottom: -72px;
+  margin-bottom: calc(-48px - 2cqw);
 }
 
-/* I mezzobusti sono disegnati alla stessa densità del fondale (64 px su 256): qui prendono l'80% della
+/* al tavolo del boss gli altri due si stringono attorno al Prete: con lo spazio normale i gomiti esterni uscivano
+   dal bordo lontano del tavolo, che è più stretto della scena. Le braccia interne finiscono dietro le sue */
+.rk-opponents--boss {
+  --seat-gap: max(-2cqw, -24px);
+}
+
+.rk-seat.is-host .portrait {
+  z-index: calc(var(--z-characters) + 1);
+}
+
+/* I mezzobusti sono tele di 80×80 disegnate alla stessa densità del fondale (256 px): qui prendono l'80% della
    sua scala, così i pixel restano simili a quelli della stanza senza che i personaggi la riempiano.
-   Si fermano prima se gli avversari al tavolo non ci stanno in larghezza o se coprirebbero troppa scena */
+   Si fermano prima se coprirebbero troppa scena, e soprattutto se tutti insieme non stanno dentro l'85% del
+   bordo lontano del tavolo, dove appoggiano le braccia: il tavolo scala con la larghezza della scena e il
+   fondale con il lato che lo copre, quindi sugli schermi meno larghi (16:10, portatili) i personaggi
+   finirebbero oltre il bordo */
 .rk-seat {
+  --far-edge: calc(var(--table-far) * var(--table-zoom) * 100cqw);
   --bust-w: min(
-    0.8 * 64 * max(100cqw / 256, 100cqh / 144),
-    (100cqw - 32px) / var(--seats, 2) - var(--seat-gap),
-    42cqh / 1.15
+    0.8 * 80 * max(100cqw / 256, 100cqh / 144),
+    (0.85 * var(--far-edge) - (var(--seats, 2) - 1) * var(--seat-gap)) / var(--seats, 2),
+    42cqh
   );
   display: flex;
   flex-direction: column;
@@ -711,7 +755,7 @@
 /* mezzobusto: niente cornice tonda, il disegno (o il segnaposto) ha già la sua sagoma */
 .portrait--bust {
   width: var(--bust-w);
-  height: calc(var(--bust-w) * 1.15);
+  height: var(--bust-w);
   align-items: flex-end;
   border-radius: 0;
   background: none;
@@ -770,6 +814,56 @@
   box-shadow: 0 0 0 3px var(--c-ink), inset 0 -10px 0 rgba(0, 0, 0, 0.25);
 }
 
+/* il segno sopra la testa di chi non mostra il volto (l'incappucciato), come nei manga */
+.portrait-emote {
+  position: absolute;
+  top: -4%;
+  right: 16%;
+  z-index: 1;
+  font-family: var(--font-title);
+  font-size: max(1.4rem, calc(var(--bust-w, 92px) * 0.24));
+  line-height: 1;
+  text-shadow:
+    2px 2px 0 var(--c-ink),
+    -1px -1px 0 var(--c-ink),
+    1px -1px 0 var(--c-ink),
+    -1px 1px 0 var(--c-ink);
+  animation: emotePop 1.6s var(--ease-back) both;
+}
+
+.portrait-emote img {
+  width: calc(var(--bust-w, 92px) * 0.24);
+  image-rendering: pixelated;
+}
+
+.portrait-emote--happy {
+  color: var(--c-gold-light);
+}
+
+.portrait-emote--sad {
+  font-size: max(1.1rem, calc(var(--bust-w, 92px) * 0.18));
+}
+
+.portrait-emote--suspicious {
+  color: var(--c-red-light);
+}
+
+@keyframes emotePop {
+  0% {
+    transform: translateY(10px) scale(0.4);
+    opacity: 0;
+  }
+  18% {
+    transform: translateY(-4px) scale(1.15);
+    opacity: 1;
+  }
+  30%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
 .portrait-badge {
   position: absolute;
   right: -6px;
@@ -820,7 +914,7 @@
 }
 
 .rk-table--art::before {
-  background: var(--table-art) center top / cover no-repeat;
+  background: var(--table-art) center top / calc(var(--table-zoom) * 100%) auto no-repeat;
   clip-path: none;
   image-rendering: pixelated;
 }
@@ -866,11 +960,9 @@
   gap: 4px;
 }
 
-/* le carte pixel sono piccole dentro un quadrato di 64 px: vanno ingrandite parecchio.
-   Il dorso è disegnato ancora più piccolo del fronte, quindi il mazzo si ingrandisce di più. */
+/* il mazzo è grande quanto la carta pescata: dorso e fronti sono disegnati sulla stessa tela di 64 px */
 .rk-deck-stack {
   position: relative;
-  transform: scale(1.6);
   width: clamp(100px, min(14vw, 21vh), 170px);
   height: clamp(100px, min(14vw, 21vh), 170px);
 }
@@ -889,7 +981,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/cards/back.png") center / contain no-repeat;
+  background: var(--card-back) center / contain no-repeat;
   image-rendering: pixelated;
   filter: brightness(0.6);
 }
@@ -915,13 +1007,14 @@
 }
 
 .rk-pot-plate {
-  width: clamp(84px, min(11vw, 15vh), 150px);
+  width: clamp(96px, min(12.5vw, 17vh), 172px);
   image-rendering: pixelated;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.5));
 }
 
+/* il cartellino sta sotto il piatto: le ultime righe del disegno sono la sua ombra sul tavolo e non vanno coperte */
 .rk-pot-amount {
-  margin-top: -10px;
+  margin-top: 2px;
   padding: 0 14px 2px;
   border-radius: 999px;
   background: var(--c-ink);
@@ -1153,6 +1246,44 @@
   flex: 1;
 }
 
+/* il premio dell'incappucciato: due scelte affiancate al posto del pulsante della bottega */
+.rk-reward {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rk-reward-intro {
+  margin: 0;
+  text-align: center;
+  color: var(--c-text-soft);
+}
+
+.rk-reward-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.rk-reward-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.rk-reward-coins {
+  font-size: 1.8rem;
+}
+
+.rk-reward-art {
+  width: 40px;
+  height: 50px;
+  font-size: 2rem;
+}
+
 /* ---------- Bottega ---------- */
 .rk-screen--shop {
   display: block;
@@ -1171,6 +1302,12 @@
     var(--scene-art) center / cover no-repeat fixed,
     #3b1d22;
   image-rendering: pixelated;
+}
+
+.rk-blessing-intro {
+  margin: 6px 0 0;
+  max-width: 52ch;
+  color: var(--c-text-soft);
 }
 
 .rk-shop-screen {
@@ -1638,6 +1775,10 @@
     gap: clamp(10px, 4vw, 40px);
   }
 
+  .rk-room:has(.rk-table--art) .rk-opponents {
+    margin-bottom: calc(-32px - 2cqw);
+  }
+
   .rk-seat-plate {
     min-width: 0;
     padding: 2px 8px 3px;
@@ -1666,7 +1807,7 @@
   }
 
   .rk-pot-plate {
-    width: 70px;
+    width: 80px;
   }
 
   .rk-pot-amount {

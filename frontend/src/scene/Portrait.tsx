@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { CHARACTERS, characterArt, type Expression } from "../art/manifest";
+import { CHARACTERS, EMOTE_GLYPHS, characterArt, emoteArt, type Expression } from "../art/manifest";
 
 interface PortraitProps {
   character: string;
@@ -21,6 +21,9 @@ export default function Portrait({ character, expression = "neutral", size = "me
   const info = CHARACTERS[character] ?? CHARACTERS.hero;
   const art = characterArt(character, expression);
   const badge = EXPRESSION_BADGES[expression];
+  // chi non mostra il volto esprime le emozioni con un segno sopra la testa
+  const emote = info.emotes && expression !== "neutral" ? expression : null;
+  const emoteImg = emote ? emoteArt(emote) : undefined;
 
   return (
     <span
@@ -35,7 +38,12 @@ export default function Portrait({ character, expression = "neutral", size = "me
           {size === "bust" && <span className="portrait-shoulders" />}
         </span>
       )}
-      {!art && badge && (
+      {emote && (
+        <span key={emote} className={`portrait-emote portrait-emote--${emote}`} aria-hidden="true">
+          {emoteImg ? <img src={emoteImg} alt="" /> : EMOTE_GLYPHS[emote]}
+        </span>
+      )}
+      {!art && !info.emotes && badge && (
         <span key={expression} className="portrait-badge" aria-hidden="true">
           {badge}
         </span>

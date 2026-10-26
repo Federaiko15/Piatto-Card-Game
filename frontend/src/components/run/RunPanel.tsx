@@ -1,10 +1,11 @@
 import {
-  RUN_TABLES,
   TABLE_MODIFIERS,
   getHero,
   getTableConfig,
   maxHeroBet,
+  runTables,
   type ConsumableId,
+  type FoodId,
   type RunState,
 } from "@piatto/game-core";
 import BetControls from "../BetControls";
@@ -23,12 +24,13 @@ interface RunPanelProps {
   onPlay: (amount: number) => void;
   onPeek: () => void;
   onConsume: (item: ConsumableId) => void;
+  onEat: (food: FoodId) => void;
   onHelp: () => void;
   onMenu: () => void;
 }
 
 // Il pannello a sinistra, come in Balatro: il tavolo e le sue regole, monete e quota, la puntata,
-// poi santini e consumabili. Su smartphone le sue sezioni si dispongono sopra e sotto la scena.
+// poi santini, consumabili e cibi. Su smartphone le sue sezioni si dispongono sopra e sotto la scena.
 export default function RunPanel({
   run,
   heroTurn,
@@ -37,6 +39,7 @@ export default function RunPanel({
   onPlay,
   onPeek,
   onConsume,
+  onEat,
   onHelp,
   onMenu,
 }: RunPanelProps) {
@@ -70,7 +73,7 @@ export default function RunPanel({
 
       <section className={`rk-blind${config.boss ? " rk-blind--boss" : ""}`}>
         <span className="ui-label">
-          Tavolo {run.tableIndex + 1} di {RUN_TABLES.length}
+          Tavolo {run.tableIndex + 1} di {runTables(run).length}
           {config.boss && " · boss"}
         </span>
         <h1 className="rk-blind-name">{config.name}</h1>
@@ -133,7 +136,7 @@ export default function RunPanel({
         )}
       </section>
 
-      <RunFortune run={run} heroTurn={heroTurn} onPeek={onPeek} onConsume={onConsume} />
+      <RunFortune run={run} heroTurn={heroTurn} onPeek={onPeek} onConsume={onConsume} onEat={onEat} />
     </aside>
   );
 }

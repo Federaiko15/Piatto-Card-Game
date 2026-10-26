@@ -14,10 +14,19 @@ import {
 import { botBet, cardCount, type BotPersonality } from "../classic/bots.js";
 import {
   MAX_CONSUMABLES,
+  MAX_FOODS,
   MAX_SANTINI,
+  MPANATA_MIN,
+  MPURNATU_TURNS,
+  inEdition,
   rerollPrice,
+  STRANGER_COINS,
+  rollBlessing,
   rollShop,
+  rollStrangerItem,
   type ConsumableId,
+  type Edition,
+  type FoodId,
   type SantinoId,
   type ShopItem,
   type ShopState,
@@ -56,6 +65,8 @@ export interface RunTableConfig {
   opponents: RunOpponent[];
   boss?: boolean;
   modifiers?: TableModifierId[]; // la regola fissa del boss
+  stranger?: boolean; // siede l'incappucciato: a tavolo superato offre un premio a scelta
+  full?: boolean; // solo nel gioco completo, non nella demo
 }
 
 export const RUN_TABLES: readonly RunTableConfig[] = [
@@ -77,10 +88,21 @@ export const RUN_TABLES: readonly RunTableConfig[] = [
       { character: "ragioniere", name: "Il Ragioniere", personality: "Calmo", balance: 120 },
     ],
   },
+  // Nella demo l'incappucciato c'è sempre; nel gioco completo la sua comparsa sarà da decidere
+  // (a caso, o solo a certe condizioni)
+  {
+    name: "La cantina",
+    ante: 10,
+    quota: 130,
+    stranger: true,
+    opponents: [
+      { character: "incappucciato", name: "L'Incappucciato", personality: "Calcolatore", balance: 160 },
+    ],
+  },
   {
     name: "Il tavolo del Prete",
     ante: 15,
-    quota: 135,
+    quota: 145,
     boss: true,
     modifiers: ["niente_piatto"],
     opponents: [
@@ -91,6 +113,10 @@ export const RUN_TABLES: readonly RunTableConfig[] = [
   },
 ];
 
+// I tavoli della notte nell'edizione giocata, in ordine
+export const editionTables = (edition: Edition): RunTableConfig[] =>
+  RUN_TABLES.filter((table) => inEdition(table, edition));
+
 export const HERO_ID = "hero";
 
 export interface RunPlayer extends ClassicPlayer {
@@ -99,7 +125,8 @@ export interface RunPlayer extends ClassicPlayer {
   personality?: BotPersonality;
 }
 
-export type RunPhase = "table" | "table_cleared" | "shop" | "won" | "lost";
+// "blessing": prima del primo tavolo l'eroe sceglie il santino della nonna
+export type RunPhase = "blessing" | "table" | "table_cleared" | "shop" | "won" | "lost";
 export type RunLossReason = "bankrupt" | "below_quota";
 
 export type TableEndReason = "deck_empty" | "opponents_out" | "hero_out";
@@ -114,6 +141,7 @@ export interface RunDraw {
 
 export interface RunState {
   seed: number;
+  edition: Edition;
   rngState: number; // lo stato del generatore, salvato insieme alla run
   heroName: string;
   phase: RunPhase;
@@ -126,11 +154,17 @@ export interface RunState {
   lossReason: RunLossReason | null;
   santini: SantinoId[];
   consumables: ConsumableId[];
+  foods: FoodId[]; // il panaru
   shop: ShopState | null; // la vetrina della bottega, solo nella fase "shop"
+  blessing: SantinoId[] | null; // i santini della nonna fra cui scegliere, solo nella fase "blessing"
+  // il premio dell'incappucciato finché l'eroe non l'ha scelto: monete o il santino in palio (null se li ha già tutti)
+  strangerReward: { santino: SantinoId | null } | null;
   seen: Card[]; // le carte uscite al tavolo attuale, in ordine
   peeked: Card | null; // la prossima carta, se l'eroe l'ha sbirciata con la Coppola
   peekUsed: boolean;
   refundUsed: boolean; // il Corno rosso ha già restituito una puntata a questo tavolo
+  trinacriaUsed: boolean; // la Trinacria ha già salvato una carta bassa a questo tavolo
+  satiety: number; // i turni in cui il 'Mpurnatu dimezza ancora le perdite
   lossStreak: number; // puntate perse di fila dall'eroe
   modifiers: TableModifierId[]; // malocchi, eventi e regola del boss del tavolo attuale
   nextEvent: TableModifierId | null; // l'evento del prossimo tavolo, scoperto in bottega
@@ -141,6 +175,9 @@ export type RunAction =
   | { type: "bot_turn" } // l'avversario di turno sceglie la puntata e pesca
   | { type: "peek" } // Coppola del nonno
   | { type: "use"; item: ConsumableId }
+  | { type: "eat"; food: FoodId }
+  | { type: "choose_blessing"; index: number } // il santino della nonna, all'inizio della notte
+  | { type: "choose_reward"; reward: "coins" | "santino" } // il premio dell'incappucciato, poi la bottega
   | { type: "enter_shop" }
   | { type: "buy"; index: number }
   | { type: "reroll" }
@@ -167,7 +204,11 @@ export type RunEvent =
   | { type: "modifier_triggered"; modifier: TableModifierId; amount?: number }
   | { type: "card_peeked"; card: Card }
   | { type: "consumable_used"; item: ConsumableId }
+  | { type: "food_eaten"; food: FoodId; amount?: number }
+  | { type: "food_effect"; food: FoodId; amount: number } // il 'Mpurnatu dimezza una perdita
   | { type: "shop_opened" }
+  | { type: "blessing_chosen"; santino: SantinoId }
+  | { type: "reward_chosen"; santino?: SantinoId; amount?: number }
   | { type: "item_bought"; item: ShopItem }
   | { type: "shop_rerolled"; price: number };
 
@@ -178,17 +219,22 @@ export type RunError =
   | "not_bot_turn"
   | "not_owned" // santino o consumabile che l'eroe non ha
   | "already_used"
+  | "invalid_choice"
+  | "reward_pending" // prima della bottega va scelto il premio dell'incappucciato
   | "sold_out"
   | "not_enough_coins" // in bottega bisogna tenere almeno una moneta per sedersi
   | "santini_full"
-  | "pocket_full";
+  | "pocket_full"
+  | "basket_full";
 
 export type RunResult =
   { ok: true; run: RunState; events: RunEvent[] } | { ok: false; error: RunError };
 
 export const getHero = (run: RunState): RunPlayer => run.table.players.find((p) => p.hero)!;
 
-export const getTableConfig = (run: RunState): RunTableConfig => RUN_TABLES[run.tableIndex];
+export const runTables = (run: RunState): RunTableConfig[] => editionTables(run.edition);
+
+export const getTableConfig = (run: RunState): RunTableConfig => runTables(run)[run.tableIndex];
 
 const has = (run: RunState, santino: SantinoId): boolean => run.santini.includes(santino);
 const rule = (run: RunState, modifier: TableModifierId): boolean =>
@@ -204,13 +250,12 @@ export const maxBet = (run: RunState, balance: number): number => {
 // Si siedono l'eroe (primo a giocare) e gli avversari; ognuno versa la posta nel piatto
 // (l'eroe no, se ha Sant'Antonio)
 const seatTable = (
-  tableIndex: number,
+  config: RunTableConfig,
   heroName: string,
   bankroll: number,
   heroPaysAnte: boolean,
   rng: Rng,
 ): ClassicTable<RunPlayer> => {
-  const config = RUN_TABLES[tableIndex];
   const ante = heroPaysAnte ? Math.min(config.ante, bankroll) : 0;
   const players: RunPlayer[] = [
     {
@@ -245,16 +290,28 @@ const freshTable = {
   peeked: null,
   peekUsed: false,
   refundUsed: false,
+  trinacriaUsed: false,
+  satiety: 0,
 } satisfies Partial<RunState>;
 
-export const createRun = (seed: number, heroName: string): RunState => {
+// Con blessing la notte comincia dalla scelta del santino della nonna; senza (test e simulatore)
+// si parte direttamente dal primo tavolo
+export const createRun = (
+  seed: number,
+  heroName: string,
+  edition: Edition = "full",
+  { blessing = false }: { blessing?: boolean } = {},
+): RunState => {
   const rng = createRngFromState(seed);
-  const table = seatTable(0, heroName, STARTING_BANKROLL, true, rng.next);
+  const [first] = editionTables(edition);
+  const table = seatTable(first, heroName, STARTING_BANKROLL, true, rng.next);
+  const offers = blessing ? rollBlessing(rng.next, edition) : null;
   return {
     seed,
+    edition,
     rngState: rng.state(),
     heroName,
-    phase: "table",
+    phase: offers ? "blessing" : "table",
     tableIndex: 0,
     bankroll: STARTING_BANKROLL,
     table,
@@ -262,9 +319,12 @@ export const createRun = (seed: number, heroName: string): RunState => {
     lossReason: null,
     santini: [],
     consumables: [],
+    foods: [],
     shop: null,
+    blessing: offers,
+    strangerReward: first.stranger ? { santino: rollStrangerItem([], rng.next, edition) } : null,
     lossStreak: 0,
-    modifiers: RUN_TABLES[0].modifiers ?? [],
+    modifiers: first.modifiers ?? [],
     nextEvent: null,
   };
 };
@@ -349,7 +409,7 @@ const closeTable = (run: RunState, reason: TableEndReason, events: RunEvent[]): 
   }
 
   let balance = table.players.find((p) => p.hero)!.balance;
-  const { quota } = RUN_TABLES[run.tableIndex];
+  const { quota } = getTableConfig(run);
   const closed = { ...run, table, bankroll: balance, tableEndReason: reason };
 
   if (balance < quota) {
@@ -365,7 +425,7 @@ const closeTable = (run: RunState, reason: TableEndReason, events: RunEvent[]): 
   }
 
   events.push({ type: "table_cleared", balance, quota });
-  if (run.tableIndex === RUN_TABLES.length - 1) {
+  if (run.tableIndex === runTables(run).length - 1) {
     events.push({ type: "run_won", balance });
     return { ...closed, bankroll: balance, phase: "won" };
   }
@@ -410,6 +470,23 @@ const resolveDraw = (run: RunState, index: number, amount: number, rng: Rng): Dr
     win = true;
     after.push({ type: "santino_triggered", santino: "san_giuseppe" });
   }
+  if (card.value === 4 && blessed("sant_agata")) {
+    win = true;
+    after.push({ type: "santino_triggered", santino: "sant_agata" });
+  }
+  if (!win && card.seed === "coppe" && blessed("testa_di_moro")) {
+    win = true;
+    after.push({ type: "santino_triggered", santino: "testa_di_moro" });
+  }
+  let { trinacriaUsed } = run;
+  if (!win && card.value <= 5 && blessed("trinacria") && !trinacriaUsed) {
+    win = true;
+    trinacriaUsed = true;
+    after.push({ type: "santino_triggered", santino: "trinacria" });
+  }
+  // il 'Mpurnatu dura un certo numero di turni dell'eroe, vinti o persi
+  const sated = player.hero && run.satiety > 0;
+  const satiety = sated ? run.satiety - 1 : run.satiety;
 
   let { piatto } = table;
   let balance = player.balance;
@@ -424,6 +501,10 @@ const resolveDraw = (run: RunState, index: number, amount: number, rng: Rng): Dr
     if (figure === "re") {
       bankBonus = amount * figureTimes;
       effect("re");
+    }
+    if (figure && blessed("corona_di_ruggero")) {
+      bankBonus += amount;
+      after.push({ type: "santino_triggered", santino: "corona_di_ruggero", amount });
     }
     if (rule(run, "festa_del_patrono")) gain += 1;
     if (blessed("santa_rosalia") && lossStreak >= 3) {
@@ -442,6 +523,18 @@ const resolveDraw = (run: RunState, index: number, amount: number, rng: Rng): Dr
       after.push({ type: "santino_triggered", santino: "corno_rosso", amount: loss });
       loss = 0;
     }
+    // il Patto e il 'Mpurnatu non si sommano: la perdita si dimezza una volta sola
+    if (loss > 0 && (blessed("patto") || sated)) {
+      const saved = Math.floor(loss / 2);
+      loss -= saved;
+      if (saved > 0) {
+        after.push(
+          blessed("patto")
+            ? { type: "santino_triggered", santino: "patto", amount: saved }
+            : { type: "food_effect", food: "mpurnatu", amount: saved },
+        );
+      }
+    }
     piatto += loss;
     balance -= loss;
   }
@@ -457,7 +550,9 @@ const resolveDraw = (run: RunState, index: number, amount: number, rng: Rng): Dr
         null,
       );
     if (victim) {
-      const stolen = Math.min(figureTimes, victim.balance);
+      const theft = (blessed("paladino_rinaldo") ? 3 : 1) * figureTimes;
+      const stolen = Math.min(theft, victim.balance);
+      if (blessed("paladino_rinaldo")) after.push({ type: "santino_triggered", santino: "paladino_rinaldo", amount: stolen });
       players = players.map((p) =>
         p.id === victim.id
           ? { ...p, balance: p.balance - stolen }
@@ -510,6 +605,8 @@ const resolveDraw = (run: RunState, index: number, amount: number, rng: Rng): Dr
       ...run,
       lossStreak,
       refundUsed,
+      trinacriaUsed,
+      satiety,
       table: {
         players,
         piatto,
@@ -543,9 +640,17 @@ const playTurn = (run: RunState, playerId: string, amount: number, rng: Rng): Ru
       players: table.players.map((p) => (p.hero ? { ...p, balance: p.balance + 1 } : p)),
     };
   }
+  // il Carretto siciliano fa per i denari quello che il Fico d'India fa per i bastoni
+  if (drawn.card.seed === "denari" && has(run, "carretto_siciliano") && hero.status === "playing") {
+    events.push({ type: "santino_triggered", santino: "carretto_siciliano", amount: 1 });
+    table = {
+      ...table,
+      players: table.players.map((p) => (p.hero ? { ...p, balance: p.balance + 1 } : p)),
+    };
+  }
 
   if (table.finished === "pot_emptied" && table.deck.length > 0) {
-    const { ante } = RUN_TABLES[run.tableIndex];
+    const { ante } = getTableConfig(run);
     table = refillPot(table, ante, !has(run, "sant_antonio"), events);
   }
   let next: RunState = {
@@ -569,6 +674,28 @@ const playTurn = (run: RunState, playerId: string, amount: number, rng: Rng): Ru
 };
 
 // I consumabili si usano nel turno dell'eroe, prima di puntare
+// I cibi del panaru: si mangiano nel proprio turno e non fanno pescare
+const eat = (run: RunState, food: FoodId): RunResult => {
+  const slot = run.foods.indexOf(food);
+  if (slot === -1) return { ok: false, error: "not_owned" };
+  const foods = run.foods.filter((_, i) => i !== slot);
+
+  if (food === "mpurnatu") {
+    return { ok: true, run: { ...run, foods, satiety: MPURNATU_TURNS }, events: [{ type: "food_eaten", food }] };
+  }
+
+  // la 'Mpanata: metà di quello che manca alla quota, e mai meno di un minimo
+  const hero = getHero(run);
+  const missing = getTableConfig(run).quota - hero.balance;
+  const amount = Math.max(MPANATA_MIN, Math.ceil(missing / 2));
+  const players = run.table.players.map((p) => (p.hero ? { ...p, balance: p.balance + amount } : p));
+  return {
+    ok: true,
+    run: { ...run, foods, table: { ...run.table, players } },
+    events: [{ type: "food_eaten", food, amount }],
+  };
+};
+
 const useConsumable = (run: RunState, item: ConsumableId, rng: Rng): RunResult => {
   const slot = run.consumables.indexOf(item);
   if (slot === -1) return { ok: false, error: "not_owned" };
@@ -597,8 +724,9 @@ const applyShopAction = (
 
   if (action.type === "next_table") {
     const tableIndex = run.tableIndex + 1;
+    const config = runTables(run)[tableIndex];
     const modifiers = [
-      ...(RUN_TABLES[tableIndex].modifiers ?? []),
+      ...(config.modifiers ?? []),
       ...(run.nextEvent ? [run.nextEvent] : []),
     ];
     const events: RunEvent[] = [{ type: "table_started", tableIndex }];
@@ -615,9 +743,10 @@ const applyShopAction = (
         phase: "table",
         tableIndex,
         bankroll,
-        table: seatTable(tableIndex, run.heroName, bankroll, !has(run, "sant_antonio"), rng),
+        table: seatTable(config, run.heroName, bankroll, !has(run, "sant_antonio"), rng),
         ...freshTable,
         shop: null,
+        strangerReward: config.stranger ? { santino: rollStrangerItem(run.santini, rng, run.edition) } : null,
         modifiers,
         nextEvent: null,
       },
@@ -633,7 +762,7 @@ const applyShopAction = (
       run: {
         ...run,
         bankroll: run.bankroll - price,
-        shop: { offers: rollShop(run.santini, rng), rerolls: shop.rerolls + 1 },
+        shop: { offers: rollShop(run.santini, rng, run.edition), rerolls: shop.rerolls + 1 },
       },
       events: [{ type: "shop_rerolled", price }],
     };
@@ -648,6 +777,9 @@ const applyShopAction = (
   if (item.kind === "consumable" && run.consumables.length >= MAX_CONSUMABLES) {
     return { ok: false, error: "pocket_full" };
   }
+  if (item.kind === "food" && run.foods.length >= MAX_FOODS) {
+    return { ok: false, error: "basket_full" };
+  }
   return {
     ok: true,
     run: {
@@ -655,11 +787,23 @@ const applyShopAction = (
       bankroll: run.bankroll - item.price,
       santini: item.kind === "santino" ? [...run.santini, item.id] : run.santini,
       consumables: item.kind === "consumable" ? [...run.consumables, item.id] : run.consumables,
+      foods: item.kind === "food" ? [...run.foods, item.id] : run.foods,
       shop: { ...shop, offers: shop.offers.map((o, i) => (i === action.index ? null : o)) },
     },
     events: [{ type: "item_bought", item }],
   };
 };
+
+const openShop = (run: RunState, events: RunEvent[], rng: Rng): RunResult => ({
+  ok: true,
+  run: {
+    ...run,
+    phase: "shop",
+    shop: { offers: rollShop(run.santini, rng, run.edition), rerolls: 0 },
+    nextEvent: rollTableEvent(rng),
+  },
+  events: [...events, { type: "shop_opened" }],
+});
 
 export const applyRunAction = (run: RunState, action: RunAction): RunResult => {
   const rng = createRngFromState(run.rngState);
@@ -669,18 +813,49 @@ export const applyRunAction = (run: RunState, action: RunAction): RunResult => {
 };
 
 const applyWithRng = (run: RunState, action: RunAction, rng: Rng): RunResult => {
-  if (action.type === "enter_shop") {
-    if (run.phase !== "table_cleared") return { ok: false, error: "wrong_phase" };
+  if (action.type === "choose_blessing") {
+    if (run.phase !== "blessing" || !run.blessing) return { ok: false, error: "wrong_phase" };
+    const santino = run.blessing[action.index];
+    if (!santino) return { ok: false, error: "invalid_choice" };
+    // con Sant'Antonio la posta del primo tavolo, già versata quando ci si è seduti, torna all'eroe
+    const table =
+      santino === "sant_antonio"
+        ? seatTable(runTables(run)[0], run.heroName, run.bankroll, false, rng)
+        : run.table;
     return {
       ok: true,
-      run: {
-        ...run,
-        phase: "shop",
-        shop: { offers: rollShop(run.santini, rng), rerolls: 0 },
-        nextEvent: rollTableEvent(rng),
-      },
-      events: [{ type: "shop_opened" }],
+      run: { ...run, phase: "table", table, santini: [...run.santini, santino], blessing: null },
+      events: [
+        { type: "blessing_chosen", santino },
+        { type: "table_started", tableIndex: 0 },
+      ],
     };
+  }
+
+  if (action.type === "enter_shop") {
+    if (run.phase !== "table_cleared") return { ok: false, error: "wrong_phase" };
+    if (run.strangerReward) return { ok: false, error: "reward_pending" };
+    return openShop(run, [], rng);
+  }
+
+  // il premio dell'incappucciato: le monete vanno subito in tasca, da spendere nella bottega che si apre dopo
+  if (action.type === "choose_reward") {
+    const reward = run.strangerReward;
+    if (run.phase !== "table_cleared" || !reward) return { ok: false, error: "wrong_phase" };
+    if (action.reward === "coins") {
+      return openShop(
+        { ...run, bankroll: run.bankroll + STRANGER_COINS, strangerReward: null },
+        [{ type: "reward_chosen", amount: STRANGER_COINS }],
+        rng,
+      );
+    }
+    if (!reward.santino) return { ok: false, error: "invalid_choice" };
+    if (run.santini.length >= MAX_SANTINI) return { ok: false, error: "santini_full" };
+    return openShop(
+      { ...run, santini: [...run.santini, reward.santino], strangerReward: null },
+      [{ type: "reward_chosen", santino: reward.santino }],
+      rng,
+    );
   }
 
   if (action.type === "buy" || action.type === "reroll" || action.type === "next_table") {
@@ -691,13 +866,15 @@ const applyWithRng = (run: RunState, action: RunAction, rng: Rng): RunResult => 
   if (run.phase !== "table") return { ok: false, error: "wrong_phase" };
   const current = run.table.players[run.table.currentTurn];
 
-  if (action.type === "play" || action.type === "peek" || action.type === "use") {
+  if (action.type === "play" || action.type === "peek" || action.type === "use" || action.type === "eat") {
     if (!current?.hero) return { ok: false, error: "not_hero_turn" };
   }
 
   if (action.type === "play") return playTurn(run, current.id, action.amount, rng);
 
   if (action.type === "use") return useConsumable(run, action.item, rng);
+
+  if (action.type === "eat") return eat(run, action.food);
 
   if (action.type === "peek") {
     if (!has(run, "coppola_del_nonno")) return { ok: false, error: "not_owned" };

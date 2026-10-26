@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:itch": "tsc -b && vite build --mode itch --outDir dist-itch && cd dist-itch && rm -rf sw.js _redirects manifest.webmanifest icons ../piatto-itch.zip && python3 -m zipfile -c ../piatto-itch.zip *",
     "lint": "eslint .",
     "preview": "vite preview"
   },

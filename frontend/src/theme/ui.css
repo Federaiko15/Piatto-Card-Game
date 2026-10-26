@@ -145,6 +145,9 @@
 .ui-tag--consumabile {
   --tag-color: var(--c-gold);
 }
+.ui-tag--cibo {
+  --tag-color: var(--c-green-light);
+}
 .ui-tag--malocchio,
 .ui-tag--boss {
   --tag-color: var(--c-curse);

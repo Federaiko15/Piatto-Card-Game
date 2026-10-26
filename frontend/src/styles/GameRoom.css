@@ -129,7 +129,7 @@
 
 .piatto-img {
   width: clamp(100px, 13vw, 150px);
-  height: clamp(100px, 13vw, 150px);
+  height: auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
 }
@@ -410,7 +410,7 @@
 
   .piatto-img {
     width: clamp(70px, 17vw, 98px);
-    height: clamp(70px, 17vw, 98px);
+    height: auto;
     image-rendering: pixelated;
     filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
   }

@@ -4,11 +4,13 @@ import {
   createRun,
   randomSeed,
   type ConsumableId,
+  type FoodId,
   type RunAction,
   type RunEvent,
   type RunState,
 } from "@piatto/game-core";
 import { clearRun, loadRun, saveRun } from "../services/runStorage";
+import { EDITION } from "../edition";
 
 const BOT_DELAY = 1300;
 const BOT_DELAY_AFTER_NOTICE = 2400; // dopo un avviso (piatto rimesso, santino) lasciamo il tempo di leggerlo
@@ -33,7 +35,7 @@ type EngineAction =
 const reducer = (state: EngineState, action: EngineAction): EngineState => {
   if (action.type === "start") {
     return {
-      run: createRun(action.seed, action.heroName),
+      run: createRun(action.seed, action.heroName, EDITION, { blessing: true }),
       events: [],
       moveId: state.moveId + 1,
     };
@@ -86,6 +88,12 @@ export function useRunEngine() {
   const reroll = useCallback(() => act({ type: "reroll" }), [act]);
   const peek = useCallback(() => act({ type: "peek" }), [act]);
   const consume = useCallback((item: ConsumableId) => act({ type: "use", item }), [act]);
+  const eat = useCallback((food: FoodId) => act({ type: "eat", food }), [act]);
+  const chooseBlessing = useCallback((index: number) => act({ type: "choose_blessing", index }), [act]);
+  const chooseReward = useCallback(
+    (reward: "coins" | "santino") => act({ type: "choose_reward", reward }),
+    [act],
+  );
 
   const startNewRun = useCallback((heroName: string) => {
     dispatch({ type: "start", seed: randomSeed(), heroName });
@@ -102,6 +110,9 @@ export function useRunEngine() {
     reroll,
     peek,
     consume,
+    eat,
+    chooseBlessing,
+    chooseReward,
     startNewRun,
   };
 }

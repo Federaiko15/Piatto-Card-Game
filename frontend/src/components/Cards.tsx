@@ -1,3 +1,4 @@
+import { CARD_BACK, cardArt } from "../art/manifest";
 import "../styles/Cards.css";
 
 interface CardProps {
@@ -19,13 +20,13 @@ const Card = ({ seed, value, isHidden = false, reveal = false }: CardProps) => {
       >
         {/* FACCIA 1: Il Dorso della carta */}
         <div className="card-face card-back">
-          <img src="/cards/back.png" alt="Dorso carta" />
+          <img src={CARD_BACK} alt="Dorso carta" />
         </div>
 
         {/* FACCIA 2: Il Fronte della carta (nascosto dietro al dorso) */}
         <div className="card-face card-front">
           <img
-            src={`/cards/${seed}_${value}.png`}
+            src={cardArt(seed ?? "", value ?? 0)}
             alt={`${value} di ${seed}`}
           />
         </div>

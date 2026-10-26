@@ -12,7 +12,19 @@ export const loadRun = (): RunState | null => {
     const raw = localStorage.getItem(RUN_KEY);
     if (!raw) return null;
     const run = JSON.parse(raw) as RunState;
-    return run?.table?.players && run.phase && Array.isArray(run.modifiers) ? run : null;
+    if (!run?.table?.players || !run.phase || !Array.isArray(run.modifiers)) return null;
+    // le notti salvate prima delle edizioni erano tutte del gioco completo
+    // e quelle di prima del santino della nonna non avevano la scelta iniziale
+    // e quelle di prima del panaru non avevano i cibi
+    return {
+      ...run,
+      edition: run.edition ?? "full",
+      blessing: run.blessing ?? null,
+      strangerReward: run.strangerReward ?? null,
+      foods: run.foods ?? [],
+      satiety: run.satiety ?? 0,
+      trinacriaUsed: run.trinacriaUsed ?? false,
+    };
   } catch {
     return null;
   }

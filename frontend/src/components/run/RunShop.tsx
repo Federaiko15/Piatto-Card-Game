@@ -1,11 +1,13 @@
 import {
   CONSUMABLES,
+  FOODS,
   MAX_CONSUMABLES,
+  MAX_FOODS,
   MAX_SANTINI,
-  RUN_TABLES,
   SANTINI,
   TABLE_MODIFIERS,
   rerollPrice,
+  runTables,
   type RunState,
   type ShopItem,
   type TableModifierId,
@@ -25,13 +27,16 @@ interface RunShopProps {
 const itemInfo = (item: ShopItem) =>
   item.kind === "santino"
     ? { ...SANTINI[item.id], tag: SANTINI[item.id].rarity }
-    : { ...CONSUMABLES[item.id], tag: "consumabile" };
+    : item.kind === "food"
+      ? { ...FOODS[item.id], tag: "cibo" }
+      : { ...CONSUMABLES[item.id], tag: "consumabile" };
 
 // Il motivo per cui un oggetto non si può comprare, o null se si può
 const blockedReason = (run: RunState, item: ShopItem): string | null => {
   if (item.price >= run.bankroll) return "Monete insufficienti";
   if (item.kind === "santino" && run.santini.length >= MAX_SANTINI) return "Santini al completo";
   if (item.kind === "consumable" && run.consumables.length >= MAX_CONSUMABLES) return "Tasche piene";
+  if (item.kind === "food" && run.foods.length >= MAX_FOODS) return "Panaru pieno";
   return null;
 };
 
@@ -53,7 +58,7 @@ function ModifierLine({ id }: { id: TableModifierId }) {
 // La bottega tra un tavolo e l'altro: ogni acquisto rafforza la build ma lascia meno monete per il prossimo tavolo
 export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopProps) {
   const shop = run.shop!;
-  const next = RUN_TABLES[run.tableIndex + 1];
+  const next = runTables(run)[run.tableIndex + 1];
   const reroll = rerollPrice(shop);
   const nextModifiers = [...(next.modifiers ?? []), ...(run.nextEvent ? [run.nextEvent] : [])];
 
@@ -149,7 +154,8 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
           <button type="button" className="ui-btn ui-btn--gold" onClick={onNextTable}>
             Siediti al tavolo
             <span className="ui-btn-detail">
-              Santini {run.santini.length}/{MAX_SANTINI} · In tasca {run.consumables.length}/{MAX_CONSUMABLES}
+              Santini {run.santini.length}/{MAX_SANTINI} · In tasca {run.consumables.length}/{MAX_CONSUMABLES} · Panaru{" "}
+              {run.foods.length}/{MAX_FOODS}
             </span>
           </button>
         </div>

@@ -72,3 +72,76 @@
 .fx-flash--lose {
   background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(90, 30, 140, 0.55));
 }
+
+.fx-float--small {
+  font-size: 1.15rem;
+}
+
+/* Il santino che si attiva ed entra in scena: una figurina di carta con il bordo del suo colore */
+.fx-santino {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: clamp(140px, 19vw, 210px);
+  padding: 10px 10px 8px;
+  background: var(--c-paper);
+  border: 3px solid var(--c-gold);
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 2px var(--c-ink),
+    6px 10px 0 rgba(0, 0, 0, 0.45);
+}
+
+.fx-santino--raro {
+  border-color: var(--c-rarity-raro);
+}
+
+.fx-santino--leggendario {
+  border-color: var(--c-rarity-leggendario);
+}
+
+.fx-santino-art {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 32 / 40;
+  font-size: 4rem;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.fx-santino-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.fx-santino-name {
+  font-family: var(--font-title);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--c-ink);
+}
+
+/* la scena che si scurisce intorno al santino, con la luce di candela dietro (--x, --y: il centro) */
+.fx-santino-halo {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  --glow: rgba(255, 214, 120, 0.6);
+  background: radial-gradient(
+    circle at var(--x) var(--y),
+    var(--glow),
+    rgba(255, 170, 70, 0.18) clamp(120px, 15vw, 190px),
+    rgba(18, 8, 6, 0.6) clamp(260px, 36vw, 460px)
+  );
+}
+
+.fx-santino-halo--leggendario {
+  --glow: rgba(214, 160, 245, 0.6);
+}

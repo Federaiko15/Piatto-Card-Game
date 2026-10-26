@@ -1,6 +1,6 @@
 // Service Worker per Piatto Card Game
 // Gestione stato offline e caching asset
-const CACHE_NAME = "piatto-cache-v8";
+const CACHE_NAME = "piatto-cache-v9";
 
 // Asset di base dell'applicazione
 const CORE_ASSETS = [

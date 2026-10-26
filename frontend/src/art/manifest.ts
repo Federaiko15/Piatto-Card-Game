@@ -1,4 +1,5 @@
-import type { ConsumableId, SantinoId, TableModifierId } from "@piatto/game-core";
+import type { ConsumableId, FoodId, SantinoId, TableModifierId } from "@piatto/game-core";
+import { publicUrl } from "../edition";
 
 // Il registro di tutta la grafica e dei suoni del gioco.
 // I file si mettono nelle cartelle di src/art con il nome giusto (vedi src/art/README.md) e vengono
@@ -32,6 +33,9 @@ export interface CharacterInfo {
   emoji: string; // segnaposto del ritratto
   color: string; // colore dello sfondo del ritratto
   tagline: string; // una riga sul suo modo di giocare, per il giocatore che impara a leggerlo
+  // il volto non si vede (l'incappucciato): le espressioni spuntano sopra la testa come nei manga,
+  // con i disegni di emotes/ al posto delle espressioni del ritratto
+  emotes?: boolean;
 }
 
 export const CHARACTERS: Record<string, CharacterInfo> = {
@@ -41,7 +45,29 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   zingara: { name: "'A Zingara", emoji: "🔮", color: "#6b3fa0", tagline: "Conta le carte." },
   ragioniere: { name: "Il Ragioniere", emoji: "🧮", color: "#1f5fa8", tagline: "Punta il 10% del saldo." },
   prete: { name: "Il Prete", emoji: "⛪", color: "#2a1a12", tagline: "Al suo tavolo niente Piatto." },
+  incappucciato: {
+    name: "L'Incappucciato",
+    emoji: "🕴️",
+    color: "#15110f",
+    tagline: "Nessuno sa chi sia. Se lo batti, paga.",
+    emotes: true,
+  },
 };
+
+// ---------- Espressioni sopra la testa ----------
+
+const emoteFiles = files(
+  import.meta.glob<string>("./emotes/*.{png,webp}", { eager: true, import: "default" }),
+);
+
+// emotes/happy.png, sad.png, suspicious.png; finché mancano, un segno disegnato con il testo
+export const EMOTE_GLYPHS: Record<Exclude<Expression, "neutral">, string> = {
+  happy: "♪",
+  sad: "💧",
+  suspicious: "?",
+};
+
+export const emoteArt = (expression: Expression): string | undefined => emoteFiles[expression];
 
 // Mezzobusto del personaggio con l'espressione richiesta: zio_turi.happy.png, se c'è, altrimenti zio_turi.png
 export const characterArt = (id: string, expression: Expression = "neutral"): string | undefined =>
@@ -59,6 +85,7 @@ export interface SceneInfo {
 export const SCENES: SceneInfo[] = [
   { wall: "#5a2a1e", wainscot: "#2a1810", lamp: "rgba(255, 200, 110, 0.45)" }, // il bar della piazza
   { wall: "#2c2338", wainscot: "#1c1420", lamp: "rgba(255, 170, 90, 0.38)" }, // la bisca del retrobottega
+  { wall: "#2a221c", wainscot: "#140f0c", lamp: "rgba(255, 160, 80, 0.32)" }, // la cantina
   { wall: "#3a1420", wainscot: "#1a0c10", lamp: "rgba(255, 140, 80, 0.4)" }, // il tavolo del Prete
 ];
 
@@ -85,7 +112,9 @@ export const sceneInfo = (tableIndex: number): SceneInfo =>
 
 // ---------- Santini, consumabili, malocchi ----------
 
-export const ITEM_ICONS: Record<SantinoId | ConsumableId, string> = {
+export type ItemId = SantinoId | ConsumableId | FoodId;
+
+export const ITEM_ICONS: Record<ItemId, string> = {
   san_giuseppe: "🪚",
   corno_rosso: "🌶️",
   coppola_del_nonno: "🧢",
@@ -95,9 +124,18 @@ export const ITEM_ICONS: Record<SantinoId | ConsumableId, string> = {
   sant_antonio: "🕯️",
   salvadanaio: "🐷",
   pupo_di_orlando: "🗡️",
+  patto: "📜",
+  corona_di_ruggero: "👑",
+  sant_agata: "🌋",
+  carretto_siciliano: "🛞",
+  paladino_rinaldo: "🛡️",
+  testa_di_moro: "🏺",
+  trinacria: "☀️",
   brucia: "🔥",
   passo: "✋",
   mischia: "🔀",
+  mpanata: "🥖",
+  mpurnatu: "🥘",
 };
 
 export const MODIFIER_ICONS: Record<TableModifierId, string> = {
@@ -108,9 +146,10 @@ export const MODIFIER_ICONS: Record<TableModifierId, string> = {
   festa_del_patrono: "🎆",
 };
 
-// L'illustrazione di un santino o consumabile (san_giuseppe.png...), se è già stata disegnata
-export const itemArt = (id: SantinoId | ConsumableId): string | undefined => santinoFiles[id];
+// L'illustrazione di un santino, consumabile o cibo (san_giuseppe.png, mpanata.png...), se è già stata disegnata
+export const itemArt = (id: ItemId): string | undefined => santinoFiles[id];
 
 export const SEED_SYMBOLS = { denari: "🪙", coppe: "🍷", spade: "🗡️", bastoni: "🪵" } as const;
 
-export const cardArt = (seed: string, value: number) => `/cards/${seed}_${value}.png`;
+export const cardArt = (seed: string, value: number) => publicUrl(`cards/${seed}_${value}.png`);
+export const CARD_BACK = publicUrl("cards/back.png");
