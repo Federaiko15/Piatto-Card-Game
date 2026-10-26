@@ -2,7 +2,7 @@ import type { RunState } from "@piatto/game-core";
 
 // La run del roguelike vive solo sul dispositivo: si salva dopo ogni mossa e si riprende con "Continua".
 // Se il formato della run cambia in modo incompatibile basta cambiare la versione nella chiave.
-const RUN_KEY = "piattoRun:v3"; // v3: santini, bottega, malocchi e personaggi
+const RUN_KEY = "piattoRun:v4"; // v4: la cantina diventa il terzo tavolo, le notti a tre tavoli non si riprendono
 const NAME_KEY = "piattoRunName";
 
 // localStorage può non esserci o lanciare un errore (navigazione privata, spazio pieno): in quel caso
