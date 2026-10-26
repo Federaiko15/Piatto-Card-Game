@@ -1,7 +1,5 @@
 import {
   MAX_SANTINI,
-  SANTINI,
-  STRANGER_COINS,
   getTableConfig,
   runTables,
   type RunEvent,
@@ -11,6 +9,7 @@ import { useState } from "react";
 import coinsImg from "../../assets/coins.png";
 import ItemArt from "./ItemArt";
 import SwapChooser from "./SwapChooser";
+import { useText } from "../../i18n";
 
 interface RunEndPanelProps {
   run: RunState;
@@ -24,6 +23,7 @@ interface RunEndPanelProps {
 // Pannello di fine tavolo: tavolo superato (si va in bottega), notte vinta o persa
 // Il premio dell'incappucciato, a tavolo superato: una buona somma da spendere in bottega o uno dei suoi oggetti
 function StrangerReward({ run, onChoose }: { run: RunState; onChoose: RunEndPanelProps["onChooseReward"] }) {
+  const t = useText();
   const santino = run.strangerReward?.santino;
   // con i santini al completo il suo oggetto si prende con uno scambio, se ne restano
   const full = run.santini.length >= MAX_SANTINI;
@@ -32,14 +32,15 @@ function StrangerReward({ run, onChoose }: { run: RunState; onChoose: RunEndPane
   return (
     <section className="rk-reward" aria-labelledby="rk-reward-title">
       <p id="rk-reward-title" className="rk-reward-intro">
-        L'Incappucciato alza appena la testa: <em>"Hai giocato bene. Scegli."</em>
+        {t.end.strangerIntro} <em>{t.end.strangerLine}</em>
       </p>
       <div className="rk-reward-options">
         <button type="button" className="ui-btn ui-btn--gold rk-reward-option" onClick={() => onChoose("coins")}>
           <span className="ui-coins rk-reward-coins">
-            <img src={coinsImg} alt="" />+{STRANGER_COINS}
+            <img src={coinsImg} alt="" />
+            {t.end.rewardCoins}
           </span>
-          <span className="ui-btn-detail">Monete da spendere in bottega</span>
+          <span className="ui-btn-detail">{t.end.rewardCoinsDetail}</span>
         </button>
         {santino && (
           <button
@@ -47,12 +48,16 @@ function StrangerReward({ run, onChoose }: { run: RunState; onChoose: RunEndPane
             className="ui-btn ui-btn--wood rk-reward-option"
             disabled={blocked}
             onClick={() => (full ? setSwapping(true) : onChoose("santino"))}
-            title={SANTINI[santino].effect}
+            title={t.santini[santino].effect}
           >
             <ItemArt id={santino} className="rk-reward-art" />
-            <span>{SANTINI[santino].name}</span>
+            <span>{t.santini[santino].name}</span>
             <span className="ui-btn-detail">
-              {blocked ? "Santini al completo" : full ? `Scambia: ${SANTINI[santino].effect}` : SANTINI[santino].effect}
+              {blocked
+                ? t.shop.santiniFull
+                : full
+                  ? t.end.rewardSwap(t.santini[santino].effect)
+                  : t.santini[santino].effect}
             </span>
           </button>
         )}
@@ -70,6 +75,7 @@ function StrangerReward({ run, onChoose }: { run: RunState; onChoose: RunEndPane
 }
 
 export default function RunEndPanel({ run, events, onEnterShop, onChooseReward, onNewRun, onMenu }: RunEndPanelProps) {
+  const t = useText();
   const config = getTableConfig(run);
   const tables = runTables(run);
   const split = events.find((e) => e.type === "pot_split");
@@ -78,23 +84,21 @@ export default function RunEndPanel({ run, events, onEnterShop, onChooseReward, 
 
   const lines = [
     run.tableEndReason === "opponents_out"
-      ? "Hai lasciato tutti gli avversari senza monete!"
+      ? t.end.opponentsOut
       : run.tableEndReason === "deck_empty"
-        ? "Il mazzo è finito."
+        ? t.end.deckEmpty
         : null,
     collected?.type === "pot_collected"
-      ? `Il piatto è tuo: +${collected.amount} monete.`
+      ? t.end.potCollected(collected.amount)
       : split?.type === "pot_split" && split.share > 0
-        ? `Il piatto rimasto si divide: ${split.share} monete a testa.`
+        ? t.end.potSplit(split.share)
         : null,
-    interest?.type === "santino_triggered" && interest.amount
-      ? `Salvadanaio: +${interest.amount} monete di interessi.`
-      : null,
+    interest?.type === "santino_triggered" && interest.amount ? t.end.interest(interest.amount) : null,
   ].filter(Boolean);
 
   const cleared = run.phase === "table_cleared";
   const won = run.phase === "won";
-  const title = cleared ? "Tavolo superato!" : won ? "Hai sbancato l'osteria!" : "La notte finisce qui";
+  const title = cleared ? t.end.cleared : won ? t.end.won : t.end.lost;
   const tablesCleared = won ? tables.length : run.tableIndex + (cleared ? 1 : 0);
 
   return (
@@ -119,26 +123,26 @@ export default function RunEndPanel({ run, events, onEnterShop, onChooseReward, 
         <p className="rk-end-coins">
           {cleared || won ? (
             <>
-              {won ? "Chiudi la notte con" : "Ti alzi con"}{" "}
+              {won ? t.end.closeWith : t.end.leaveWith}{" "}
               <span className="ui-coins">
                 <img src={coinsImg} alt="" />
                 {run.bankroll}
               </span>
-              {cleared && ` (quota ${config.quota})`}
+              {cleared && t.end.quotaNote(config.quota)}
             </>
           ) : run.lossReason === "bankrupt" ? (
-            "Sei rimasto senza monete."
+            t.end.bankrupt
           ) : (
-            `Ti alzi con ${run.bankroll} monete, ma la quota era ${config.quota}.`
+            t.end.belowQuota(run.bankroll, config.quota)
           )}
         </p>
 
-        <ol className="rk-end-track" aria-label={`Tavoli superati: ${tablesCleared} su ${tables.length}`}>
+        <ol className="rk-end-track" aria-label={t.end.track(tablesCleared, tables.length)}>
           {tables.map((table, i) => (
             <li
-              key={table.name}
+              key={table.id}
               className={i < tablesCleared ? "is-done" : i === run.tableIndex && !cleared && !won ? "is-lost" : ""}
-              title={table.name}
+              title={t.tables[table.id]}
             >
               {table.boss ? "👑" : table.stranger ? "?" : i + 1}
             </li>
@@ -149,16 +153,16 @@ export default function RunEndPanel({ run, events, onEnterShop, onChooseReward, 
           <StrangerReward run={run} onChoose={onChooseReward} />
         ) : cleared ? (
           <button type="button" className="ui-btn ui-btn--gold" onClick={onEnterShop}>
-            Entra in bottega
-            <span className="ui-btn-detail">Santini e consumabili prima del prossimo tavolo</span>
+            {t.end.enterShop}
+            <span className="ui-btn-detail">{t.end.enterShopDetail}</span>
           </button>
         ) : (
           <div className="rk-end-actions">
             <button type="button" className="ui-btn ui-btn--gold" onClick={onNewRun}>
-              Nuova notte
+              {t.end.newNight}
             </button>
             <button type="button" className="ui-btn ui-btn--wood" onClick={onMenu}>
-              Menu
+              {t.end.menu}
             </button>
           </div>
         )}

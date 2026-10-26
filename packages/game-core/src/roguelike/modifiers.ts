@@ -6,15 +6,11 @@ import type { Rng } from "../core/rng.js";
 
 export type CardEffectId = "fante" | "cavallo" | "re";
 
-export interface CardEffectInfo {
-  name: string;
-  effect: string;
-}
-
-export const CARD_EFFECTS: Record<CardEffectId, CardEffectInfo> = {
-  fante: { name: "Fante (8)", effect: "ruba 1 moneta all'avversario più ricco" },
-  cavallo: { name: "Cavallo (9)", effect: "il turno salta il prossimo giocatore" },
-  re: { name: "Re (10)", effect: "raddoppia la vincita" },
+// le figure e il loro valore; cosa fanno lo raccontano i dizionari dell'interfaccia
+export const CARD_EFFECTS: Record<CardEffectId, { value: number }> = {
+  fante: { value: 8 },
+  cavallo: { value: 9 },
+  re: { value: 10 },
 };
 
 export const FIGURES: Partial<Record<number, CardEffectId>> = { 8: "fante", 9: "cavallo", 10: "re" };
@@ -31,40 +27,28 @@ export type TableModifierId =
 
 export interface TableModifierInfo {
   id: TableModifierId;
-  name: string;
-  effect: string;
   kind: "boss" | "malocchio" | "evento";
 }
 
 export const TABLE_MODIFIERS: Record<TableModifierId, TableModifierInfo> = {
   niente_piatto: {
     id: "niente_piatto",
-    name: "Niente Piatto",
-    effect: "Al tavolo del Prete nessuno può puntare più di metà del piatto.",
     kind: "boss",
   },
   sei_storto: {
     id: "sei_storto",
-    name: "Il 6 storto",
-    effect: "A questo tavolo i 6 perdono.",
     kind: "malocchio",
   },
   malocchio: {
     id: "malocchio",
-    name: "Malocchio",
-    effect: "Il 7 di spade porta sfortuna: chi lo pesca perde la puntata.",
     kind: "malocchio",
   },
   finanza: {
     id: "finanza",
-    name: "Arriva la Finanza",
-    effect: "Quando ti siedi perdi il 10% delle tue monete.",
     kind: "malocchio",
   },
   festa_del_patrono: {
     id: "festa_del_patrono",
-    name: "Festa del patrono",
-    effect: "A questo tavolo ogni vincita paga 1 moneta in più, a tutti.",
     kind: "evento",
   },
 };

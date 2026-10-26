@@ -47,11 +47,12 @@ export const clearRun = () => {
   }
 };
 
+// vuoto se il giocatore non ha mai scritto un nome: il menu propone quello di serie nella sua lingua
 export const loadHeroName = (): string => {
   try {
-    return localStorage.getItem(NAME_KEY) || "Giocatore";
+    return localStorage.getItem(NAME_KEY) ?? "";
   } catch {
-    return "Giocatore";
+    return "";
   }
 };
 

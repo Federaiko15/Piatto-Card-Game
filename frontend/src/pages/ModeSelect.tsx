@@ -1,48 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import authBg from "../assets/auth.png";
+import { useText } from "../i18n";
 import "../styles/ModeSelect.css";
 
-type Mode = {
-  id: string;
-  icon: string;
-  title: string;
-  description: string;
-  tag: string;
-  comingSoon?: boolean;
-};
+type ModeId = "roguelike" | "offline" | "online";
 
-const MODES: Mode[] = [
-  {
-    id: "roguelike",
-    icon: "🍷",
-    title: "Notte all'Osteria",
-    description:
-      "Piatto con regole nuove, più dinamiche del gioco originale: quattro tavoli in una notte, santini che cambiano le regole, una bottega e un boss finale. Raggiungi la quota di ogni tavolo per arrivare fino in fondo.",
-    tag: "Giocatore singolo · Regole nuove",
-  },
-  {
-    id: "offline",
-    icon: "🤖",
-    title: "Classica contro i Bot",
-    description:
-      "Le regole di sempre contro avversari controllati dal computer. Funziona anche senza connessione.",
-    tag: "Senza account",
-  },
-  {
-    id: "online",
-    icon: "🌐",
-    title: "Classica Online",
-    description:
-      "Crea una lobby o entra in quella di un amico e sfida altri giocatori in tempo reale.",
-    tag: "Serve un account",
-  },
+// le modalità del sito; i testi nella lingua scelta stanno nei dizionari
+const MODES: { id: ModeId; icon: string; comingSoon?: boolean }[] = [
+  { id: "roguelike", icon: "🍷" },
+  { id: "offline", icon: "🤖" },
+  { id: "online", icon: "🌐" },
 ];
 
 // Prima pagina dell'app: il login serve solo per la modalità online
 export default function ModeSelect() {
   const navigate = useNavigate();
+  const t = useText();
 
-  const handleSelect = (mode: Mode) => {
+  const handleSelect = (mode: (typeof MODES)[number]) => {
     if (mode.comingSoon) return;
 
     if (mode.id === "roguelike") {
@@ -63,7 +38,7 @@ export default function ModeSelect() {
     >
       <header className="mode-header">
         <h1 className="mode-title">Piatto</h1>
-        <p className="mode-subtitle">Scegli come vuoi giocare</p>
+        <p className="mode-subtitle">{t.modes.subtitle}</p>
       </header>
 
       <div className="mode-list">
@@ -79,10 +54,10 @@ export default function ModeSelect() {
               {mode.icon}
             </span>
             <span className="mode-body">
-              <span className="mode-card-title">{mode.title}</span>
-              <span className="mode-card-description">{mode.description}</span>
+              <span className="mode-card-title">{t.modes[mode.id].title}</span>
+              <span className="mode-card-description">{t.modes[mode.id].description}</span>
               <span className="mode-tag">
-                {mode.comingSoon ? "In arrivo" : mode.tag}
+                {mode.comingSoon ? t.modes.soon : t.modes[mode.id].tag}
               </span>
             </span>
           </button>
@@ -94,7 +69,7 @@ export default function ModeSelect() {
         className="mode-legal-btn"
         onClick={() => navigate("/terms")}
       >
-        Note Legali & Privacy
+        {t.modes.legal}
       </button>
     </div>
   );

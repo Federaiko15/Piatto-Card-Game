@@ -1,6 +1,4 @@
 import {
-  CONSUMABLES,
-  FOODS,
   MAX_CONSUMABLES,
   MAX_FOODS,
   MAX_SANTINI,
@@ -14,6 +12,7 @@ import { useState } from "react";
 import { SEED_SYMBOLS } from "../../art/manifest";
 import { useAnchor } from "../../scene/anchors";
 import ItemArt from "./ItemArt";
+import { useText } from "../../i18n";
 
 interface RunFortuneProps {
   run: RunState;
@@ -30,6 +29,7 @@ const isSpent = (run: RunState, id: SantinoId) =>
   (id === "corno_rosso" && run.refundUsed) || (id === "coppola_del_nonno" && run.peekUsed);
 
 function SantinoSlot({ id, spent }: { id: SantinoId; spent: boolean }) {
+  const t = useText();
   const anchor = useAnchor(`santino:${id}`);
   const info = SANTINI[id];
   // quando torna buono (al tavolo nuovo) il santino luccica un momento
@@ -50,8 +50,8 @@ function SantinoSlot({ id, spent }: { id: SantinoId; spent: boolean }) {
     >
       <ItemArt id={id} className="rk-santino-art" />
       <span className="rk-santino-text">
-        <span className="rk-santino-name">{info.name}</span>
-        <span className="rk-santino-effect">{spent ? "Usato a questo tavolo: torna buono al prossimo." : info.effect}</span>
+        <span className="rk-santino-name">{t.santini[id].name}</span>
+        <span className="rk-santino-effect">{spent ? t.fortune.spent : t.santini[id].effect}</span>
       </span>
     </li>
   );
@@ -60,15 +60,16 @@ function SantinoSlot({ id, spent }: { id: SantinoId; spent: boolean }) {
 // La "fortuna" dell'eroe: santini equipaggiati, consumabili in tasca e quello che i santini fanno vedere.
 // Su desktop sta nel pannello a sinistra, sotto la puntata; su smartphone è una striscia scorrevole.
 export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: RunFortuneProps) {
+  const t = useText();
   const memory = rememberedCards(run);
   const hasCoppola = run.santini.includes("coppola_del_nonno");
   const emptySlots = MAX_SANTINI - run.santini.length;
 
   return (
-    <section className="rk-fortune" aria-label="La tua fortuna">
+    <section className="rk-fortune" aria-label={t.fortune.label}>
       <section className="rk-side-section">
         <h2 className="ui-label">
-          Santini {run.santini.length}/{MAX_SANTINI}
+          {t.fortune.santini(run.santini.length, MAX_SANTINI)}
         </h2>
         <ul className="rk-santini">
           {run.santini.map((id) => (
@@ -83,7 +84,7 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: 
       {(run.consumables.length > 0 || hasCoppola) && (
         <section className="rk-side-section">
           <h2 className="ui-label">
-            In tasca {run.consumables.length}/{MAX_CONSUMABLES}
+            {t.fortune.pocket(run.consumables.length, MAX_CONSUMABLES)}
           </h2>
           <div className="rk-pocket">
             {hasCoppola && (
@@ -92,10 +93,10 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: 
                 className="ui-btn ui-btn--wood ui-btn--small rk-pocket-btn"
                 disabled={!heroTurn || run.peekUsed}
                 onClick={onPeek}
-                title={SANTINI.coppola_del_nonno.effect}
+                title={t.santini.coppola_del_nonno.effect}
               >
                 <ItemArt id="coppola_del_nonno" />
-                <span className="rk-pocket-name">{run.peekUsed ? "Già sbirciato" : "Sbircia"}</span>
+                <span className="rk-pocket-name">{run.peekUsed ? t.fortune.peeked : t.fortune.peek}</span>
               </button>
             )}
             {run.consumables.map((id, i) => (
@@ -105,10 +106,10 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: 
                 className="ui-btn ui-btn--gold ui-btn--small rk-pocket-btn"
                 disabled={!heroTurn}
                 onClick={() => onConsume(id)}
-                title={CONSUMABLES[id].effect}
+                title={t.consumables[id].effect}
               >
                 <ItemArt id={id} />
-                <span className="rk-pocket-name">{CONSUMABLES[id].name}</span>
+                <span className="rk-pocket-name">{t.consumables[id].name}</span>
               </button>
             ))}
           </div>
@@ -118,7 +119,7 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: 
       {run.foods.length > 0 && (
         <section className="rk-side-section">
           <h2 className="ui-label">
-            Panaru {run.foods.length}/{MAX_FOODS}
+            {t.fortune.basket(run.foods.length, MAX_FOODS)}
           </h2>
           <div className="rk-pocket">
             {run.foods.map((id, i) => (
@@ -128,10 +129,10 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: 
                 className="ui-btn ui-btn--gold ui-btn--small rk-pocket-btn"
                 disabled={!heroTurn}
                 onClick={() => onEat(id)}
-                title={FOODS[id].effect}
+                title={t.foods[id].effect}
               >
                 <ItemArt id={id} />
-                <span className="rk-pocket-name">{FOODS[id].name}</span>
+                <span className="rk-pocket-name">{t.foods[id].name}</span>
               </button>
             ))}
           </div>
@@ -139,13 +140,13 @@ export default function RunFortune({ run, heroTurn, onPeek, onConsume, onEat }: 
       )}
 
       {memory.length > 0 && (
-        <section className="rk-side-section" title={SANTINI.memoria_di_ferro.effect}>
-          <h2 className="ui-label">Ultime uscite</h2>
+        <section className="rk-side-section" title={t.santini.memoria_di_ferro.effect}>
+          <h2 className="ui-label">{t.fortune.memory}</h2>
           <div className="rk-memory">
             {memory.map((card, i) => (
               <span key={i} className="rk-mini-card">
                 {card.value}
-                <span aria-label={card.seed}>{SEED_SYMBOLS[card.seed]}</span>
+                <span aria-label={t.seeds[card.seed]}>{SEED_SYMBOLS[card.seed]}</span>
               </span>
             ))}
           </div>

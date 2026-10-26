@@ -9,7 +9,8 @@ import RunHelp from "../components/run/RunHelp";
 import RunEndPanel from "../components/run/RunEndPanel";
 import RunBlessing from "../components/run/RunBlessing";
 import { noticesFor } from "../components/run/notices";
-import { CARD_BACK, CHARACTERS, SEED_SYMBOLS, SHOP_ART, sceneArt, sceneInfo, tableArt, type Expression } from "../art/manifest";
+import { characterText, useText } from "../i18n";
+import { CARD_BACK, SEED_SYMBOLS, SHOP_ART, sceneArt, sceneInfo, tableArt, type Expression } from "../art/manifest";
 import { AnchorContext, useAnchor, useAnchorRegistry } from "../scene/anchors";
 import { directScene } from "../scene/cues";
 import FxLayer from "../scene/FxLayer";
@@ -36,18 +37,20 @@ interface SeatProps {
 
 // Un avversario seduto di fronte, dall'altra parte del tavolo: le sue monete stanno sul bordo del tavolo
 function OpponentSeat({ player, active, expression, host }: SeatProps) {
+  const t = useText();
   const anchor = useAnchor(player.id);
+  const character = characterText(t, player.character);
   const out = player.status !== "playing";
   return (
     <li
       className={`rk-seat${active ? " is-active" : ""}${out ? " is-out" : ""}${host ? " is-host" : ""}`}
-      title={CHARACTERS[player.character]?.tagline}
+      title={character.tagline}
     >
       <Portrait character={player.character} expression={out ? "sad" : expression} size="bust" />
       <span ref={anchor} className="rk-seat-plate">
-        <span className="rk-seat-name">{player.username}</span>
+        <span className="rk-seat-name">{character.name}</span>
         {out ? (
-          <span className="rk-seat-out">fuori</span>
+          <span className="rk-seat-out">{t.scene.out}</span>
         ) : (
           <span className="ui-coins">
             <img src={coinsImg} alt="" />
@@ -69,9 +72,10 @@ function seatingOrder(opponents: RunPlayer[], boss?: boolean): { seats: RunPlaye
 }
 
 function PotView({ piatto }: { piatto: number }) {
+  const t = useText();
   const anchor = useAnchor("pot");
   return (
-    <div ref={anchor} className="rk-pot" aria-label={`Piatto: ${piatto} monete`}>
+    <div ref={anchor} className="rk-pot" aria-label={t.scene.pot(piatto)}>
       <img src={piattoImg} alt="" className="rk-pot-plate" />
       <span className="ui-coins rk-pot-amount">
         <img src={coinsImg} alt="" />
@@ -86,6 +90,7 @@ export default function RoguelikeRun() {
   const { run, events, moveId, play, nextTable, enterShop, buy, reroll, peek, consume, eat, chooseBlessing, chooseReward, startNewRun } =
     useRunEngine();
   const registry = useAnchorRegistry();
+  const t = useText();
   const [helpOpen, setHelpOpen] = useState(false);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
   const sceneRef = useCallback(
@@ -146,7 +151,7 @@ export default function RoguelikeRun() {
   const heroTurn = atTable && Boolean(current?.hero);
   const recent = hiddenMoveId !== moveId;
   const expressions = recent ? direction.expressions : {};
-  const notices = recent ? noticesFor(events, run) : [];
+  const notices = recent ? noticesFor(events, run, t) : [];
   const { seats: opponents, host } = seatingOrder(
     players.filter((p) => !p.hero),
     getTableConfig(run).boss,
@@ -171,7 +176,7 @@ export default function RoguelikeRun() {
           run={run}
           heroTurn={heroTurn}
           expression={expressions[getHero(run).id] ?? "neutral"}
-          waitingFor={atTable && current && !current.hero ? current.username : null}
+          waitingFor={atTable && current && !current.hero ? characterText(t, current.character).name : null}
           onPlay={play}
           onPeek={peek}
           onConsume={consume}
@@ -215,7 +220,7 @@ export default function RoguelikeRun() {
           <div className="rk-room">
             <ul
               className={`rk-opponents${host ? " rk-opponents--boss" : ""}`}
-              aria-label="Avversari"
+              aria-label={t.scene.opponents}
               style={{ "--seats": opponents.length } as CSSProperties}
             >
               {opponents.map((player) => (
@@ -232,7 +237,7 @@ export default function RoguelikeRun() {
             {/* il tavolo visto da chi è seduto: il bordo vicino esce dallo schermo */}
             <div className={`rk-table${table ? " rk-table--art" : ""}`}>
               <div className="rk-felt">
-                <div className="rk-deck" aria-label={`${deck.length} carte nel mazzo`}>
+                <div className="rk-deck" aria-label={t.scene.deck(deck.length)}>
                   <span
                     className="rk-deck-stack"
                     style={{ "--card-back": `url(${CARD_BACK})` } as CSSProperties}
@@ -240,7 +245,7 @@ export default function RoguelikeRun() {
                     <img src={CARD_BACK} alt="" />
                   </span>
                   <span className="ui-label rk-deck-count">
-                    {deck.length === 1 ? "ultima carta" : `${deck.length} carte`}
+                    {t.scene.deckCount(deck.length)}
                   </span>
                 </div>
 
@@ -253,16 +258,17 @@ export default function RoguelikeRun() {
                       seed={run.lastDraw.card.seed}
                       value={run.lastDraw.card.value}
                       reveal
+                      text={t}
                     />
                   ) : (
-                    <span className="rk-drawn-empty ui-label">la prima carta</span>
+                    <span className="rk-drawn-empty ui-label">{t.scene.firstCard}</span>
                   )}
                   {run.peeked && (
-                    <span className="rk-peeked" title="La prossima carta, vista con la Coppola del nonno">
-                      <span className="ui-label">prossima</span>
+                    <span className="rk-peeked" title={t.scene.peekedTitle}>
+                      <span className="ui-label">{t.scene.next}</span>
                       <span className="rk-mini-card">
                         {run.peeked.value}
-                        <span aria-label={run.peeked.seed}>{SEED_SYMBOLS[run.peeked.seed]}</span>
+                        <span aria-label={t.seeds[run.peeked.seed]}>{SEED_SYMBOLS[run.peeked.seed]}</span>
                       </span>
                     </span>
                   )}

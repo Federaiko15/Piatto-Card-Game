@@ -14,6 +14,7 @@ import { MODIFIER_ICONS, type Expression } from "../../art/manifest";
 import { useAnchor } from "../../scene/anchors";
 import AnimatedNumber from "../../scene/AnimatedNumber";
 import Portrait from "../../scene/Portrait";
+import { useText } from "../../i18n";
 import coinsImg from "../../assets/coins.png";
 
 interface RunPanelProps {
@@ -43,6 +44,7 @@ export default function RunPanel({
   onHelp,
   onMenu,
 }: RunPanelProps) {
+  const t = useText();
   const hero = getHero(run);
   const anchor = useAnchor(hero.id);
   const config = getTableConfig(run);
@@ -51,21 +53,21 @@ export default function RunPanel({
   const halfPot = run.modifiers.includes("niente_piatto");
 
   return (
-    <aside className="rk-panel" aria-label="La tua partita">
+    <aside className="rk-panel" aria-label={t.panel.label}>
       <div className="rk-panel-top">
         <button
           type="button"
           className="ui-btn ui-btn--wood ui-btn--small"
           onClick={onMenu}
-          title="La notte resta salvata"
+          title={t.panel.menuTitle}
         >
-          Menu
+          {t.panel.menu}
         </button>
         <button
           type="button"
           className="ui-btn ui-btn--wood ui-btn--small rk-help-btn"
           onClick={onHelp}
-          aria-label="Regole, figure e santini"
+          aria-label={t.panel.help}
         >
           ?
         </button>
@@ -73,10 +75,10 @@ export default function RunPanel({
 
       <section className={`rk-blind${config.boss ? " rk-blind--boss" : ""}`}>
         <span className="ui-label">
-          Tavolo {run.tableIndex + 1} di {runTables(run).length}
-          {config.boss && " · boss"}
+          {t.panel.tableOf(run.tableIndex + 1, runTables(run).length)}
+          {config.boss && t.panel.boss}
         </span>
-        <h1 className="rk-blind-name">{config.name}</h1>
+        <h1 className="rk-blind-name">{t.tables[config.id]}</h1>
         {run.modifiers.length > 0 && (
           <ul className="rk-rules">
             {run.modifiers.map((id) => (
@@ -85,14 +87,14 @@ export default function RunPanel({
                   type="button"
                   className={`rk-rule rk-rule--${TABLE_MODIFIERS[id].kind}`}
                   onClick={onHelp}
-                  title={TABLE_MODIFIERS[id].effect}
+                  title={t.modifiers[id].effect}
                 >
                   <span className="rk-rule-icon" aria-hidden="true">
                     {MODIFIER_ICONS[id]}
                   </span>
                   <span className="rk-rule-text">
-                    <span className="rk-rule-name">{TABLE_MODIFIERS[id].name}</span>
-                    <span className="rk-rule-effect">{TABLE_MODIFIERS[id].effect}</span>
+                    <span className="rk-rule-name">{t.modifiers[id].name}</span>
+                    <span className="rk-rule-effect">{t.modifiers[id].effect}</span>
                   </span>
                 </button>
               </li>
@@ -101,7 +103,7 @@ export default function RunPanel({
         )}
       </section>
 
-      <section className="rk-status" aria-label={`Le tue monete: ${hero.balance}, quota ${config.quota}`}>
+      <section className="rk-status" aria-label={t.panel.status(hero.balance, config.quota)}>
         <div ref={anchor} className="rk-stat rk-stat--coins">
           <Portrait character="hero" expression={expression} size="small" />
           <span className="rk-stat-text">
@@ -113,7 +115,7 @@ export default function RunPanel({
           </span>
         </div>
         <div className={`rk-stat rk-stat--quota${met ? " is-met" : ""}`}>
-          <span className="ui-label">Quota {met && "✓"}</span>
+          <span className="ui-label">{t.panel.quota} {met && "✓"}</span>
           <span className="rk-stat-value">{config.quota}</span>
         </div>
         <span className={`ui-meter rk-status-meter${met ? " ui-meter--done" : ""}`}>
@@ -121,18 +123,19 @@ export default function RunPanel({
         </span>
       </section>
 
-      <section className={`rk-action${heroTurn ? " is-active" : ""}`} aria-label="La tua puntata">
+      <section className={`rk-action${heroTurn ? " is-active" : ""}`} aria-label={t.panel.betLabel}>
         {heroTurn ? (
           <BetControls
             key={run.tableIndex}
             max={maxHeroBet(run)}
             potIsMax={!halfPot && run.table.piatto <= hero.balance}
-            limitLabel={halfPot ? "metà del piatto, regola del Prete" : undefined}
+            limitLabel={halfPot ? t.panel.halfPotLimit : undefined}
+            text={t.bet}
             initialBet={Math.max(1, Math.floor(hero.balance / 10))}
             onConfirm={onPlay}
           />
         ) : (
-          <p className="rk-waiting">{waitingFor ? `Tocca a ${waitingFor}…` : "Tavolo chiuso"}</p>
+          <p className="rk-waiting">{waitingFor ? t.panel.waiting(waitingFor) : t.panel.closed}</p>
         )}
       </section>
 

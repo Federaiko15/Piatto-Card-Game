@@ -36,10 +36,10 @@ export type ConsumableId = "brucia" | "passo" | "mischia";
 // Le specialità di Campobello di Licata; nel gioco completo arriveranno altri cibi siciliani
 export type FoodId = "mpanata" | "mpurnatu";
 
+// Nomi ed effetti dei santini, dei consumabili e dei cibi stanno nei dizionari dell'interfaccia
+// (italiano e inglese): qui restano solo le regole
 export interface SantinoInfo {
   id: SantinoId;
-  name: string;
-  effect: string;
   rarity: Rarity;
   full?: boolean;
   stranger?: boolean; // solo come premio dell'incappucciato: mai in bottega né dalla nonna
@@ -47,15 +47,11 @@ export interface SantinoInfo {
 
 export interface ConsumableInfo {
   id: ConsumableId;
-  name: string;
-  effect: string;
   full?: boolean;
 }
 
 export interface FoodInfo {
   id: FoodId;
-  name: string;
-  effect: string;
   full?: boolean;
 }
 
@@ -68,69 +64,47 @@ export const MAX_FOODS = 2; // i posti del panaru
 export const SANTINI: Record<SantinoId, SantinoInfo> = {
   san_giuseppe: {
     id: "san_giuseppe",
-    name: "San Giuseppe",
-    effect: "Quando peschi un 5 vinci invece di perdere.",
     rarity: "raro",
   },
   corno_rosso: {
     id: "corno_rosso",
-    name: "Corno rosso",
-    effect: "La tua prima puntata persa a ogni tavolo ti viene restituita.",
     rarity: "comune",
   },
   coppola_del_nonno: {
     id: "coppola_del_nonno",
-    name: "Coppola del nonno",
-    effect: "Una volta per tavolo, nel tuo turno, puoi sbirciare la prossima carta.",
     rarity: "raro",
   },
   memoria_di_ferro: {
     id: "memoria_di_ferro",
-    name: "Memoria di ferro",
-    effect: "Vedi le ultime 5 carte uscite al tavolo.",
     rarity: "comune",
   },
   santa_rosalia: {
     id: "santa_rosalia",
-    name: "Santa Rosalia",
-    effect: "Dopo 3 puntate perse di fila, la prossima vincita paga il doppio.",
     rarity: "raro",
   },
   fico_d_india: {
     id: "fico_d_india",
-    name: "Fico d'India",
-    effect: "+1 moneta per ogni carta di bastoni che esce, chiunque la peschi.",
     rarity: "raro",
   },
   sant_antonio: {
     id: "sant_antonio",
-    name: "Sant'Antonio",
-    effect: "Non paghi mai la posta: né quando ti siedi né quando il piatto si svuota.",
     rarity: "raro",
   },
   salvadanaio: {
     id: "salvadanaio",
-    name: "Salvadanaio",
-    effect: "A ogni tavolo superato guadagni 1 moneta ogni 10 che hai (massimo 5).",
     rarity: "comune",
   },
   pupo_di_orlando: {
     id: "pupo_di_orlando",
-    name: "Pupo di Orlando",
-    effect: "Quando peschi una figura il suo effetto vale doppio: il fante ruba 2, il cavallo salta 2 giocatori, il re paga il triplo invece del doppio.",
     rarity: "leggendario",
   },
   patto: {
     id: "patto",
-    name: "Il Patto",
-    effect: "Quando perdi una puntata ne perdi solo metà.",
     rarity: "leggendario",
     stranger: true,
   },
   corona_di_ruggero: {
     id: "corona_di_ruggero",
-    name: "Corona di Re Ruggero",
-    effect: "Quando vinci con una figura il banco ti paga una puntata in più: fante e cavallo pagano doppio, il re triplo.",
     rarity: "leggendario",
     stranger: true,
   },
@@ -138,33 +112,23 @@ export const SANTINI: Record<SantinoId, SantinoInfo> = {
   // che le chiude (la Trinacria); gli altri solo nel gioco completo
   sant_agata: {
     id: "sant_agata",
-    name: "Sant'Agata",
-    effect: "Quando peschi un 4 vinci invece di perdere.",
     rarity: "raro",
   },
   carretto_siciliano: {
     id: "carretto_siciliano",
-    name: "Carretto siciliano",
-    effect: "+1 moneta per ogni carta di denari che esce, chiunque la peschi.",
     rarity: "raro",
   },
   paladino_rinaldo: {
     id: "paladino_rinaldo",
-    name: "Paladino Rinaldo",
-    effect: "Il fante che peschi ruba 3 monete invece di 1.",
     rarity: "raro",
   },
   testa_di_moro: {
     id: "testa_di_moro",
-    name: "Testa di Moro",
-    effect: "Le carte di coppe che peschi vincono sempre.",
     rarity: "leggendario",
     full: true,
   },
   trinacria: {
     id: "trinacria",
-    name: "Trinacria",
-    effect: "A ogni tavolo, la prima carta da 1 a 5 che peschi vince.",
     rarity: "leggendario",
   },
 };
@@ -176,18 +140,12 @@ const findable = (edition: Edition) =>
 export const CONSUMABLES: Record<ConsumableId, ConsumableInfo> = {
   brucia: {
     id: "brucia",
-    name: "Brucia",
-    effect: "Scarta la prima carta del mazzo senza guardarla.",
   },
   passo: {
     id: "passo",
-    name: "Passo",
-    effect: "Salti il turno senza puntare.",
   },
   mischia: {
     id: "mischia",
-    name: "Mischia",
-    effect: "Rimescola le carte rimaste nel mazzo.",
   },
 };
 
@@ -198,13 +156,9 @@ export const MPURNATU_TURNS = 3;
 export const FOODS: Record<FoodId, FoodInfo> = {
   mpanata: {
     id: "mpanata",
-    name: "'Mpanata",
-    effect: `Ti dà metà delle monete che ti mancano alla quota (almeno ${MPANATA_MIN}).`,
   },
   mpurnatu: {
     id: "mpurnatu",
-    name: "'Mpurnatu",
-    effect: `Piatto pesante, ti tiene: nei tuoi prossimi ${MPURNATU_TURNS} turni, se perdi, perdi solo metà puntata.`,
   },
 };
 

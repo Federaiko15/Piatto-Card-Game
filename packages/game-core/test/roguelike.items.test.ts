@@ -116,8 +116,8 @@ describe("edizioni", () => {
     const bisca = RUN_TABLES[1] as { full?: boolean };
     bisca.full = true;
     try {
-      expect(editionTables("demo").map((t) => t.name)).toEqual(
-        RUN_TABLES.filter((t) => t !== RUN_TABLES[1]).map((t) => t.name),
+      expect(editionTables("demo").map((t) => t.id)).toEqual(
+        RUN_TABLES.filter((t) => t !== RUN_TABLES[1]).map((t) => t.id),
       );
       expect(editionTables("full")).toHaveLength(RUN_TABLES.length);
       const demo = createRun(1, "Eroe", "demo");
@@ -610,9 +610,8 @@ describe("consumabili", () => {
   });
 });
 
-it("ogni oggetto del catalogo ha nome ed effetto", () => {
-  for (const item of [...Object.values(SANTINI), ...Object.values(CONSUMABLES)]) {
-    expect(item.name.length).toBeGreaterThan(0);
-    expect(item.effect.length).toBeGreaterThan(0);
+it("ogni oggetto del catalogo ha il suo id come chiave", () => {
+  for (const [key, item] of [...Object.entries(SANTINI), ...Object.entries(CONSUMABLES), ...Object.entries(FOODS)]) {
+    expect(item.id).toBe(key);
   }
 });

@@ -2,24 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createRun, editionTables, getHero, randomSeed } from "@piatto/game-core";
 import { EDITION, ITCH } from "../edition";
+import { LANGS, setLang, useLang, useText } from "../i18n";
 import { buttonSound } from "../audio/sfx";
 import authBg from "../assets/auth.png";
 import { loadHeroName, loadRun, saveHeroName, saveRun } from "../services/runStorage";
 import "../styles/ModeSelect.css";
 import "../styles/Roguelike.css";
 
-const RULES = [
-  "Affronti i tavoli uno dopo l'altro: le monete che ti restano le porti al tavolo successivo.",
-  "Con una carta da 1 a 5 la puntata va nel piatto, da 6 a 10 la prendi dal piatto.",
-  "A ogni tavolo si gioca un solo mazzo: le carte uscite non tornano più.",
-  "Se il piatto si svuota tutti rimettono la posta; quando il mazzo finisce, quello che resta si divide.",
-  "Ogni tavolo ha una quota: alla fine devi avere almeno quelle monete, altrimenti la notte è finita.",
-  "Le figure hanno un effetto, per tutti: il fante ruba una moneta, il cavallo fa saltare un turno, il re raddoppia la vincita.",
-  "Tra un tavolo e l'altro passi dalla bottega: santini, consumabili e cibi ti aiutano, ma costano monete che poi non hai al tavolo.",
-];
 
 export default function RoguelikeMenu() {
   const navigate = useNavigate();
+  const t = useText();
+  const lang = useLang();
   const [savedRun] = useState(loadRun);
   // i tavoli della notte salvata, o di quella nuova nell'edizione di questa build
   const tables = editionTables(savedRun?.edition ?? EDITION);
@@ -32,7 +26,7 @@ export default function RoguelikeMenu() {
       setConfirmingNew(true);
       return;
     }
-    const name = heroName.trim() || "Giocatore";
+    const name = heroName.trim() || t.menu.defaultName;
     saveHeroName(name);
     saveRun(createRun(randomSeed(), name, EDITION, { blessing: true }));
     navigate("/roguelike/run");
@@ -45,14 +39,25 @@ export default function RoguelikeMenu() {
       style={{ backgroundImage: `url(${authBg})`, imageRendering: "pixelated" }}
     >
       <header className="mode-header">
-        <h1 className="mode-title run-menu-title">Notte all'Osteria</h1>
-        <p className="mode-subtitle">
-          {tables.length} tavoli, una sola notte per fare fortuna
-        </p>
+        <h1 className="mode-title run-menu-title">{t.menu.title}</h1>
+        <p className="mode-subtitle">{t.menu.subtitle(tables.length)}</p>
+        <div className="run-lang" role="group" aria-label={t.menu.language}>
+          {LANGS.map((code) => (
+            <button
+              key={code}
+              type="button"
+              className={`run-lang-btn${code === lang ? " is-active" : ""}`}
+              aria-pressed={code === lang}
+              onClick={() => setLang(code)}
+            >
+              {code.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </header>
 
       <div className="run-menu-box ui-panel">
-        <ol className="run-night" aria-label="I tavoli della notte">
+        <ol className="run-night" aria-label={t.menu.nightLabel}>
           {tables.map((table, i) => {
             const state = !savedRun
               ? ""
@@ -62,9 +67,9 @@ export default function RoguelikeMenu() {
                   ? "is-current"
                   : "";
             return (
-              <li key={table.name} className={state}>
+              <li key={table.id} className={state}>
                 <span className="run-night-dot">{table.boss ? "👑" : table.stranger ? "?" : i + 1}</span>
-                <span className="run-night-name">{table.name}</span>
+                <span className="run-night-name">{t.tables[table.id]}</span>
               </li>
             );
           })}
@@ -76,18 +81,15 @@ export default function RoguelikeMenu() {
             className="ui-btn ui-btn--gold"
             onClick={() => navigate("/roguelike/run")}
           >
-            Continua la notte
+            {t.menu.continue}
             <span className="ui-btn-detail">
               {savedRun.phase === "shop"
-                ? "In bottega"
+                ? t.menu.inShop
                 : savedRun.phase === "blessing"
-                  ? "Il santino della nonna"
-                  : `Tavolo ${savedRun.tableIndex + 1}/${tables.length}`}{" "}
-              ·{" "}
-              {savedRun.phase === "table"
-                ? getHero(savedRun).balance
-                : savedRun.bankroll}{" "}
-              monete
+                  ? t.menu.inBlessing
+                  : t.menu.atTable(savedRun.tableIndex + 1, tables.length)}
+              {" · "}
+              {t.coins(savedRun.phase === "table" ? getHero(savedRun).balance : savedRun.bankroll)}
             </span>
           </button>
         )}
@@ -100,12 +102,13 @@ export default function RoguelikeMenu() {
           }}
         >
           <label className="ui-label" htmlFor="run-hero-name">
-            Il tuo nome
+            {t.menu.nameLabel}
           </label>
           <input
             id="run-hero-name"
             className="run-name-input"
             value={heroName}
+            placeholder={t.menu.defaultName}
             maxLength={16}
             onChange={(e) => setHeroName(e.target.value)}
           />
@@ -113,16 +116,14 @@ export default function RoguelikeMenu() {
             type="submit"
             className={`ui-btn ${savedRun ? "ui-btn--wood" : "ui-btn--gold"}`}
           >
-            {confirmingNew
-              ? "Sicuro? La notte salvata andrà persa"
-              : "Nuova notte"}
+            {confirmingNew ? t.menu.confirmNew : t.menu.newNight}
           </button>
         </form>
 
         <details className="run-rules" open={!savedRun}>
-          <summary>Come si gioca</summary>
+          <summary>{t.menu.howToPlay}</summary>
           <ul>
-            {RULES.map((rule) => (
+            {t.menu.rules.map((rule) => (
               <li key={rule}>{rule}</li>
             ))}
           </ul>
@@ -132,7 +133,7 @@ export default function RoguelikeMenu() {
       {/* su itch.io c'è solo questa modalità */}
       {!ITCH && (
         <button type="button" className="mode-legal-btn" onClick={() => navigate("/")}>
-          ← Scegli un'altra modalità
+          {t.menu.otherModes}
         </button>
       )}
     </div>

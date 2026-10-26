@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { SANTINI, type SantinoId } from "@piatto/game-core";
 import coinsImg from "../assets/coins.png";
 import { ITEM_ICONS, itemArt } from "../art/manifest";
+import { useText } from "../i18n";
 import { playSfx } from "../audio/sfx";
 import type { AnchorRegistry } from "./anchors";
 import type { SceneCue } from "./cues";
@@ -36,7 +37,7 @@ const spawn = (root: HTMLElement, className: string, x: number, y: number) => {
 };
 
 // Il santino ingrandito al centro della scena, come una figurina tenuta in mano: illustrazione e nome
-const santinoCard = (root: HTMLElement, id: SantinoId, x: number, y: number) => {
+const santinoCard = (root: HTMLElement, id: SantinoId, label: string, x: number, y: number) => {
   const card = spawn(root, `fx-santino fx-santino--${SANTINI[id].rarity}`, x, y);
   const art = itemArt(id);
   const figure = document.createElement("span");
@@ -51,7 +52,7 @@ const santinoCard = (root: HTMLElement, id: SantinoId, x: number, y: number) => 
   }
   const name = document.createElement("span");
   name.className = "fx-santino-name";
-  name.textContent = SANTINI[id].name;
+  name.textContent = label;
   card.append(figure, name);
   return card;
 };
@@ -61,6 +62,7 @@ const santinoCard = (root: HTMLElement, id: SantinoId, x: number, y: number) => 
 // così un'animazione non fa mai ridisegnare la pagina React.
 export default function FxLayer({ cues, moveId, registry }: FxLayerProps) {
   const layer = useRef<HTMLDivElement>(null);
+  const t = useText();
 
   useEffect(() => {
     const root = layer.current;
@@ -156,7 +158,7 @@ export default function FxLayer({ cues, moveId, registry }: FxLayerProps) {
         const halo = spawn(root, `fx-santino-halo fx-santino-halo--${SANTINI[cue.id].rarity}`, 0, 0);
         halo.style.setProperty("--x", `${x}px`);
         halo.style.setProperty("--y", `${y}px`);
-        const card = santinoCard(root, cue.id, x, y);
+        const card = santinoCard(root, cue.id, t.santini[cue.id].name, x, y);
         const away = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.25) rotate(0deg)`;
         const held = (tilt: number, scale = 1) => `translate(-50%, -50%) scale(${scale}) rotate(${tilt}deg)`;
         const hold = SANTINO_RETURN - 0.04;
@@ -265,7 +267,7 @@ export default function FxLayer({ cues, moveId, registry }: FxLayerProps) {
     }
 
     return () => root.replaceChildren();
-  }, [cues, moveId, registry]);
+  }, [cues, moveId, registry, t]);
 
   return <div ref={layer} className="fx-layer" aria-hidden="true" />;
 }

@@ -28,30 +28,23 @@ export const sfxFiles = files(
 
 // ---------- Personaggi ----------
 
+// L'aspetto dei personaggi; nomi e descrizioni stanno nei dizionari (src/i18n)
 export interface CharacterInfo {
-  name: string;
   emoji: string; // segnaposto del ritratto
   color: string; // colore dello sfondo del ritratto
-  tagline: string; // una riga sul suo modo di giocare, per il giocatore che impara a leggerlo
   // il volto non si vede (l'incappucciato): le espressioni spuntano sopra la testa come nei manga,
   // con i disegni di emotes/ al posto delle espressioni del ritratto
   emotes?: boolean;
 }
 
 export const CHARACTERS: Record<string, CharacterInfo> = {
-  hero: { name: "Tu", emoji: "🧑", color: "#2f8f5b", tagline: "" },
-  zio_turi: { name: "Zio Turi", emoji: "👴", color: "#7a5a3a", tagline: "Punta sempre poco." },
-  picciotto: { name: "Il Picciotto", emoji: "😎", color: "#c8372d", tagline: "Va spesso a Piatto." },
-  zingara: { name: "'A Zingara", emoji: "🔮", color: "#6b3fa0", tagline: "Conta le carte." },
-  ragioniere: { name: "Il Ragioniere", emoji: "🧮", color: "#1f5fa8", tagline: "Punta il 10% del saldo." },
-  prete: { name: "Il Prete", emoji: "⛪", color: "#2a1a12", tagline: "Al suo tavolo niente Piatto." },
-  incappucciato: {
-    name: "L'Incappucciato",
-    emoji: "🕴️",
-    color: "#15110f",
-    tagline: "Nessuno sa chi sia. Se lo batti, paga.",
-    emotes: true,
-  },
+  hero: { emoji: "🧑", color: "#2f8f5b" },
+  zio_turi: { emoji: "👴", color: "#7a5a3a" },
+  picciotto: { emoji: "😎", color: "#c8372d" },
+  zingara: { emoji: "🔮", color: "#6b3fa0" },
+  ragioniere: { emoji: "🧮", color: "#1f5fa8" },
+  prete: { emoji: "⛪", color: "#2a1a12" },
+  incappucciato: { emoji: "🕴️", color: "#15110f", emotes: true },
 };
 
 // ---------- Espressioni sopra la testa ----------

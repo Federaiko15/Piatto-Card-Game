@@ -53,14 +53,16 @@ import {
 export const STARTING_BANKROLL = 100;
 
 export interface RunOpponent {
-  character: string; // chi è, per ritratti ed espressioni (lo stesso personaggio può sedere a più tavoli)
-  name: string;
+  character: string; // chi è, per nome, ritratti ed espressioni (lo stesso personaggio può sedere a più tavoli)
   personality: BotPersonality;
   balance: number;
 }
 
+// I tavoli della notte; i loro nomi stanno nei dizionari dell'interfaccia
+export type RunTableId = "bar" | "bisca" | "cantina" | "prete";
+
 export interface RunTableConfig {
-  name: string;
+  id: RunTableId;
   ante: number; // la posta che ognuno versa nel piatto quando si siede
   quota: number; // le monete minime con cui l'eroe deve alzarsi dal tavolo
   opponents: RunOpponent[];
@@ -72,44 +74,44 @@ export interface RunTableConfig {
 
 export const RUN_TABLES: readonly RunTableConfig[] = [
   {
-    name: "Il bar della piazza",
+    id: "bar",
     ante: 5,
     quota: 110,
     opponents: [
-      { character: "zio_turi", name: "Zio Turi", personality: "Tirchio", balance: 80 },
-      { character: "picciotto", name: "Il Picciotto", personality: "Pazzo", balance: 80 },
+      { character: "zio_turi", personality: "Tirchio", balance: 80 },
+      { character: "picciotto", personality: "Pazzo", balance: 80 },
     ],
   },
   {
-    name: "La bisca del retrobottega",
+    id: "bisca",
     ante: 10,
     quota: 120,
     opponents: [
-      { character: "zingara", name: "'A Zingara", personality: "Calcolatore", balance: 120 },
-      { character: "ragioniere", name: "Il Ragioniere", personality: "Calmo", balance: 120 },
+      { character: "zingara", personality: "Calcolatore", balance: 120 },
+      { character: "ragioniere", personality: "Calmo", balance: 120 },
     ],
   },
   // Nella demo l'incappucciato c'è sempre; nel gioco completo la sua comparsa sarà da decidere
   // (a caso, o solo a certe condizioni)
   {
-    name: "La cantina",
+    id: "cantina",
     ante: 10,
     quota: 130,
     stranger: true,
     opponents: [
-      { character: "incappucciato", name: "L'Incappucciato", personality: "Calcolatore", balance: 160 },
+      { character: "incappucciato", personality: "Calcolatore", balance: 160 },
     ],
   },
   {
-    name: "Il tavolo del Prete",
+    id: "prete",
     ante: 15,
     quota: 145,
     boss: true,
     modifiers: ["niente_piatto"],
     opponents: [
-      { character: "prete", name: "Il Prete", personality: "Aggressivo", balance: 200 },
-      { character: "picciotto", name: "Il Picciotto", personality: "Pazzo", balance: 100 },
-      { character: "zio_turi", name: "Zio Turi", personality: "Tirchio", balance: 100 },
+      { character: "prete", personality: "Aggressivo", balance: 200 },
+      { character: "picciotto", personality: "Pazzo", balance: 100 },
+      { character: "zio_turi", personality: "Tirchio", balance: 100 },
     ],
   },
 ];
@@ -272,7 +274,7 @@ const seatTable = (
     },
     ...config.opponents.map((opponent, i) => ({
       id: `opponent-${i}`,
-      username: opponent.name,
+      username: opponent.character,
       balance: opponent.balance - config.ante,
       currentBet: 0,
       status: "playing",

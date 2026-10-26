@@ -1,6 +1,4 @@
 import {
-  CONSUMABLES,
-  FOODS,
   MAX_CONSUMABLES,
   MAX_FOODS,
   MAX_SANTINI,
@@ -18,6 +16,7 @@ import { MODIFIER_ICONS } from "../../art/manifest";
 import AnimatedNumber from "../../scene/AnimatedNumber";
 import ItemArt from "./ItemArt";
 import SwapChooser from "./SwapChooser";
+import { characterText, useText, type Text } from "../../i18n";
 
 interface RunShopProps {
   run: RunState;
@@ -26,32 +25,34 @@ interface RunShopProps {
   onNextTable: () => void;
 }
 
-const itemInfo = (item: ShopItem) =>
+// nome, effetto ed etichetta di un oggetto in vetrina; tag è anche la classe del colore
+const itemInfo = (item: ShopItem, t: Text) =>
   item.kind === "santino"
-    ? { ...SANTINI[item.id], tag: SANTINI[item.id].rarity }
+    ? { ...t.santini[item.id], tag: SANTINI[item.id].rarity, label: t.rarity[SANTINI[item.id].rarity] }
     : item.kind === "food"
-      ? { ...FOODS[item.id], tag: "cibo" }
-      : { ...CONSUMABLES[item.id], tag: "consumabile" };
+      ? { ...t.foods[item.id], tag: "cibo", label: t.tagFood }
+      : { ...t.consumables[item.id], tag: "consumabile", label: t.tagConsumable };
 
 // Il motivo per cui un oggetto non si può comprare, o null se si può
-const blockedReason = (run: RunState, item: ShopItem): string | null => {
-  if (item.price >= run.bankroll) return "Monete insufficienti";
-  if (item.kind === "santino" && run.santini.length >= MAX_SANTINI && run.swapsLeft <= 0) return "Santini al completo";
-  if (item.kind === "consumable" && run.consumables.length >= MAX_CONSUMABLES) return "Tasche piene";
-  if (item.kind === "food" && run.foods.length >= MAX_FOODS) return "Panaru pieno";
+const blockedReason = (run: RunState, item: ShopItem, t: Text): string | null => {
+  if (item.price >= run.bankroll) return t.shop.noCoins;
+  if (item.kind === "santino" && run.santini.length >= MAX_SANTINI && run.swapsLeft <= 0) return t.shop.santiniFull;
+  if (item.kind === "consumable" && run.consumables.length >= MAX_CONSUMABLES) return t.shop.pocketFull;
+  if (item.kind === "food" && run.foods.length >= MAX_FOODS) return t.shop.basketFull;
   return null;
 };
 
 function ModifierLine({ id }: { id: TableModifierId }) {
-  const info = TABLE_MODIFIERS[id];
+  const t = useText();
+  const { kind } = TABLE_MODIFIERS[id];
   return (
     <li className="rk-modifier-line">
       <span className="rk-modifier-icon" aria-hidden="true">
         {MODIFIER_ICONS[id]}
       </span>
       <span>
-        <span className={`ui-tag ui-tag--${info.kind}`}>{info.kind}</span> <strong>{info.name}</strong>
-        : {info.effect}
+        <span className={`ui-tag ui-tag--${kind}`}>{t.modifierKinds[kind]}</span> <strong>{t.modifiers[id].name}</strong>
+        : {t.modifiers[id].effect}
       </span>
     </li>
   );
@@ -59,6 +60,7 @@ function ModifierLine({ id }: { id: TableModifierId }) {
 
 // La bottega tra un tavolo e l'altro: ogni acquisto rafforza la build ma lascia meno monete per il prossimo tavolo
 export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopProps) {
+  const t = useText();
   const shop = run.shop!;
   const next = runTables(run)[run.tableIndex + 1];
   const reroll = rerollPrice(shop);
@@ -71,11 +73,11 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
     <div className="rk-shop-screen">
       <header className="rk-shop-header">
         <div>
-          <p className="ui-label">Tra un tavolo e l'altro</p>
-          <h1 className="ui-title rk-shop-title">La bottega</h1>
+          <p className="ui-label">{t.shop.between}</p>
+          <h1 className="ui-title rk-shop-title">{t.shop.title}</h1>
         </div>
         <p className="rk-shop-purse ui-panel">
-          <span className="ui-label">Le tue monete</span>
+          <span className="ui-label">{t.shop.purse}</span>
           <span className="ui-coins rk-shop-coins">
             <img src={coinsImg} alt="" />
             <AnimatedNumber value={run.bankroll} />
@@ -88,19 +90,19 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
           if (!item) {
             return (
               <li key={index} className="rk-offer rk-offer--sold">
-                <span>Venduto</span>
+                <span>{t.shop.sold}</span>
               </li>
             );
           }
-          const info = itemInfo(item);
-          const blocked = blockedReason(run, item);
+          const info = itemInfo(item, t);
+          const blocked = blockedReason(run, item, t);
           const swap = item.kind === "santino" && run.santini.length >= MAX_SANTINI;
           return (
             <li key={`${index}-${item.id}`} className={`rk-offer ui-paper ui-pop rk-offer--${info.tag}`} style={{ animationDelay: `${index * 80}ms` }}>
               <span className="rk-offer-art">
                 <ItemArt id={item.id} />
               </span>
-              <span className={`ui-tag ui-tag--${info.tag}`}>{info.tag}</span>
+              <span className={`ui-tag ui-tag--${info.tag}`}>{info.label}</span>
               <span className="rk-offer-name">{info.name}</span>
               <span className="rk-offer-effect">{info.effect}</span>
               <button
@@ -108,11 +110,11 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
                 className="ui-btn ui-btn--gold rk-offer-buy"
                 disabled={blocked !== null}
                 onClick={() => (swap ? setSwapping(index) : onBuy(index))}
-                title={swap ? `Lasci uno dei tuoi santini (scambi rimasti: ${run.swapsLeft})` : undefined}
+                title={swap ? t.shop.swapTitle(run.swapsLeft) : undefined}
               >
                 {blocked ?? (
                   <span className="ui-coins rk-offer-price">
-                    {swap ? "Scambia" : "Compra"} · <img src={coinsImg} alt="" />
+                    {swap ? t.shop.swap : t.shop.buy} · <img src={coinsImg} alt="" />
                     {item.price}
                   </span>
                 )}
@@ -124,13 +126,17 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
 
       <div className="rk-shop-bottom">
         <section className="ui-panel rk-next" aria-labelledby="rk-next-title">
-          <p className="ui-label">Prossimo tavolo</p>
+          <p className="ui-label">{t.shop.next}</p>
           <h2 id="rk-next-title" className="rk-next-name">
             {next.boss && "👑 "}
-            {next.name}
+            {t.tables[next.id]}
           </h2>
           <p className="rk-next-detail">
-            Posta {next.ante} · Quota {next.quota} · Al tavolo: {next.opponents.map((o) => o.name).join(", ")}
+            {t.shop.tableDetail(
+              next.ante,
+              next.quota,
+              next.opponents.map((o) => characterText(t, o.character).name).join(", "),
+            )}
           </p>
           {nextModifiers.length > 0 ? (
             <ul className="rk-modifier-list">
@@ -139,11 +145,11 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
               ))}
             </ul>
           ) : (
-            <p className="rk-next-detail">Stanotte questo tavolo è tranquillo.</p>
+            <p className="rk-next-detail">{t.shop.quiet}</p>
           )}
           {run.bankroll < next.quota && (
             <p className="rk-shop-warning">
-              Ti siedi sotto la quota: dovrai vincere almeno {next.quota - run.bankroll} monete.
+              {t.shop.belowQuota(next.quota - run.bankroll)}
             </p>
           )}
         </section>
@@ -155,14 +161,21 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
             disabled={reroll >= run.bankroll}
             onClick={onReroll}
           >
-            Rimescola la vetrina
-            <span className="ui-btn-detail">{reroll} monete</span>
+            {t.shop.reroll}
+            <span className="ui-btn-detail">{t.shop.rerollPrice(reroll)}</span>
           </button>
           <button type="button" className="ui-btn ui-btn--gold" onClick={onNextTable}>
-            Siediti al tavolo
+            {t.shop.sit}
             <span className="ui-btn-detail">
-              Santini {run.santini.length}/{MAX_SANTINI} · Scambi {run.swapsLeft} · In tasca {run.consumables.length}/{MAX_CONSUMABLES} · Panaru{" "}
-              {run.foods.length}/{MAX_FOODS}
+              {t.shop.sitDetail(
+                run.santini.length,
+                MAX_SANTINI,
+                run.swapsLeft,
+                run.consumables.length,
+                MAX_CONSUMABLES,
+                run.foods.length,
+                MAX_FOODS,
+              )}
             </span>
           </button>
         </div>

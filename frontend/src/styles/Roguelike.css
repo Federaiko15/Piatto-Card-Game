@@ -115,3 +115,40 @@
   flex-direction: column;
   gap: 6px;
 }
+
+/* la scelta della lingua, sotto il titolo */
+.run-lang {
+  display: inline-flex;
+  margin-top: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 2px var(--c-ink),
+    0 0 0 3px var(--c-gold-deep);
+}
+
+.run-lang-btn {
+  min-width: 44px;
+  min-height: 32px;
+  padding: 2px 10px;
+  border: 0;
+  background: rgba(22, 12, 16, 0.85);
+  color: var(--c-text-soft);
+  font-family: var(--font-title);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.run-lang-btn + .run-lang-btn {
+  border-left: 2px solid var(--c-ink);
+}
+
+.run-lang-btn.is-active {
+  background: var(--c-gold);
+  color: var(--c-ink);
+}
+
+.run-lang-btn:focus-visible {
+  outline: 2px solid var(--c-gold-light);
+  outline-offset: -2px;
+}

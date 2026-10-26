@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { it, type Text } from "../i18n/it";
 import "../styles/BetControls.css";
 
 interface BetControlsProps {
@@ -8,6 +9,7 @@ interface BetControlsProps {
   initialBet?: number;
   disabled?: boolean;
   limitLabel?: string; // perché il massimo è quello (di serie: il piatto o il saldo)
+  text?: Text["bet"]; // i testi nella lingua della notte; i tavoli classici restano in italiano
 }
 
 // Controlli della puntata usati ai tavoli giocati in locale: la puntata non può mai superare il massimo,
@@ -19,6 +21,7 @@ export default function BetControls({
   initialBet = 1,
   disabled = false,
   limitLabel,
+  text = it.bet,
 }: BetControlsProps) {
   const [rawBet, setRawBet] = useState<number | "">(initialBet);
 
@@ -35,14 +38,14 @@ export default function BetControls({
   };
 
   const quickBets = [
-    { label: "Min", value: 1 },
-    { label: "Metà", value: Math.max(1, Math.floor(max / 2)) },
-    { label: limitLabel ? "Max" : potIsMax ? "Piatto" : "Tutto", value: max },
+    { label: text.min, value: 1 },
+    { label: text.half, value: Math.max(1, Math.floor(max / 2)) },
+    { label: limitLabel ? text.max : potIsMax ? text.pot : text.all, value: max },
   ];
 
   return (
     <div className="bet-panel">
-      <div className="bet-quick" role="group" aria-label="Puntate rapide">
+      <div className="bet-quick" role="group" aria-label={text.quick}>
         {quickBets.map((quick) => (
           <button
             key={quick.label}
@@ -60,7 +63,7 @@ export default function BetControls({
         <div className="bet-stepper">
           <button
             type="button"
-            aria-label="Diminuisci la puntata"
+            aria-label={text.decrease}
             onClick={() => setRawBet(Math.max(1, bet - 1))}
             disabled={disabled || bet <= 1}
           >
@@ -75,12 +78,12 @@ export default function BetControls({
             onChange={(e) => handleInput(e.target.value)}
             onBlur={() => setRawBet(bet)}
             className="bet-stepper-input"
-            aria-label="Puntata"
+            aria-label={text.amount}
             disabled={disabled}
           />
           <button
             type="button"
-            aria-label="Aumenta la puntata"
+            aria-label={text.increase}
             onClick={() => setRawBet(Math.min(max, bet + 1))}
             disabled={disabled || bet >= max}
           >
@@ -94,12 +97,12 @@ export default function BetControls({
           onClick={() => onConfirm(bet)}
           disabled={disabled}
         >
-          Punta {bet} e pesca
+          {text.confirm(bet)}
         </button>
       </div>
 
       <p className="bet-hint">
-        Massimo {max} ({limitLabel ?? (potIsMax ? "il piatto" : "il tuo saldo")})
+        {text.hint(max, limitLabel ?? (potIsMax ? text.limitPot : text.limitBalance))}
       </p>
     </div>
   );
