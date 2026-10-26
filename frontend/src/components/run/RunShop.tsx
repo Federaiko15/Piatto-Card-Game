@@ -12,14 +12,16 @@ import {
   type ShopItem,
   type TableModifierId,
 } from "@piatto/game-core";
+import { useState } from "react";
 import coinsImg from "../../assets/coins.png";
 import { MODIFIER_ICONS } from "../../art/manifest";
 import AnimatedNumber from "../../scene/AnimatedNumber";
 import ItemArt from "./ItemArt";
+import SwapChooser from "./SwapChooser";
 
 interface RunShopProps {
   run: RunState;
-  onBuy: (index: number) => void;
+  onBuy: (index: number, replace?: number) => void;
   onReroll: () => void;
   onNextTable: () => void;
 }
@@ -34,7 +36,7 @@ const itemInfo = (item: ShopItem) =>
 // Il motivo per cui un oggetto non si può comprare, o null se si può
 const blockedReason = (run: RunState, item: ShopItem): string | null => {
   if (item.price >= run.bankroll) return "Monete insufficienti";
-  if (item.kind === "santino" && run.santini.length >= MAX_SANTINI) return "Santini al completo";
+  if (item.kind === "santino" && run.santini.length >= MAX_SANTINI && run.swapsLeft <= 0) return "Santini al completo";
   if (item.kind === "consumable" && run.consumables.length >= MAX_CONSUMABLES) return "Tasche piene";
   if (item.kind === "food" && run.foods.length >= MAX_FOODS) return "Panaru pieno";
   return null;
@@ -61,6 +63,9 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
   const next = runTables(run)[run.tableIndex + 1];
   const reroll = rerollPrice(shop);
   const nextModifiers = [...(next.modifiers ?? []), ...(run.nextEvent ? [run.nextEvent] : [])];
+  // l'offerta per cui l'eroe sta scegliendo quale santino lasciare
+  const [swapping, setSwapping] = useState<number | null>(null);
+  const swapItem = swapping === null ? null : shop.offers[swapping];
 
   return (
     <div className="rk-shop-screen">
@@ -89,6 +94,7 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
           }
           const info = itemInfo(item);
           const blocked = blockedReason(run, item);
+          const swap = item.kind === "santino" && run.santini.length >= MAX_SANTINI;
           return (
             <li key={`${index}-${item.id}`} className={`rk-offer ui-paper ui-pop rk-offer--${info.tag}`} style={{ animationDelay: `${index * 80}ms` }}>
               <span className="rk-offer-art">
@@ -101,11 +107,12 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
                 type="button"
                 className="ui-btn ui-btn--gold rk-offer-buy"
                 disabled={blocked !== null}
-                onClick={() => onBuy(index)}
+                onClick={() => (swap ? setSwapping(index) : onBuy(index))}
+                title={swap ? `Lasci uno dei tuoi santini (scambi rimasti: ${run.swapsLeft})` : undefined}
               >
                 {blocked ?? (
                   <span className="ui-coins rk-offer-price">
-                    Compra · <img src={coinsImg} alt="" />
+                    {swap ? "Scambia" : "Compra"} · <img src={coinsImg} alt="" />
                     {item.price}
                   </span>
                 )}
@@ -154,12 +161,24 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
           <button type="button" className="ui-btn ui-btn--gold" onClick={onNextTable}>
             Siediti al tavolo
             <span className="ui-btn-detail">
-              Santini {run.santini.length}/{MAX_SANTINI} · In tasca {run.consumables.length}/{MAX_CONSUMABLES} · Panaru{" "}
+              Santini {run.santini.length}/{MAX_SANTINI} · Scambi {run.swapsLeft} · In tasca {run.consumables.length}/{MAX_CONSUMABLES} · Panaru{" "}
               {run.foods.length}/{MAX_FOODS}
             </span>
           </button>
         </div>
       </div>
+
+      {swapItem?.kind === "santino" && (
+        <SwapChooser
+          run={run}
+          incoming={swapItem.id}
+          onPick={(replace) => {
+            onBuy(swapping!, replace);
+            setSwapping(null);
+          }}
+          onCancel={() => setSwapping(null)}
+        />
+      )}
     </div>
   );
 }

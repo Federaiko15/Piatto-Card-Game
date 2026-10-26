@@ -16,6 +16,7 @@ import {
   MAX_CONSUMABLES,
   MAX_FOODS,
   MAX_SANTINI,
+  MAX_SWAPS,
   MPANATA_MIN,
   MPURNATU_TURNS,
   inEdition,
@@ -155,6 +156,7 @@ export interface RunState {
   santini: SantinoId[];
   consumables: ConsumableId[];
   foods: FoodId[]; // il panaru
+  swapsLeft: number; // gli scambi di santini rimasti per la notte
   shop: ShopState | null; // la vetrina della bottega, solo nella fase "shop"
   blessing: SantinoId[] | null; // i santini della nonna fra cui scegliere, solo nella fase "blessing"
   // il premio dell'incappucciato finché l'eroe non l'ha scelto: monete o il santino in palio (null se li ha già tutti)
@@ -177,9 +179,9 @@ export type RunAction =
   | { type: "use"; item: ConsumableId }
   | { type: "eat"; food: FoodId }
   | { type: "choose_blessing"; index: number } // il santino della nonna, all'inizio della notte
-  | { type: "choose_reward"; reward: "coins" | "santino" } // il premio dell'incappucciato, poi la bottega
+  | { type: "choose_reward"; reward: "coins" | "santino"; replace?: number } // il premio dell'incappucciato, poi la bottega
   | { type: "enter_shop" }
-  | { type: "buy"; index: number }
+  | { type: "buy"; index: number; replace?: number } // replace: il santino da lasciare, con i santini al completo
   | { type: "reroll" }
   | { type: "next_table" };
 
@@ -208,8 +210,8 @@ export type RunEvent =
   | { type: "food_effect"; food: FoodId; amount: number } // il 'Mpurnatu dimezza una perdita
   | { type: "shop_opened" }
   | { type: "blessing_chosen"; santino: SantinoId }
-  | { type: "reward_chosen"; santino?: SantinoId; amount?: number }
-  | { type: "item_bought"; item: ShopItem }
+  | { type: "reward_chosen"; santino?: SantinoId; amount?: number; replaced?: SantinoId }
+  | { type: "item_bought"; item: ShopItem; replaced?: SantinoId }
   | { type: "shop_rerolled"; price: number };
 
 export type RunError =
@@ -225,7 +227,8 @@ export type RunError =
   | "not_enough_coins" // in bottega bisogna tenere almeno una moneta per sedersi
   | "santini_full"
   | "pocket_full"
-  | "basket_full";
+  | "basket_full"
+  | "no_swaps"; // santini al completo e nessuno scambio rimasto
 
 export type RunResult =
   { ok: true; run: RunState; events: RunEvent[] } | { ok: false; error: RunError };
@@ -320,6 +323,7 @@ export const createRun = (
     santini: [],
     consumables: [],
     foods: [],
+    swapsLeft: MAX_SWAPS,
     shop: null,
     blessing: offers,
     strangerReward: first.stranger ? { santino: rollStrangerItem([], rng.next, edition) } : null,
@@ -771,9 +775,8 @@ const applyShopAction = (
   const item = shop.offers[action.index];
   if (!item) return { ok: false, error: "sold_out" };
   if (item.price >= run.bankroll) return { ok: false, error: "not_enough_coins" };
-  if (item.kind === "santino" && run.santini.length >= MAX_SANTINI) {
-    return { ok: false, error: "santini_full" };
-  }
+  const added = item.kind === "santino" ? addSantino(run, item.id, action.replace) : null;
+  if (typeof added === "string") return { ok: false, error: added };
   if (item.kind === "consumable" && run.consumables.length >= MAX_CONSUMABLES) {
     return { ok: false, error: "pocket_full" };
   }
@@ -785,12 +788,32 @@ const applyShopAction = (
     run: {
       ...run,
       bankroll: run.bankroll - item.price,
-      santini: item.kind === "santino" ? [...run.santini, item.id] : run.santini,
+      santini: added?.santini ?? run.santini,
+      swapsLeft: added?.swapsLeft ?? run.swapsLeft,
       consumables: item.kind === "consumable" ? [...run.consumables, item.id] : run.consumables,
       foods: item.kind === "food" ? [...run.foods, item.id] : run.foods,
       shop: { ...shop, offers: shop.offers.map((o, i) => (i === action.index ? null : o)) },
     },
-    events: [{ type: "item_bought", item }],
+    events: [{ type: "item_bought", item, ...(added?.replaced ? { replaced: added.replaced } : {}) }],
+  };
+};
+
+// Un santino nuovo entra nella build: in un posto libero, oppure al posto di quello che l'eroe lascia
+// (con i santini al completo, finché ha scambi)
+const addSantino = (
+  run: RunState,
+  santino: SantinoId,
+  replace: number | undefined,
+): { santini: SantinoId[]; swapsLeft: number; replaced?: SantinoId } | RunError => {
+  if (run.santini.length < MAX_SANTINI) return { santini: [...run.santini, santino], swapsLeft: run.swapsLeft };
+  if (replace === undefined) return "santini_full";
+  if (run.swapsLeft <= 0) return "no_swaps";
+  const replaced = run.santini[replace];
+  if (!replaced) return "invalid_choice";
+  return {
+    santini: run.santini.map((s, i) => (i === replace ? santino : s)),
+    swapsLeft: run.swapsLeft - 1,
+    replaced,
   };
 };
 
@@ -850,10 +873,11 @@ const applyWithRng = (run: RunState, action: RunAction, rng: Rng): RunResult => 
       );
     }
     if (!reward.santino) return { ok: false, error: "invalid_choice" };
-    if (run.santini.length >= MAX_SANTINI) return { ok: false, error: "santini_full" };
+    const added = addSantino(run, reward.santino, action.replace);
+    if (typeof added === "string") return { ok: false, error: added };
     return openShop(
-      { ...run, santini: [...run.santini, reward.santino], strangerReward: null },
-      [{ type: "reward_chosen", santino: reward.santino }],
+      { ...run, santini: added.santini, swapsLeft: added.swapsLeft, strangerReward: null },
+      [{ type: "reward_chosen", santino: reward.santino, ...(added.replaced ? { replaced: added.replaced } : {}) }],
       rng,
     );
   }

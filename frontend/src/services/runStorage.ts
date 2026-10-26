@@ -1,4 +1,4 @@
-import type { RunState } from "@piatto/game-core";
+import { MAX_SWAPS, type RunState } from "@piatto/game-core";
 
 // La run del roguelike vive solo sul dispositivo: si salva dopo ogni mossa e si riprende con "Continua".
 // Se il formato della run cambia in modo incompatibile basta cambiare la versione nella chiave.
@@ -22,6 +22,7 @@ export const loadRun = (): RunState | null => {
       blessing: run.blessing ?? null,
       strangerReward: run.strangerReward ?? null,
       foods: run.foods ?? [],
+      swapsLeft: run.swapsLeft ?? MAX_SWAPS,
       satiety: run.satiety ?? 0,
       trinacriaUsed: run.trinacriaUsed ?? false,
     };

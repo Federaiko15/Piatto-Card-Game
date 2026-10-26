@@ -84,14 +84,14 @@ export function useRunEngine() {
   const act = useCallback((action: RunAction) => dispatch({ type: "act", action }), []);
   const nextTable = useCallback(() => act({ type: "next_table" }), [act]);
   const enterShop = useCallback(() => act({ type: "enter_shop" }), [act]);
-  const buy = useCallback((index: number) => act({ type: "buy", index }), [act]);
+  const buy = useCallback((index: number, replace?: number) => act({ type: "buy", index, replace }), [act]);
   const reroll = useCallback(() => act({ type: "reroll" }), [act]);
   const peek = useCallback(() => act({ type: "peek" }), [act]);
   const consume = useCallback((item: ConsumableId) => act({ type: "use", item }), [act]);
   const eat = useCallback((food: FoodId) => act({ type: "eat", food }), [act]);
   const chooseBlessing = useCallback((index: number) => act({ type: "choose_blessing", index }), [act]);
   const chooseReward = useCallback(
-    (reward: "coins" | "santino") => act({ type: "choose_reward", reward }),
+    (reward: "coins" | "santino", replace?: number) => act({ type: "choose_reward", reward, replace }),
     [act],
   );
 

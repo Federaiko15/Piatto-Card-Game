@@ -1246,6 +1246,51 @@
   flex: 1;
 }
 
+/* la scelta del santino da lasciare in uno scambio */
+.rk-swap {
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rk-swap-title {
+  margin: 0;
+  text-align: center;
+}
+
+.rk-swap-intro {
+  margin: 0;
+  text-align: center;
+  color: var(--c-text-soft);
+}
+
+.rk-swap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rk-swap-option {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.rk-swap-option:hover,
+.rk-swap-option:focus-visible {
+  transform: translateX(4px);
+  filter: brightness(1.05);
+}
+
 /* il premio dell'incappucciato: due scelte affiancate al posto del pulsante della bottega */
 .rk-reward {
   width: 100%;

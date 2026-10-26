@@ -3,6 +3,7 @@ import {
   CONSUMABLES,
   FOODS,
   MAX_FOODS,
+  MAX_SWAPS,
   MPANATA_MIN,
   MPURNATU_TURNS,
   MAX_CONSUMABLES,
@@ -210,13 +211,16 @@ describe("l'incappucciato", () => {
     expect(item.bankroll).toBe(200);
   });
 
-  it("con i santini al completo resta solo il premio in monete", () => {
+  it("con i santini al completo il suo oggetto si prende solo con uno scambio", () => {
     const full: SantinoId[] = ["san_giuseppe", "corno_rosso", "fico_d_india", "salvadanaio", "santa_rosalia"];
     const cleared = clearedStranger(full);
     expect(applyRunAction(cleared, { type: "choose_reward", reward: "santino" })).toEqual({
       ok: false,
       error: "santini_full",
     });
+    const swapped = apply(cleared, { type: "choose_reward", reward: "santino", replace: 0 }).run;
+    expect(swapped.santini[0]).toBe(cleared.strangerReward!.santino);
+    expect(swapped.swapsLeft).toBe(MAX_SWAPS - 1);
     expect(apply(cleared, { type: "choose_reward", reward: "coins" }).run.phase).toBe("shop");
   });
 
@@ -282,14 +286,38 @@ describe("santini delle build", () => {
     expect(again.lastDraw).toMatchObject({ outcome: "lose" });
   });
 
-  it("i leggendari delle build esistono solo nel gioco completo", () => {
-    expect(SANTINI.testa_di_moro.full).toBe(true);
-    expect(SANTINI.trinacria.full).toBe(true);
-    for (let seed = 1; seed <= 200; seed++) {
-      const ids = rollShop([], createRng(seed), "demo").flatMap((o) => (o?.kind === "santino" ? [o.id] : []));
-      expect(ids).not.toContain("testa_di_moro");
-      expect(ids).not.toContain("trinacria");
-    }
+  it("nella demo c'è la Trinacria, la Testa di Moro solo nel gioco completo", () => {
+    const demo = Array.from({ length: 300 }, (_, seed) => rollShop([], createRng(seed), "demo"))
+      .flat()
+      .flatMap((o) => (o?.kind === "santino" ? [o.id] : []));
+    expect(demo).not.toContain("testa_di_moro");
+    expect(demo).toContain("trinacria");
+  });
+});
+
+describe("scambio dei santini", () => {
+  const full: SantinoId[] = ["san_giuseppe", "corno_rosso", "fico_d_india", "salvadanaio", "santa_rosalia"];
+  const offer = { kind: "santino" as const, id: "sant_agata" as const, price: 18 };
+
+  it("con i santini al completo se ne compra uno nuovo lasciandone uno, finché ci sono scambi", () => {
+    const run = shopWith([offer], 100, { santini: full });
+    expect(run.swapsLeft).toBe(MAX_SWAPS);
+    expect(applyRunAction(run, { type: "buy", index: 0 })).toEqual({ ok: false, error: "santini_full" });
+
+    const { run: next, events } = apply(run, { type: "buy", index: 0, replace: 1 });
+    expect(next.santini).toEqual(["san_giuseppe", "sant_agata", "fico_d_india", "salvadanaio", "santa_rosalia"]);
+    expect(next.swapsLeft).toBe(MAX_SWAPS - 1);
+    expect(next.bankroll).toBe(82);
+    expect(events).toEqual([{ type: "item_bought", item: offer, replaced: "corno_rosso" }]);
+
+    const noSwaps = shopWith([offer], 100, { santini: full, swapsLeft: 0 });
+    expect(applyRunAction(noSwaps, { type: "buy", index: 0, replace: 1 })).toEqual({ ok: false, error: "no_swaps" });
+  });
+
+  it("con un posto libero lo scambio non serve e non si consuma", () => {
+    const next = apply(shopWith([offer], 100, { santini: ["corno_rosso"] }), { type: "buy", index: 0, replace: 0 }).run;
+    expect(next.santini).toEqual(["corno_rosso", "sant_agata"]);
+    expect(next.swapsLeft).toBe(MAX_SWAPS);
   });
 });
 

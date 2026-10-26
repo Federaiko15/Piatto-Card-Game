@@ -60,6 +60,8 @@ export interface FoodInfo {
 }
 
 export const MAX_SANTINI = 5;
+// con i santini al completo se ne può comprare uno nuovo lasciandone uno vecchio, poche volte a notte
+export const MAX_SWAPS = 2;
 export const MAX_CONSUMABLES = 2;
 export const MAX_FOODS = 2; // i posti del panaru
 
@@ -132,8 +134,8 @@ export const SANTINI: Record<SantinoId, SantinoInfo> = {
     rarity: "leggendario",
     stranger: true,
   },
-  // Le build: carte basse, semi, figure. Nella demo c'è un esempio di ognuna, i leggendari che le chiudono
-  // solo nel gioco completo
+  // Le build: carte basse, semi, figure. Nella demo c'è un esempio di ognuna e un solo leggendario
+  // che le chiude (la Trinacria); gli altri solo nel gioco completo
   sant_agata: {
     id: "sant_agata",
     name: "Sant'Agata",
@@ -164,7 +166,6 @@ export const SANTINI: Record<SantinoId, SantinoInfo> = {
     name: "Trinacria",
     effect: "A ogni tavolo, la prima carta da 1 a 5 che peschi vince.",
     rarity: "leggendario",
-    full: true,
   },
 };
 

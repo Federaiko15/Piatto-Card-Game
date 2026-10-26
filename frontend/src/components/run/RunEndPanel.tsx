@@ -7,14 +7,16 @@ import {
   type RunEvent,
   type RunState,
 } from "@piatto/game-core";
+import { useState } from "react";
 import coinsImg from "../../assets/coins.png";
 import ItemArt from "./ItemArt";
+import SwapChooser from "./SwapChooser";
 
 interface RunEndPanelProps {
   run: RunState;
   events: RunEvent[];
   onEnterShop: () => void;
-  onChooseReward: (reward: "coins" | "santino") => void;
+  onChooseReward: (reward: "coins" | "santino", replace?: number) => void;
   onNewRun: () => void;
   onMenu: () => void;
 }
@@ -23,7 +25,10 @@ interface RunEndPanelProps {
 // Il premio dell'incappucciato, a tavolo superato: una buona somma da spendere in bottega o uno dei suoi oggetti
 function StrangerReward({ run, onChoose }: { run: RunState; onChoose: RunEndPanelProps["onChooseReward"] }) {
   const santino = run.strangerReward?.santino;
+  // con i santini al completo il suo oggetto si prende con uno scambio, se ne restano
   const full = run.santini.length >= MAX_SANTINI;
+  const blocked = full && run.swapsLeft <= 0;
+  const [swapping, setSwapping] = useState(false);
   return (
     <section className="rk-reward" aria-labelledby="rk-reward-title">
       <p id="rk-reward-title" className="rk-reward-intro">
@@ -40,16 +45,26 @@ function StrangerReward({ run, onChoose }: { run: RunState; onChoose: RunEndPane
           <button
             type="button"
             className="ui-btn ui-btn--wood rk-reward-option"
-            disabled={full}
-            onClick={() => onChoose("santino")}
+            disabled={blocked}
+            onClick={() => (full ? setSwapping(true) : onChoose("santino"))}
             title={SANTINI[santino].effect}
           >
             <ItemArt id={santino} className="rk-reward-art" />
             <span>{SANTINI[santino].name}</span>
-            <span className="ui-btn-detail">{full ? "Santini al completo" : SANTINI[santino].effect}</span>
+            <span className="ui-btn-detail">
+              {blocked ? "Santini al completo" : full ? `Scambia: ${SANTINI[santino].effect}` : SANTINI[santino].effect}
+            </span>
           </button>
         )}
       </div>
+      {swapping && santino && (
+        <SwapChooser
+          run={run}
+          incoming={santino}
+          onPick={(replace) => onChoose("santino", replace)}
+          onCancel={() => setSwapping(false)}
+        />
+      )}
     </section>
   );
 }

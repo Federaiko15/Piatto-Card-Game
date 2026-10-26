@@ -17,8 +17,8 @@ const MODES: Mode[] = [
     icon: "🍷",
     title: "Notte all'Osteria",
     description:
-      "Quattro tavoli sempre più difficili in una sola notte: raggiungi la quota di ogni tavolo per arrivare fino in fondo.",
-    tag: "Giocatore singolo",
+      "Piatto con regole nuove, più dinamiche del gioco originale: quattro tavoli in una notte, santini che cambiano le regole, una bottega e un boss finale. Raggiungi la quota di ogni tavolo per arrivare fino in fondo.",
+    tag: "Giocatore singolo · Regole nuove",
   },
   {
     id: "offline",

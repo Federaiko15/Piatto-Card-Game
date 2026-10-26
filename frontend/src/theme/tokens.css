@@ -49,8 +49,8 @@
 
   /* font: titoli e numeri grossi alla Balatro, testo pixel ma leggibile anche piccolo */
   --font-title: "Jersey 10", sans-serif;
-  --font-body: "Pixelify Sans", sans-serif;
-  --font-label: "Pixelify Sans", sans-serif;
+  --font-body: "DotGothic16", sans-serif;
+  --font-label: "DotGothic16", sans-serif;
   /* Jersey 10 ha un solo peso: niente grassetto finto, che sui font pixel sbava */
   font-synthesis-weight: none;
 
