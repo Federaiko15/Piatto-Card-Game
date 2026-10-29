@@ -29,26 +29,46 @@ export default function RunHelp({ run, onClose }: RunHelpProps) {
         <h2 id="rk-help-title" className="ui-title rk-help-title">
           {t.help.title}
         </h2>
-        <p className="rk-help-lead">
-          {t.help.leadStart}
-          <strong>{t.help.low}</strong>
-          {t.help.leadMiddle}
-          <strong>{t.help.high}</strong>
-          {t.help.leadEnd}
-        </p>
+        {/* in cantina le regole sono quelle di Ti vitti */}
+        {run.tivitti ? (
+          <>
+            <p className="rk-help-lead">{t.tivitti.subtitle}</p>
+            <ul className="rk-help-list">
+              {t.tivitti.rules.map((line, i) => (
+                <li key={i}>
+                  <span className="rk-help-icon" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="rk-help-lead">{t.tivitti.stakes}</p>
+          </>
+        ) : (
+          <>
+            <p className="rk-help-lead">
+              {t.help.leadStart}
+              <strong>{t.help.low}</strong>
+              {t.help.leadMiddle}
+              <strong>{t.help.high}</strong>
+              {t.help.leadEnd}
+            </p>
 
-        <ul className="rk-help-list">
-          {(Object.keys(CARD_EFFECTS) as CardEffectId[]).map((id) => (
-            <li key={id}>
-              <span className="rk-help-icon" aria-hidden="true">
-                {CARD_EFFECTS[id].value}
-              </span>
-              <span>
-                <strong>{t.figures[id].name}</strong>: {t.figures[id].effect}
-              </span>
-            </li>
-          ))}
-        </ul>
+            <ul className="rk-help-list">
+              {(Object.keys(CARD_EFFECTS) as CardEffectId[]).map((id) => (
+                <li key={id}>
+                  <span className="rk-help-icon" aria-hidden="true">
+                    {CARD_EFFECTS[id].value}
+                  </span>
+                  <span>
+                    <strong>{t.figures[id].name}</strong>: {t.figures[id].effect}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         {run.modifiers.length > 0 && (
           <>

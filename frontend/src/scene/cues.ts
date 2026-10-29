@@ -159,6 +159,27 @@ export const directScene = (events: RunEvent[], run: RunState): SceneDirection =
       case "item_bought":
         cues.push({ kind: "sfx", name: "shop_buy" });
         break;
+      // Ti vitti: le carte suonano; chi dice "ti vitti" a ragione è contento, chi lo subisce no
+      case "tivitti": {
+        const stranger = run.table.players.find((p) => !p.hero)?.id;
+        const e = event.event;
+        if (e.type === "flipped" || e.type === "given" || e.type === "stacked") {
+          cues.push({ kind: "sfx", name: "card_flip" });
+        }
+        if (e.type === "given" && e.seat === 0 && stranger) expressions[stranger] = "suspicious";
+        if (e.type === "ti_vitti" && stranger) {
+          const heroCaught = e.penalized === 0;
+          expressions[stranger] = heroCaught ? "happy" : "sad";
+          expressions[HERO_ID] = heroCaught ? "sad" : "happy";
+          cues.push({ kind: "flash", tone: heroCaught ? "curse" : "gold" });
+          cues.push({ kind: "sfx", name: heroCaught ? "curse" : "santino" });
+          if (heroCaught) cues.push({ kind: "shake" });
+        }
+        break;
+      }
+      case "tivitti_over":
+        cues.push({ kind: "sfx", name: event.won ? "victory" : "lose" });
+        break;
     }
   }
   return { cues, expressions };

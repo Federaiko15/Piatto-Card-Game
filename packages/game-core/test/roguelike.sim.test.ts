@@ -7,7 +7,9 @@ import {
   createRng,
   createRun,
   getHero,
+  mandatoryMove,
   maxHeroBet,
+  type RunAction,
   type RunState,
   type SantinoId,
 } from "../src/index.js";
@@ -38,12 +40,29 @@ const STRATEGIES: Record<string, Strategy> = {
   sempre_piatto: (run) => maxHeroBet(run),
 };
 
+// In cantina, a Ti vitti, l'eroe gioca come un giocatore attento: salta una mossa obbligata su venti e si
+// accorge di quattro errori dell'incappucciato su cinque
+const tiVittiTurn = (run: RunState, rng: () => number): RunAction => {
+  const game = run.tivitti!;
+  if (game.mistake === 1 && rng() < 0.8) return { type: "tivitti", move: { type: "ti_vitti" } };
+  if (game.turn === 1 || game.mistake === 0) return { type: "tivitti_bot" };
+  const required = mandatoryMove(game);
+  if (required && rng() >= 0.05) return { type: "tivitti", move: required };
+  return { type: "tivitti", move: game.flipped ? { type: "keep" } : { type: "flip" } };
+};
+
 const RUNS = 4000;
 const quotaSets: number[][] = process.env.QUOTAS
   ? JSON.parse(process.env.QUOTAS)
   : [RUN_TABLES.map((t) => t.quota)];
 const santini: SantinoId[] = process.env.SANTINI ? JSON.parse(process.env.SANTINI) : [];
 const reward = process.env.REWARD === "santino" ? "santino" : "coins";
+
+// Per confrontare con la cantina di prima, giocata a piatto: PIATTO_IN_CANTINA=1 npm run simulate
+if (process.env.PIATTO_IN_CANTINA) {
+  const cantina = RUN_TABLES.find((t) => t.game === "tivitti") as { ante: number; quota: number; game?: string };
+  Object.assign(cantina, { ante: 10, quota: 130, game: undefined });
+}
 
 it.runIf(process.env.SIMULATE).each(quotaSets)("quote %j", (...quotas: number[]) => {
   quotas.forEach((quota, i) => ((RUN_TABLES[i] as { quota: number }).quota = quota));
@@ -66,6 +85,8 @@ it.runIf(process.env.SIMULATE).each(quotaSets)("quote %j", (...quotas: number[])
               : { type: "enter_shop" }
             : run.phase === "shop"
               ? { type: "next_table" }
+              : run.tivitti
+              ? tiVittiTurn(run, rng)
               : current.hero
               ? { type: "play", amount: Math.min(strategy(run, rng), maxHeroBet(run)) }
               : { type: "bot_turn" },
@@ -85,4 +106,4 @@ it.runIf(process.env.SIMULATE).each(quotaSets)("quote %j", (...quotas: number[])
       lost,
     );
   }
-});
+}, 600_000);

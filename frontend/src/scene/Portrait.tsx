@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import { CHARACTERS, EMOTE_GLYPHS, characterArt, emoteArt, type Expression } from "../art/manifest";
+import { CHARACTERS, EMOTE_GLYPHS, characterArt, characterLayers, emoteArt, type Expression } from "../art/manifest";
+import LayeredBust from "./LayeredBust";
 
 interface PortraitProps {
   character: string;
@@ -20,6 +21,8 @@ const EXPRESSION_BADGES: Record<Expression, string | null> = {
 export default function Portrait({ character, expression = "neutral", size = "medium" }: PortraitProps) {
   const info = CHARACTERS[character] ?? CHARACTERS.hero;
   const art = characterArt(character, expression);
+  // al tavolo, se il personaggio è disegnato a livelli, respira
+  const layered = size === "bust" && characterLayers(character) !== undefined;
   const badge = EXPRESSION_BADGES[expression];
   // chi non mostra il volto esprime le emozioni con un segno sopra la testa
   const emote = info.emotes && expression !== "neutral" ? expression : null;
@@ -30,7 +33,9 @@ export default function Portrait({ character, expression = "neutral", size = "me
       className={`portrait portrait--${size} portrait--${expression}`}
       style={{ "--portrait-color": info.color } as CSSProperties}
     >
-      {art ? (
+      {layered ? (
+        <LayeredBust character={character} expression={expression} />
+      ) : art ? (
         <img src={art} alt="" className="portrait-art" />
       ) : (
         <span className="portrait-placeholder" aria-hidden="true">
@@ -43,7 +48,7 @@ export default function Portrait({ character, expression = "neutral", size = "me
           {emoteImg ? <img src={emoteImg} alt="" /> : EMOTE_GLYPHS[emote]}
         </span>
       )}
-      {!art && !info.emotes && badge && (
+      {!art && !layered && !info.emotes && badge && (
         <span key={expression} className="portrait-badge" aria-hidden="true">
           {badge}
         </span>

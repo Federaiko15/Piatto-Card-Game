@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { getHero, getTableConfig, type RunPlayer } from "@piatto/game-core";
+import { cardsLeft, getHero, getTableConfig, runTables, type RunPlayer } from "@piatto/game-core";
 import { useRunEngine } from "../hooks/useRunEngine";
 import Card from "../components/Cards";
 import RunPanel from "../components/run/RunPanel";
@@ -8,6 +8,7 @@ import RunShop from "../components/run/RunShop";
 import RunHelp from "../components/run/RunHelp";
 import RunEndPanel from "../components/run/RunEndPanel";
 import RunBlessing from "../components/run/RunBlessing";
+import TiVittiBoard from "../components/run/TiVittiBoard";
 import { noticesFor } from "../components/run/notices";
 import { characterText, useText } from "../i18n";
 import { CARD_BACK, SEED_SYMBOLS, SHOP_ART, sceneArt, sceneInfo, tableArt, type Expression } from "../art/manifest";
@@ -33,10 +34,11 @@ interface SeatProps {
   active: boolean;
   expression: Expression;
   host: boolean;
+  cards: number | null; // a Ti vitti contano le carte che gli restano, non le monete
 }
 
 // Un avversario seduto di fronte, dall'altra parte del tavolo: le sue monete stanno sul bordo del tavolo
-function OpponentSeat({ player, active, expression, host }: SeatProps) {
+function OpponentSeat({ player, active, expression, host, cards }: SeatProps) {
   const t = useText();
   const anchor = useAnchor(player.id);
   const character = characterText(t, player.character);
@@ -51,6 +53,8 @@ function OpponentSeat({ player, active, expression, host }: SeatProps) {
         <span className="rk-seat-name">{character.name}</span>
         {out ? (
           <span className="rk-seat-out">{t.scene.out}</span>
+        ) : cards !== null ? (
+          <span className="rk-seat-cards">{t.tivitti.count(cards)}</span>
         ) : (
           <span className="ui-coins">
             <img src={coinsImg} alt="" />
@@ -87,12 +91,33 @@ function PotView({ piatto }: { piatto: number }) {
 
 export default function RoguelikeRun() {
   const navigate = useNavigate();
-  const { run, events, moveId, play, nextTable, enterShop, buy, reroll, peek, consume, eat, chooseBlessing, chooseReward, startNewRun } =
-    useRunEngine();
+  // finché le regole sono aperte gli avversari aspettano
+  const [helpOpen, setHelpOpen] = useState(false);
+  const {
+    run,
+    events,
+    moveId,
+    play,
+    nextTable,
+    enterShop,
+    buy,
+    reroll,
+    peek,
+    consume,
+    eat,
+    chooseBlessing,
+    chooseReward,
+    tivitti,
+    startNewRun,
+  } = useRunEngine(helpOpen);
   const registry = useAnchorRegistry();
   const t = useText();
-  const [helpOpen, setHelpOpen] = useState(false);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
+  // sedendosi in cantina si aprono le regole di Ti vitti, un gioco che quasi nessuno conosce
+  const sitDown = useCallback(() => {
+    if (run && runTables(run)[run.tableIndex + 1]?.game === "tivitti") setHelpOpen(true);
+    nextTable();
+  }, [run, nextTable]);
   const sceneRef = useCallback(
     (el: HTMLElement | null) => {
       if (el) registry.set("scene", el);
@@ -138,7 +163,7 @@ export default function RoguelikeRun() {
           onClickCapture={buttonSound}
           style={SHOP_ART ? ({ "--scene-art": `url(${SHOP_ART})` } as CSSProperties) : undefined}
         >
-          <RunShop run={run} onBuy={buy} onReroll={reroll} onNextTable={nextTable} />
+          <RunShop run={run} onBuy={buy} onReroll={reroll} onNextTable={sitDown} />
           <FxLayer cues={direction.cues} moveId={moveId} registry={registry} />
         </div>
       </AnchorContext.Provider>
@@ -147,8 +172,11 @@ export default function RoguelikeRun() {
 
   const { players, piatto, currentTurn, deck } = run.table;
   const atTable = run.phase === "table";
-  const current = players[currentTurn];
-  const heroTurn = atTable && Boolean(current?.hero);
+  // in cantina si gioca a Ti vitti: il turno è quello della sua partita, non quello del piatto.
+  // A partita finita il tavolo resta quello di Ti vitti, dietro al pannello di fine tavolo
+  const game = run.tivitti;
+  const current = game ? players.find((p) => p.hero === (game.turn === 0)) : players[currentTurn];
+  const heroTurn = atTable && !game && Boolean(current?.hero);
   const recent = hiddenMoveId !== moveId;
   const expressions = recent ? direction.expressions : {};
   const notices = recent ? noticesFor(events, run, t) : [];
@@ -181,6 +209,7 @@ export default function RoguelikeRun() {
           onPeek={peek}
           onConsume={consume}
           onEat={eat}
+          onTiVitti={() => tivitti({ type: "ti_vitti" })}
           onHelp={() => setHelpOpen(true)}
           onMenu={() => navigate("/roguelike")}
         />
@@ -227,16 +256,26 @@ export default function RoguelikeRun() {
                 <OpponentSeat
                   key={player.id}
                   player={player}
-                  active={atTable && current?.id === player.id}
+                  active={atTable && (!game || game.winner === null) && current?.id === player.id}
                   expression={expressions[player.id] ?? "neutral"}
                   host={player.id === host?.id}
+                  cards={game ? cardsLeft(game.hands[1]) + (game.turn === 1 && game.flipped ? 1 : 0) : null}
                 />
               ))}
             </ul>
 
             {/* il tavolo visto da chi è seduto: il bordo vicino esce dallo schermo */}
             <div className={`rk-table${table ? " rk-table--art" : ""}`}>
-              <div className="rk-felt">
+              <div className={`rk-felt${game ? " rk-felt--tivitti" : ""}`}>
+                {game ? (
+                  <TiVittiBoard
+                    game={game}
+                    events={events}
+                    opponentName={characterText(t, opponents[0]?.character ?? "incappucciato").name}
+                    onMove={tivitti}
+                  />
+                ) : (
+                <>
                 <div className="rk-deck" aria-label={t.scene.deck(deck.length)}>
                   <span
                     className="rk-deck-stack"
@@ -273,6 +312,8 @@ export default function RoguelikeRun() {
                     </span>
                   )}
                 </div>
+                </>
+                )}
               </div>
             </div>
           </div>

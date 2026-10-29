@@ -80,6 +80,21 @@ export const noticesFor = (events: RunEvent[], run: RunState, t: Text): Notice[]
         return [{ text: t.notices.foodSaved(t.foods[event.food].name, event.amount), tone: "gold" }];
       case "consumable_used":
         return [{ text: t.notices.used(t.consumables[event.item].name), tone: "info" }];
+      // a Ti vitti si scrive solo quello che il giocatore deve sapere: le mosse sbagliate restano nascoste
+      // finché qualcuno non dice "ti vitti"
+      case "tivitti": {
+        const stranger = run.table.players.find((p) => !p.hero);
+        const name = stranger ? characterText(t, stranger.character).name : "";
+        const e = event.event;
+        if (e.type === "ti_vitti") {
+          if (e.penalized === e.seat) return [{ text: t.tivitti.noticeFalseCall, tone: "curse" }];
+          return e.penalized === 0
+            ? [{ text: t.tivitti.noticeCalledOnYou(name), tone: "curse" }]
+            : [{ text: t.tivitti.noticeYouCalled(name), tone: "gold" }];
+        }
+        if (e.type === "turned_over") return [{ text: t.tivitti.noticeTurnedOver(e.seat === 0 ? t.you : name), tone: "info" }];
+        return [];
+      }
       default:
         return [];
     }

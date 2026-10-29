@@ -8,3 +8,4 @@ export * from "./classic/bots.js";
 export * from "./roguelike/run.js";
 export * from "./roguelike/items.js";
 export * from "./roguelike/modifiers.js";
+export * from "./tivitti/game.js";

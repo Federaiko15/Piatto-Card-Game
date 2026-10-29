@@ -33,6 +33,15 @@ import {
   type ShopState,
 } from "./items.js";
 import {
+  applyTiVittiAction,
+  createTiVitti,
+  tiVittiBotAction,
+  type TiVittiAction,
+  type TiVittiError,
+  type TiVittiEvent,
+  type TiVittiState,
+} from "../tivitti/game.js";
+import {
   CURSED_CARD,
   FIGURES,
   FINANZA_RATE,
@@ -51,6 +60,8 @@ import {
 // Fante, cavallo e re hanno un effetto, e un tavolo può avere un malocchio o un evento.
 
 export const STARTING_BANKROLL = 100;
+// Chi perde a Ti vitti con l'incappucciato perde un santino a caso, o queste monete se non ne ha
+export const TI_VITTI_STOLEN_COINS = 15;
 
 export interface RunOpponent {
   character: string; // chi è, per nome, ritratti ed espressioni (lo stesso personaggio può sedere a più tavoli)
@@ -69,6 +80,8 @@ export interface RunTableConfig {
   boss?: boolean;
   modifiers?: TableModifierId[]; // la regola fissa del boss
   stranger?: boolean; // siede l'incappucciato: a tavolo superato offre un premio a scelta
+  // al posto del piatto si gioca a Ti vitti: niente posta né quota, e i santini non contano
+  game?: "tivitti";
   full?: boolean; // solo nel gioco completo, non nella demo
 }
 
@@ -92,12 +105,13 @@ export const RUN_TABLES: readonly RunTableConfig[] = [
     ],
   },
   // Nella demo l'incappucciato c'è sempre; nel gioco completo la sua comparsa sarà da decidere
-  // (a caso, o solo a certe condizioni)
+  // (a caso, o solo a certe condizioni). In cantina si gioca a Ti vitti con lui
   {
     id: "cantina",
-    ante: 10,
-    quota: 130,
+    ante: 0,
+    quota: 0,
     stranger: true,
+    game: "tivitti",
     opponents: [
       { character: "incappucciato", personality: "Calcolatore", balance: 160 },
     ],
@@ -172,6 +186,9 @@ export interface RunState {
   lossStreak: number; // puntate perse di fila dall'eroe
   modifiers: TableModifierId[]; // malocchi, eventi e regola del boss del tavolo attuale
   nextEvent: TableModifierId | null; // l'evento del prossimo tavolo, scoperto in bottega
+  tivitti: TiVittiState | null; // la partita a Ti vitti, ai tavoli in cui si gioca a quello
+  // come è finita a Ti vitti: se l'eroe ha perso, cosa gli ha preso l'incappucciato
+  tivittiResult: { won: boolean; stolen: SantinoId | null; coins: number } | null;
 }
 
 export type RunAction =
@@ -185,7 +202,9 @@ export type RunAction =
   | { type: "enter_shop" }
   | { type: "buy"; index: number; replace?: number } // replace: il santino da lasciare, con i santini al completo
   | { type: "reroll" }
-  | { type: "next_table" };
+  | { type: "next_table" }
+  | { type: "tivitti"; move: TiVittiAction } // la mossa dell'eroe a Ti vitti
+  | { type: "tivitti_bot" }; // l'incappucciato fa la sua mossa a Ti vitti (o dice "ti vitti" all'eroe)
 
 export type RunEvent =
   | ClassicEvent
@@ -214,10 +233,13 @@ export type RunEvent =
   | { type: "blessing_chosen"; santino: SantinoId }
   | { type: "reward_chosen"; santino?: SantinoId; amount?: number; replaced?: SantinoId }
   | { type: "item_bought"; item: ShopItem; replaced?: SantinoId }
-  | { type: "shop_rerolled"; price: number };
+  | { type: "shop_rerolled"; price: number }
+  | { type: "tivitti"; event: TiVittiEvent }
+  | { type: "tivitti_over"; won: boolean; stolen?: SantinoId; coins?: number };
 
 export type RunError =
   | ClassicError
+  | TiVittiError
   | "wrong_phase"
   | "not_hero_turn"
   | "not_bot_turn"
@@ -297,7 +319,11 @@ const freshTable = {
   refundUsed: false,
   trinacriaUsed: false,
   satiety: 0,
+  tivittiResult: null,
 } satisfies Partial<RunState>;
+
+const startTiVitti = (config: RunTableConfig, rng: Rng): TiVittiState | null =>
+  config.game === "tivitti" ? createTiVitti(Math.floor(rng() * 4294967296)) : null;
 
 // Con blessing la notte comincia dalla scelta del santino della nonna; senza (test e simulatore)
 // si parte direttamente dal primo tavolo
@@ -332,6 +358,7 @@ export const createRun = (
     lossStreak: 0,
     modifiers: first.modifiers ?? [],
     nextEvent: null,
+    tivitti: startTiVitti(first, rng.next),
   };
 };
 
@@ -755,6 +782,7 @@ const applyShopAction = (
         strangerReward: config.stranger ? { santino: rollStrangerItem(run.santini, rng, run.edition) } : null,
         modifiers,
         nextEvent: null,
+        tivitti: startTiVitti(config, rng),
       },
       events,
     };
@@ -890,6 +918,8 @@ const applyWithRng = (run: RunState, action: RunAction, rng: Rng): RunResult => 
   }
 
   if (run.phase !== "table") return { ok: false, error: "wrong_phase" };
+  if (run.tivitti) return playTiVitti(run, run.tivitti, action, rng);
+  if (action.type === "tivitti" || action.type === "tivitti_bot") return { ok: false, error: "wrong_phase" };
   const current = run.table.players[run.table.currentTurn];
 
   if (action.type === "play" || action.type === "peek" || action.type === "use" || action.type === "eat") {
@@ -924,6 +954,55 @@ const applyWithRng = (run: RunState, action: RunAction, rng: Rng): RunResult => 
     rng,
   );
   return playTurn(run, current.id, Math.min(amount, maxBet(run, current.balance)), rng);
+};
+
+// Una mossa a Ti vitti: dell'eroe, o dell'incappucciato con tivitti_bot. A partita finita l'eroe, se ha vinto,
+// sceglie il premio dell'incappucciato; se ha perso, l'incappucciato gli prende un santino a caso (o delle monete)
+// e si va in bottega
+const playTiVitti = (run: RunState, game: TiVittiState, action: RunAction, rng: Rng): RunResult => {
+  let result;
+  if (action.type === "tivitti") {
+    result = applyTiVittiAction(game, 0, action.move);
+  } else if (action.type === "tivitti_bot") {
+    const move = tiVittiBotAction(game, 1, rng);
+    if (!move) return { ok: false, error: "not_bot_turn" };
+    result = applyTiVittiAction(game, 1, move);
+  } else {
+    return { ok: false, error: "wrong_phase" };
+  }
+  if (!result.ok) return result;
+
+  const events: RunEvent[] = result.events.map((event) => ({ type: "tivitti", event }));
+  const next: RunState = { ...run, tivitti: result.state };
+  if (result.state.winner === null) return { ok: true, run: next, events };
+
+  if (result.state.winner === 0) {
+    events.push({ type: "tivitti_over", won: true });
+    return {
+      ok: true,
+      run: { ...next, phase: "table_cleared", tivittiResult: { won: true, stolen: null, coins: 0 } },
+      events,
+    };
+  }
+  const stolen = run.santini.length > 0 ? run.santini[Math.floor(rng() * run.santini.length)] : null;
+  const coins = stolen ? 0 : Math.min(TI_VITTI_STOLEN_COINS, run.bankroll);
+  events.push({ type: "tivitti_over", won: false, ...(stolen ? { stolen } : { coins }) });
+  return {
+    ok: true,
+    run: {
+      ...next,
+      phase: "table_cleared",
+      santini: stolen ? run.santini.filter((s) => s !== stolen) : run.santini,
+      bankroll: run.bankroll - coins,
+      table: {
+        ...run.table,
+        players: run.table.players.map((p) => (p.hero ? { ...p, balance: p.balance - coins } : p)),
+      },
+      strangerReward: null,
+      tivittiResult: { won: false, stolen, coins },
+    },
+    events,
+  };
 };
 
 // Puntata massima consentita all'eroe in questo momento (saldo e piatto)

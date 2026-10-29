@@ -66,6 +66,35 @@ export const emoteArt = (expression: Expression): string | undefined => emoteFil
 export const characterArt = (id: string, expression: Expression = "neutral"): string | undefined =>
   characterFiles[`${id}.${expression}`] ?? characterFiles[id];
 
+// Il mezzobusto a livelli, per farlo respirare: zio_turi.braccia.png, zio_turi.busto.png e una testa per
+// espressione (zio_turi.testa.happy.png, altrimenti zio_turi.testa.neutral.png). Tutti sulla stessa tela 80×80.
+// zio_turi.busto.inspira.png, se c'è, è il busto disegnato mentre inspira: altrimenti il busto si alza di 1 pixel.
+// Chi non cambia faccia (l'incappucciato) può non avere la testa a parte: è già nel busto
+export interface CharacterLayers {
+  braccia: string;
+  busto: string;
+  bustoInspira?: string;
+  testa?: string;
+}
+
+export const characterLayers = (id: string, expression: Expression = "neutral"): CharacterLayers | undefined => {
+  const braccia = characterFiles[`${id}.braccia`];
+  const busto = characterFiles[`${id}.busto`];
+  const testa = characterFiles[`${id}.testa.${expression}`] ?? characterFiles[`${id}.testa.neutral`];
+  const bustoInspira = characterFiles[`${id}.busto.inspira`];
+  return braccia && busto ? { braccia, busto, bustoInspira, testa } : undefined;
+};
+
+// Il ritmo del respiro, in secondi per un respiro intero: chi è agitato respira più in fretta
+export const BREATH_SECONDS: Record<string, number> = {
+  zio_turi: 4.2,
+  picciotto: 2.6,
+  zingara: 3.6,
+  ragioniere: 3.4,
+  prete: 4.8,
+  incappucciato: 5.2,
+};
+
 // ---------- Fondali dei tavoli ----------
 
 export interface SceneInfo {

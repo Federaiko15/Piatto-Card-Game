@@ -26,6 +26,7 @@ interface RunPanelProps {
   onPeek: () => void;
   onConsume: (item: ConsumableId) => void;
   onEat: (food: FoodId) => void;
+  onTiVitti: () => void;
   onHelp: () => void;
   onMenu: () => void;
 }
@@ -41,6 +42,7 @@ export default function RunPanel({
   onPeek,
   onConsume,
   onEat,
+  onTiVitti,
   onHelp,
   onMenu,
 }: RunPanelProps) {
@@ -51,6 +53,10 @@ export default function RunPanel({
   const progress = Math.min(100, Math.round((hero.balance / config.quota) * 100));
   const met = hero.balance >= config.quota;
   const halfPot = run.modifiers.includes("niente_piatto");
+  // a Ti vitti non si punta e non c'è quota: il pannello dice di chi è il turno e tiene il pulsante "Ti vitti!"
+  const game = run.phase === "table" ? run.tivitti : null;
+  const myMove = game?.turn === 0 && game.winner === null;
+  const noQuota = Boolean(run.tivitti);
 
   return (
     <aside className="rk-panel" aria-label={t.panel.label}>
@@ -103,7 +109,10 @@ export default function RunPanel({
         )}
       </section>
 
-      <section className="rk-status" aria-label={t.panel.status(hero.balance, config.quota)}>
+      <section
+        className={`rk-status${noQuota ? " rk-status--tivitti" : ""}`}
+        aria-label={t.panel.status(hero.balance, config.quota)}
+      >
         <div ref={anchor} className="rk-stat rk-stat--coins">
           <Portrait character="hero" expression={expression} size="small" />
           <span className="rk-stat-text">
@@ -114,15 +123,42 @@ export default function RunPanel({
             </span>
           </span>
         </div>
-        <div className={`rk-stat rk-stat--quota${met ? " is-met" : ""}`}>
-          <span className="ui-label">{t.panel.quota} {met && "✓"}</span>
-          <span className="rk-stat-value">{config.quota}</span>
-        </div>
-        <span className={`ui-meter rk-status-meter${met ? " ui-meter--done" : ""}`}>
-          <span style={{ width: `${progress}%` }} />
-        </span>
+        {!noQuota && (
+          <>
+            <div className={`rk-stat rk-stat--quota${met ? " is-met" : ""}`}>
+              <span className="ui-label">{t.panel.quota} {met && "✓"}</span>
+              <span className="rk-stat-value">{config.quota}</span>
+            </div>
+            <span className={`ui-meter rk-status-meter${met ? " ui-meter--done" : ""}`}>
+              <span style={{ width: `${progress}%` }} />
+            </span>
+          </>
+        )}
       </section>
 
+      {game ? (
+        <section className={`rk-action rk-tivitti${myMove ? " is-active" : ""}`} aria-label={t.tivitti.title}>
+          <p className="rk-waiting" role="status">
+            {myMove
+              ? game.flipped
+                ? t.tivitti.yourTurnPlace
+                : t.tivitti.yourTurnFlip
+              : waitingFor
+                ? t.tivitti.hisTurn(waitingFor)
+                : t.panel.closed}
+          </p>
+          <button
+            type="button"
+            className="ui-btn ui-btn--gold rk-tivitti-call"
+            disabled={game.winner !== null}
+            onClick={onTiVitti}
+            title={t.tivitti.callTitle}
+          >
+            {t.tivitti.call}
+          </button>
+          <p className="rk-tivitti-stakes">{t.tivitti.stakes}</p>
+        </section>
+      ) : (
       <section className={`rk-action${heroTurn ? " is-active" : ""}`} aria-label={t.panel.betLabel}>
         {heroTurn ? (
           <BetControls
@@ -138,6 +174,7 @@ export default function RunPanel({
           <p className="rk-waiting">{waitingFor ? t.panel.waiting(waitingFor) : t.panel.closed}</p>
         )}
       </section>
+      )}
 
       <RunFortune run={run} heroTurn={heroTurn} onPeek={onPeek} onConsume={onConsume} onEat={onEat} />
     </aside>

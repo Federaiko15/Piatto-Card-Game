@@ -132,11 +132,13 @@ export default function RunShop({ run, onBuy, onReroll, onNextTable }: RunShopPr
             {t.tables[next.id]}
           </h2>
           <p className="rk-next-detail">
-            {t.shop.tableDetail(
-              next.ante,
-              next.quota,
-              next.opponents.map((o) => characterText(t, o.character).name).join(", "),
-            )}
+            {next.game === "tivitti"
+              ? t.tivitti.shopDetail(characterText(t, next.opponents[0].character).name)
+              : t.shop.tableDetail(
+                  next.ante,
+                  next.quota,
+                  next.opponents.map((o) => characterText(t, o.character).name).join(", "),
+                )}
           </p>
           {nextModifiers.length > 0 ? (
             <ul className="rk-modifier-list">

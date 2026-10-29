@@ -82,7 +82,19 @@ export default function RunEndPanel({ run, events, onEnterShop, onChooseReward, 
   const collected = events.find((e) => e.type === "pot_collected");
   const interest = events.find((e) => e.type === "santino_triggered" && e.santino === "salvadanaio");
 
-  const lines = [
+  // a Ti vitti: chi ha vinto e, se ha vinto l'incappucciato, cosa si è preso
+  const tivitti = run.tivittiResult;
+  const lines = tivitti
+    ? [
+        tivitti.won
+          ? null
+          : tivitti.stolen
+            ? t.tivitti.stolenSantino(t.santini[tivitti.stolen].name)
+            : tivitti.coins > 0
+              ? t.tivitti.stolenCoins(tivitti.coins)
+              : t.tivitti.stolenNothing,
+      ].filter(Boolean)
+    : [
     run.tableEndReason === "opponents_out"
       ? t.end.opponentsOut
       : run.tableEndReason === "deck_empty"
@@ -98,18 +110,26 @@ export default function RunEndPanel({ run, events, onEnterShop, onChooseReward, 
 
   const cleared = run.phase === "table_cleared";
   const won = run.phase === "won";
-  const title = cleared ? t.end.cleared : won ? t.end.won : t.end.lost;
+  const title = tivitti && cleared
+    ? tivitti.won
+      ? t.tivitti.endWon
+      : t.tivitti.endLost
+    : cleared
+      ? t.end.cleared
+      : won
+        ? t.end.won
+        : t.end.lost;
   const tablesCleared = won ? tables.length : run.tableIndex + (cleared ? 1 : 0);
 
   return (
     <div className="ui-backdrop">
       <section
-        className={`ui-panel ui-pop rk-end rk-end--${cleared || won ? "good" : "bad"}`}
+        className={`ui-panel ui-pop rk-end rk-end--${(cleared && tivitti?.won !== false) || won ? "good" : "bad"}`}
         role="dialog"
         aria-labelledby="rk-end-title"
       >
         <span className="rk-end-emblem" aria-hidden="true">
-          {won ? "🏆" : cleared ? "🍷" : "🕯️"}
+          {won ? "🏆" : cleared ? (tivitti?.won === false ? "🕴️" : "🍷") : "🕯️"}
         </span>
         <h2 id="rk-end-title" className="ui-title rk-end-title">
           {title}
@@ -128,7 +148,7 @@ export default function RunEndPanel({ run, events, onEnterShop, onChooseReward, 
                 <img src={coinsImg} alt="" />
                 {run.bankroll}
               </span>
-              {cleared && t.end.quotaNote(config.quota)}
+              {cleared && !tivitti && t.end.quotaNote(config.quota)}
             </>
           ) : run.lossReason === "bankrupt" ? (
             t.end.bankrupt

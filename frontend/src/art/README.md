@@ -17,6 +17,14 @@ Personaggi previsti: `zio_turi`, `picciotto`, `zingara`, `ragioniere`, `prete`, 
 
 Tutte le espressioni di un personaggio stanno sulla stessa tela 80×80 nella stessa posizione: il disegno appoggiato al bordo basso e centrato, così cambiando espressione il personaggio non salta. Il personaggio può essere più stretto o più basso della tela, mai più grande.
 
+### Personaggi a livelli (respiro e reazioni)
+
+Al posto del ritratto unico un personaggio può essere diviso in livelli, tutti sulla stessa tela 80×80 e nella stessa posizione del ritratto: `zio_turi.braccia.png`, `zio_turi.busto.png` e una testa per espressione (`zio_turi.testa.neutral.png`, `.happy`, `.sad`, `.suspicious`; una testa mancante usa la neutra). Se ci sono tutti, al tavolo il personaggio è disegnato con PixiJS (`scene/LayeredBust.tsx`): le braccia stanno ferme, busto e testa si alzano insieme di 1 pixel quando inspira, a scatto come nella pixel art animata a mano. Se c'è `zio_turi.busto.inspira.png` (lo stesso busto disegnato mentre inspira, stessa tela) il busto non si sposta ma cambia disegno, e la testa sale di 1 pixel insieme alle spalle. Il busto alzato va disegnato con la testa alzata di 1 pixel, senza vuoti tra mento e colletto, e con il fondo del busto (sotto e tra le braccia) uguale al busto normale. Da contento tutto il personaggio fa due saltelli di 2 pixel, da deluso la testa si abbassa di 1 pixel. Quando cambia espressione il respiro si ferma per un attimo (anche durante i saltelli) e poi riparte da espirato. Il ritmo del respiro di ognuno sta in `BREATH_SECONDS` in `manifest.ts`.
+
+Chi non cambia faccia, come l'incappucciato, può non avere la testa a parte: il busto la contiene già, e quando inspira cambia tutto il disegno del busto (cappello compreso).
+
+Dal basso: testa, busto (il colletto copre il collo), braccia. Le parti nascoste vanno disegnate, altrimenti muovendosi si apre un buco: il busto continua sotto le braccia per almeno 3 pixel e il collo sotto il colletto per almeno 3 pixel. Gli originali disegnati a mano stanno in `art-src/` nella cartella principale.
+
 ## `scenes/`
 
 Un fondale per tavolo della notte: `table-0.png` (il bar della piazza), `table-1.png` (la bisca del retrobottega), `table-2.png` (la cantina, con l'incappucciato), `table-3.png` (il tavolo del Prete). 256×144: la stanza vista da chi è seduto al tavolo, senza tavolo né personaggi, che stanno su livelli separati. La metà bassa resta coperta dal tavolo, e i personaggi siedono davanti alla fascia centrale.

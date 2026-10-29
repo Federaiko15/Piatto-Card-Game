@@ -777,6 +777,20 @@
   border-radius: 0;
 }
 
+/* il mezzobusto a livelli (LayeredBust): la scena PixiJS è grande quanto la tela e qui si ingrandisce a pixel
+   pieni; senza WebGL i livelli sono immagini sovrapposte */
+.portrait-layers {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.portrait-layers > .portrait-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
 /* i personaggi al tavolo prendono la luce della stanza; l'ombra sotto le braccia li appoggia sul legno */
 .rk-seat .portrait-art {
   filter: url(#rk-lamp-tint) brightness(0.94) drop-shadow(0 6px 4px rgba(20, 8, 4, 0.55));
@@ -1007,7 +1021,7 @@
 }
 
 .rk-pot-plate {
-  width: clamp(96px, min(12.5vw, 17vh), 172px);
+  width: clamp(112px, min(14.5vw, 20vh), 200px);
   image-rendering: pixelated;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.5));
 }
@@ -1852,7 +1866,7 @@
   }
 
   .rk-pot-plate {
-    width: 80px;
+    width: 96px;
   }
 
   .rk-pot-amount {
@@ -1937,5 +1951,233 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+  }
+}
+
+/* ---------- Ti vitti, in cantina ---------- */
+
+/* il tavolo di Ti vitti: mazzo e pila dell'eroe, le quattro scale al centro, pila e mazzo dell'incappucciato */
+.rk-felt--tivitti {
+  grid-template-columns: 1fr;
+  padding: 44px 5% 26px;
+}
+
+/* nove posti in fila, raccolti verso il centro: le carte dei due giocatori sono le più grandi, le scale un po'
+   più piccole. Si adattano alla larghezza del tavolo (cqw è la larghezza di .tv-board) */
+.tv-board {
+  container-type: inline-size;
+}
+
+.tv-side {
+  --tv-card: min(128px, 19vh, 11.2cqw);
+}
+
+.tv-stacks {
+  --tv-card: min(96px, 15vh, 8.4cqw);
+}
+
+.tv-board {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5cqw;
+  user-select: none;
+}
+
+.tv-side,
+.tv-stacks {
+  display: flex;
+  gap: 0.8cqw;
+}
+
+.tv-slot {
+  position: relative;
+  width: var(--tv-card);
+  height: var(--tv-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(10, 6, 4, 0.28);
+  box-shadow: inset 0 0 0 2px rgba(242, 193, 78, 0.22);
+  color: var(--c-text);
+}
+
+.tv-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.45));
+}
+
+.tv-empty {
+  font-size: calc(var(--tv-card) * 0.34);
+  opacity: 0.55;
+}
+
+.tv-count {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(22, 12, 16, 0.78);
+  color: var(--c-text);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* il mazzo dell'eroe si clicca per girare la carta */
+button.tv-deck:not(:disabled) {
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--c-gold);
+  transition: transform var(--dur) var(--ease-out);
+}
+
+button.tv-deck:not(:disabled):hover {
+  transform: translateY(-4px);
+}
+
+.tv-grab {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.is-hero-turn .tv-grab:not(.tv-in-hand--stranger) {
+  cursor: grab;
+}
+
+.tv-grab.is-dragging {
+  opacity: 0.25;
+}
+
+/* la carta appena girata sta sollevata sopra la pila: è quella da posare */
+.tv-in-hand {
+  z-index: 2;
+  transform: translateY(-30%) rotate(-4deg);
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.5));
+}
+
+.tv-in-hand--stranger {
+  transform: translateY(-30%) rotate(4deg);
+}
+
+.tv-in-hand.is-rejected {
+  animation: tvReject 0.32s ease-in-out;
+}
+
+@keyframes tvReject {
+  0%,
+  100% {
+    transform: translateY(-30%) rotate(-4deg);
+  }
+  25% {
+    transform: translate(-6px, -30%) rotate(-7deg);
+  }
+  75% {
+    transform: translate(6px, -30%) rotate(-1deg);
+  }
+}
+
+/* mentre si trascina, i posti dove si può lasciare la carta si accendono */
+.tv-board.is-dragging [data-drop] {
+  box-shadow: inset 0 0 0 2px var(--c-gold), 0 0 12px rgba(242, 193, 78, 0.45);
+}
+
+/* la carta sotto la cima di una pila o di una scala */
+.tv-under {
+  position: absolute;
+  inset: 0;
+}
+
+.tv-stack > .tv-top {
+  position: relative;
+}
+
+/* la carta dell'incappucciato in volo verso la pila dell'eroe o una scala (animata da TiVittiBoard) */
+.tv-flight {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  pointer-events: none;
+  transform-origin: 0 0;
+  filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.55));
+}
+
+.tv-ghost {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  transform: rotate(-6deg) scale(1.08);
+}
+
+.tv-ghost .tv-card {
+  filter: drop-shadow(0 14px 10px rgba(0, 0, 0, 0.55));
+}
+
+/* nel pannello: di chi è il turno e il pulsante "Ti vitti!" */
+.rk-tivitti {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rk-tivitti-call {
+  width: 100%;
+  font-size: 1.6rem;
+}
+
+.rk-seat-cards {
+  color: var(--c-text);
+  font-size: 1rem;
+}
+
+.rk-tivitti-stakes {
+  margin: 0;
+  color: var(--c-text-soft);
+  font-size: 0.85rem;
+}
+
+/* su smartphone le scale vanno su una riga sopra, i due giocatori sotto */
+@media (max-width: 600px) {
+  .rk-felt--tivitti {
+    padding: 34px 6% 24px;
+  }
+
+  .tv-side {
+    --tv-card: min(72px, 22cqw);
+  }
+
+  .tv-stacks {
+    --tv-card: min(58px, 20cqw);
+  }
+
+  .tv-board {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    row-gap: 26px;
+    gap: 26px 8px;
+  }
+
+  .tv-stacks {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tv-count {
+    font-size: 0.68rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-in-hand.is-rejected {
+    animation: none;
   }
 }

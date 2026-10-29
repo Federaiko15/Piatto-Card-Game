@@ -14,6 +14,7 @@ import {
   SHOP_SIZE,
   STARTING_BANKROLL,
   STRANGER_COINS,
+  TI_VITTI_STOLEN_COINS,
   applyRunAction,
   createRng,
   createRun,
@@ -222,6 +223,77 @@ describe("l'incappucciato", () => {
     expect(swapped.santini[0]).toBe(cleared.strangerReward!.santino);
     expect(swapped.swapsLeft).toBe(MAX_SWAPS - 1);
     expect(apply(cleared, { type: "choose_reward", reward: "coins" }).run.phase).toBe("shop");
+  });
+
+  describe("Ti vitti in cantina", () => {
+    // la partita a un passo dalla fine: all'eroe resta solo il 5 da dare, sull'avversario c'è un 4
+    const lastMove = (winner: "eroe" | "incappucciato", santini: SantinoId[] = [], bankroll = 200): RunState => {
+      const run = { ...seatAtStranger(santini), bankroll };
+      const five: Card = { seed: "coppe", value: 5 };
+      const four: Card = { seed: "spade", value: 4 };
+      const nine: Card = { seed: "spade", value: 9 };
+      const hands =
+        winner === "eroe"
+          ? [{ deck: [five], pile: [] }, { deck: [nine], pile: [four] }]
+          : [{ deck: [nine], pile: [four] }, { deck: [five], pile: [] }];
+      return {
+        ...run,
+        table: { ...run.table, players: run.table.players.map((p) => (p.hero ? { ...p, balance: bankroll } : p)) },
+        tivitti: { ...run.tivitti!, hands: hands as never, turn: winner === "eroe" ? 0 : 1, flipped: null, mistake: null },
+      };
+    };
+
+    it("in cantina si gioca a Ti vitti, senza posta né piatto", () => {
+      const run = seatAtStranger();
+      expect(run.tivitti).not.toBeNull();
+      expect(run.tivitti!.hands[0].deck).toHaveLength(20);
+      expect(getHero(run).balance).toBe(200);
+      expect(applyRunAction(run, { type: "play", amount: 5 })).toEqual({ ok: false, error: "wrong_phase" });
+    });
+
+    it("l'incappucciato gioca le sue mosse con tivitti_bot", () => {
+      const run = seatAtStranger();
+      const turn = { ...run, tivitti: { ...run.tivitti!, turn: 1 as const } };
+      const { events } = apply(turn, { type: "tivitti_bot" });
+      expect(events[0]).toMatchObject({ type: "tivitti", event: { type: "flipped", seat: 1 } });
+      expect(applyRunAction({ ...run, tivitti: { ...run.tivitti!, turn: 0 } }, { type: "tivitti_bot" })).toEqual({
+        ok: false,
+        error: "not_bot_turn",
+      });
+    });
+
+    it("vincendo si sceglie il premio dell'incappucciato", () => {
+      let run = apply(lastMove("eroe"), { type: "tivitti", move: { type: "flip" } }).run;
+      const { run: won, events } = apply(run, { type: "tivitti", move: { type: "give", from: "flipped" } });
+      expect(events).toContainEqual({ type: "tivitti_over", won: true });
+      expect(won.phase).toBe("table_cleared");
+      expect(won.strangerReward).not.toBeNull();
+      run = apply(won, { type: "choose_reward", reward: "coins" }).run;
+      expect(run.phase).toBe("shop");
+      expect(run.bankroll).toBe(200 + STRANGER_COINS);
+    });
+
+    it("perdendo l'incappucciato ruba un santino a caso, e si va in bottega senza premio", () => {
+      const santini: SantinoId[] = ["san_giuseppe", "corno_rosso"];
+      let run = apply(lastMove("incappucciato", santini), { type: "tivitti_bot" }).run;
+      const { run: lost, events } = apply(run, { type: "tivitti_bot" });
+      const stolen = lost.tivittiResult!.stolen!;
+      expect(santini).toContain(stolen);
+      expect(lost.santini).toEqual(santini.filter((s) => s !== stolen));
+      expect(lost.bankroll).toBe(200);
+      expect(events).toContainEqual({ type: "tivitti_over", won: false, stolen });
+      expect(lost.strangerReward).toBeNull();
+      run = apply(lost, { type: "enter_shop" }).run;
+      expect(run.phase).toBe("shop");
+    });
+
+    it("perdendo senza santini l'incappucciato si prende 15 monete", () => {
+      let run = apply(lastMove("incappucciato", [], 100), { type: "tivitti_bot" }).run;
+      run = apply(run, { type: "tivitti_bot" }).run;
+      expect(run.bankroll).toBe(100 - TI_VITTI_STOLEN_COINS);
+      expect(getHero(run).balance).toBe(100 - TI_VITTI_STOLEN_COINS);
+      expect(run.tivittiResult).toEqual({ won: false, stolen: null, coins: TI_VITTI_STOLEN_COINS });
+    });
   });
 
   it("Il Patto: si perde solo metà della puntata", () => {

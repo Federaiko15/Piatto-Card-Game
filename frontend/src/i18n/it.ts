@@ -22,6 +22,13 @@ export type CharacterId = "zio_turi" | "picciotto" | "zingara" | "ragioniere" | 
 
 const coins = (n = 0) => (n === 1 ? "1 moneta" : `${n} monete`);
 
+// Gli articoli dei nomi dei personaggi dentro la frase: "a L'Incappucciato" diventa "all'Incappucciato"
+const article = (name: string, a: string, al: string, all: string) =>
+  name.startsWith("L'") ? `${all}${name.slice(2)}` : name.startsWith("Il ") ? `${al}${name.slice(3)}` : `${a}${name}`;
+const toName = (name: string) => article(name, "a ", "al ", "all'");
+const ofName = (name: string) => article(name, "di ", "del ", "dell'");
+const withName = (name: string) => article(name, "", "il ", "l'");
+
 export const it = {
   lang: "Italiano",
   coins,
@@ -345,6 +352,43 @@ export const it = {
     mpurnatu: (name: string) => `${name}: sei sazio, le perdite si dimezzano per qualche turno.`,
     foodSaved: (name: string, n: number) => `${name}: perdi solo metà, risparmi ${coins(n)}.`,
     used: (name: string) => `Hai usato ${name}.`,
+  },
+
+  // ---------- Ti vitti, in cantina con l'Incappucciato ----------
+  tivitti: {
+    title: "Ti vitti",
+    subtitle: "In cantina non si punta: si gioca a Ti vitti",
+    shopDetail: (name: string) => `Si gioca a Ti vitti con ${withName(name)}: niente posta, niente quota.`,
+    yourDeck: "Il tuo mazzo",
+    hisDeck: (name: string) => `Il mazzo ${ofName(name)}`,
+    yourPile: "La tua pila",
+    hisPile: (name: string) => `La pila ${ofName(name)}`,
+    stacks: "Le scale",
+    count: (n: number) => (n === 1 ? "1 carta" : `${n} carte`),
+    yourTurnFlip: "Tocca a te: clicca il tuo mazzo per girare una carta.",
+    yourTurnPlace: "Trascina la carta: sulla pila dell'avversario, in una scala o sulla tua pila.",
+    hisTurn: (name: string) => `Tocca ${toName(name)}…`,
+    call: "Ti vitti!",
+    callTitle: "Se l'avversario ha saltato una mossa obbligata: gira lui 3 carte. Se ti sbagli, le giri tu.",
+    rules: [
+      "Una carta va sulla pila dell'avversario se vale 1 in più della sua cima (un 5 su un 4; il re non va sull'asso).",
+      "Gli assi aprono le scale al centro: ci va la carta successiva dello stesso seme.",
+      "A cascata: ogni volta che liberi una carta, controlla di nuovo. La cima della tua pila può andare sull'avversario o in una scala, e così la carta che compare sotto, e quella dopo ancora. Gira la carta successiva solo quando non puoi più spostare niente.",
+      "Anche all'inizio del tuo turno, prima di girare: se la cima della tua pila va sulla carta che l'avversario ha appena posato, spostala.",
+      "Se la carta non va da nessuna parte la posi sulla tua pila e il turno passa.",
+      "Mosse obbligate: chi ne salta una si sente dire \"ti vitti\" e gira 3 carte.",
+      "Quando il mazzo finisce, la pila si capovolge. Vince chi resta senza carte.",
+    ],
+    stakes: "Se vinci scegli il premio dell'Incappucciato. Se perdi, ti prende un santino a caso (o 15 monete).",
+    noticeCalledOnYou: (name: string) => `"Ti vitti!" ${name} ti ha visto: giri 3 carte.`,
+    noticeYouCalled: (name: string) => `"Ti vitti!" Hai visto ${withName(name)}: gira lui 3 carte.`,
+    noticeFalseCall: "\"Ti vitti\" a vuoto: le 3 carte le giri tu.",
+    noticeTurnedOver: (who: string) => `${who}: mazzo finito, la pila si capovolge.`,
+    endWon: "Hai battuto l'Incappucciato a Ti vitti!",
+    endLost: "L'Incappucciato ha vinto a Ti vitti",
+    stolenSantino: (name: string) => `Allunga la mano e si prende un tuo santino: ${name}.`,
+    stolenCoins: (n: number) => `Non hai santini: si prende ${coins(n)}.`,
+    stolenNothing: "Non hai niente da dargli. Ti lascia andare.",
   },
 };
 
